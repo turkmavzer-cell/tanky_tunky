@@ -5,6 +5,8 @@ type TankyWindow = Window & {
 };
 
 test('menu → match → move with keyboard → pause/resume', async ({ page }) => {
+  // the inner waits are sized for GPU-less CI runners; the default 60 s budget is shorter than their sum
+  test.setTimeout(150_000);
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));
   await page.goto('/');
