@@ -14,6 +14,7 @@ import { spatialize } from '../src/audio/math';
 import { Music } from '../src/audio/music';
 import { SFX } from '../src/audio/sfx';
 import { ENGINE_VOICES, SFX_NAMES, type SfxName } from '../src/audio/types';
+import { createAudioSystem } from '../src/audio/index';
 
 const SR = 44100;
 
@@ -39,7 +40,7 @@ export interface Result {
 
 declare global {
   interface Window {
-    __audioCheck?: { done: boolean; error?: string; results: Result[]; wavs: Record<string, string> };
+    __audioCheck?: { done: boolean; error?: string; results: Result[]; wavs: Record<string, string>; realtime?: string };
   }
 }
 
@@ -327,6 +328,39 @@ function draw(r: Result, buf: AudioBuffer): HTMLCanvasElement {
   return cv;
 }
 
+/** Smoke test of the realtime AudioSystem (needs --autoplay-policy=no-user-gesture-required). */
+async function realtimeSmoke(): Promise<string> {
+  const a = createAudioSystem();
+  await a.unlock();
+  if (!a.unlocked) return 'not unlocked';
+  a.setVolumes({ master: 0.2, sfx: 1, music: 1 });
+  a.setListener(10, 10);
+  a.setAmbience(true, { rain: 0.3, night: false });
+  a.setMusic(true, 0.5);
+  const engines = ENGINE_VOICES.map((v) => a.createEngine(v));
+  a.chargeStart();
+  const t0 = performance.now();
+  let frames = 0;
+  while (performance.now() - t0 < 1200) {
+    const t = (performance.now() - t0) / 1000;
+    engines.forEach((h, i) => a.updateEngine(h, { x: 10 + i - 2, y: 12, speed: t % 1, load: 0.5, muffled: i % 2 === 1 }));
+    a.chargeUpdate(Math.min(1, t), t > 1);
+    // Burst far beyond the voice cap to exercise stealing + rate limiting.
+    for (const n of SFX_NAMES) a.play(n, { x: 10 + (frames % 7) - 3, y: 9, intensity: (frames % 10) / 10, muffled: frames % 3 === 0 });
+    frames++;
+    await new Promise((r) => setTimeout(r, 16));
+  }
+  a.chargeStop();
+  a.setMusic(true, 1);
+  a.suspend();
+  a.resume();
+  engines.forEach((h) => a.destroyEngine(h));
+  a.setMusic(false);
+  a.setAmbience(false);
+  a.dispose();
+  return `ok (${frames} frames)`;
+}
+
 async function run(): Promise<void> {
   const state: NonNullable<Window['__audioCheck']> = { done: false, results: [], wavs: {} };
   window.__audioCheck = state;
@@ -350,6 +384,7 @@ async function run(): Promise<void> {
       }
       grp?.appendChild(draw(r, buf));
     }
+    state.realtime = await realtimeSmoke();
     (document.getElementById('status') as HTMLElement).textContent = `${state.results.length} renders, ${state.results.filter((r) => !r.ok).length} failing`;
   } catch (e) {
     state.error = e instanceof Error ? `${e.message}\n${e.stack ?? ''}` : String(e);

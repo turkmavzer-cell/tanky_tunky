@@ -47,7 +47,9 @@ try {
     if (!r.ok) failed++;
     console.log(`${pad(r.label, 30)}${pad(r.duration.toFixed(2), 8)}${pad(r.peak.toFixed(3), 8)}${pad(r.rms.toFixed(4), 8)}${pad(r.dc.toFixed(5), 9)}${pad(r.tail.toFixed(4), 8)}${status}`);
   }
-  console.log(`\n${res.results.length} renders, ${failed} failing. WAVs + viz-*.png in ${outDir}`);
+  console.log(`\nrealtime AudioSystem smoke: ${res.realtime}`);
+  if (!String(res.realtime).startsWith('ok')) failed++;
+  console.log(`${res.results.length} renders, ${failed} failing. WAVs + viz-*.png in ${outDir}`);
 } finally {
   await browser.close();
   server.close();

@@ -277,6 +277,14 @@ function canvasPixels(art: TerrainArt): number {
 }
 
 function main(): void {
+  if (location.search.includes('coldonly')) {
+    // profiling aid: a single cold build, nothing else
+    const t = performance.now();
+    buildTerrainArt();
+    document.getElementById('info')!.textContent = `cold ${(performance.now() - t).toFixed(1)} ms`;
+    document.body.dataset.ready = '1';
+    return;
+  }
   const t0 = performance.now();
   const art = buildTerrainArt();
   const cold = performance.now() - t0;
@@ -310,4 +318,4 @@ function main(): void {
   document.body.dataset.ready = '1';
 }
 
-main();
+setTimeout(main, 300);

@@ -24,5 +24,3 @@ android/app/src/main/res/xml/config.xml
 keystore/release*
 .audio-dist/
 tools/audio-out/
-.audio-dist/
-tools/audio-out/

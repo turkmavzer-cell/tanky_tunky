@@ -208,8 +208,20 @@ function mk(w: number, h: number): [HTMLCanvasElement, CanvasRenderingContext2D]
   const c = document.createElement('canvas');
   c.width = w;
   c.height = h;
-  const g = c.getContext('2d', { willReadFrequently: false })!;
+  const g = c.getContext('2d')!;
   return [c, g];
+}
+
+const imgPool = new Map<number, ImageData>();
+/** Reusable, zeroed ImageData (putImageData copies it, so one buffer per size is enough). */
+function scratchImage(w: number, h: number): ImageData {
+  const key = w * 4096 + h;
+  let img = imgPool.get(key);
+  if (!img) {
+    img = new ImageData(w, h);
+    imgPool.set(key, img);
+  } else img.data.fill(0);
+  return img;
 }
 
 type Pt = readonly [number, number];
@@ -660,7 +672,7 @@ function buildGround(): GroundBuild {
     for (let vi = 0; vi < VARIANTS; vi++) {
       const Vn = new Fbm(4, 2, 9001 + type * 17 + vi * 101);
       const [cv, g] = mk(W, H);
-      const img = g.createImageData(W, H);
+      const img = scratchImage(W, H);
       const d = img.data;
       const varK = type >= 4 ? 0.8 : 1.3;
       for (let i = 0; i < N; i++) {
@@ -749,7 +761,7 @@ function buildEdges(gb: GroundBuild): HTMLCanvasElement[][] {
     const width = (dir: number, along: number): number => wBase * (0.45 + 1.1 * EN.at(along, dir * 0.25 + 0.1));
     for (let dir = 0; dir < 4; dir++) {
       const [cv, g] = mk(W, H);
-      const img = g.createImageData(W, H);
+      const img = scratchImage(W, H);
       const d = img.data;
       for (let i = 0; i < N; i++) {
         if (G.a[i] <= 0) continue;
@@ -819,7 +831,7 @@ function buildWaterFrames(): HTMLCanvasElement[][] {
     for (let f = 0; f < 4; f++) {
       const ph = (f / 4) * TAU;
       const [cv, g] = mk(W, H);
-      const img = g.createImageData(W, H);
+      const img = scratchImage(W, H);
       const d = img.data;
       for (let i = 0; i < N; i++) {
         if (G.a[i] <= 0) continue;
@@ -922,7 +934,7 @@ function buildCliffs(): [HTMLCanvasElement[], HTMLCanvasElement[]] {
     for (let side = 0; side < 2; side++) {
       const isLeft = side === 0;
       const [cv, g] = mk(cw, ch);
-      const img = g.createImageData(cw, ch);
+      const img = scratchImage(cw, ch);
       const d = img.data;
       for (let py = 0; py < ch; py++) {
         for (let px = 0; px < cw; px++) {
@@ -1034,7 +1046,7 @@ function buildRamps(): HTMLCanvasElement[] {
   const SHADE = [1.0, 0.84, 1.02, 1.12];
   for (let dir = 0; dir < 4; dir++) {
     const [cv, g] = mk(W, rh);
-    const img = g.createImageData(W, rh);
+    const img = scratchImage(W, rh);
     const d = img.data;
     const H0 = CORNERS[(dir + 3) % 4];
     const H1 = CORNERS[(dir + 2) % 4];
