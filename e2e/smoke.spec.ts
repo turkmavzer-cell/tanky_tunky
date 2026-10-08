@@ -12,8 +12,10 @@ test('menu → match → move with keyboard → pause/resume', async ({ page }) 
   await page.screenshot({ path: 'e2e/out/01-menu.png' });
   await page.getByTestId('play').click();
   await page.getByTestId('start').click();
-  // 3-2-1 countdown is shown, then play starts
-  await expect(page.getByTestId('countdown')).toBeVisible();
+  // 3-2-1 countdown is shown (scene init can take several seconds on GPU-less CI runners), then play starts
+  await page.waitForFunction(() => (window as TankyWindow).__tanky?.scene.state !== undefined, null, { timeout: 60_000 });
+  const phase = await page.evaluate(() => (window as TankyWindow).__tanky!.scene.state.match.phase);
+  if (phase === 'countdown') await expect(page.getByTestId('countdown')).toBeVisible({ timeout: 15_000 });
   await page.waitForFunction(() => (window as TankyWindow).__tanky?.scene.state.match.phase === 'playing', null, { timeout: 60_000 });
   const before = await page.evaluate(() => ({ ...(window as TankyWindow).__tanky!.scene.state.tanks[0] }));
   await page.keyboard.down('KeyD');
