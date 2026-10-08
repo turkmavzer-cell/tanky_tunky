@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Audio Render Check</title>
+    <style>
+      :root { color-scheme: dark; }
+      body { margin: 0; padding: 12px; background: #111418; color: #d8dee6; font: 12px/1.3 system-ui, sans-serif; }
+      h1 { font-size: 15px; margin: 0 0 8px; }
+      .grp { display: grid; grid-template-columns: repeat(3, 366px); gap: 6px; padding: 6px; background: #111418; width: max-content; }
+      canvas { display: block; background: #0a0c0f; border: 1px solid #2a3038; }
+      #status { margin-bottom: 8px; }
+    </style>
+  </head>
+  <body>
+    <h1>Tanky Tunky — procedural audio offline render check</h1>
+    <div id="status">rendering…</div>
+    <div id="out"></div>
+    <script type="module" src="./audio-check.ts"></script>
+  </body>
+</html>

@@ -1,6 +1,7 @@
 node_modules/
 dist/
 .bench-dist/
+.preview-dist/
 bench/out/*.png
 coverage/
 test-results/
@@ -21,3 +22,7 @@ android/app/src/main/res/xml/config.xml
 # never commit release keys
 *.jks
 keystore/release*
+.audio-dist/
+tools/audio-out/
+.audio-dist/
+tools/audio-out/
