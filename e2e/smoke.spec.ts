@@ -11,6 +11,7 @@ test('menu → match → move with keyboard → pause/resume', async ({ page }) 
   await expect(page.getByTestId('play')).toBeVisible();
   await page.screenshot({ path: 'e2e/out/01-menu.png' });
   await page.getByTestId('play').click();
+  await page.getByTestId('start').click();
   await page.waitForFunction(() => ((window as TankyWindow).__tanky?.scene.state.tick ?? 0) > 30);
   const before = await page.evaluate(() => ({ ...(window as TankyWindow).__tanky!.scene.state.tanks[0] }));
   await page.keyboard.down('KeyD');

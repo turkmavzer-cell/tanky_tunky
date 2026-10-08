@@ -24,5 +24,22 @@
   "hud.fire": "ATEŞ",
   "hud.ability": "YETENEK",
   "error.title": "Bir hata oluştu",
-  "error.reload": "Yeniden başlat"
+  "error.reload": "Yeniden başlat",
+  "game.respawn": "Yeniden doğuş: {s}",
+  "menu.chooseClass": "Tankını seç",
+  "menu.start": "Başla",
+  "class.scout": "Çevik",
+  "class.heavy": "Ağır",
+  "class.standard": "Dengeli",
+  "class.artillery": "Topçu",
+  "class.trapper": "Tuzakçı",
+  "class.scout.desc": "Çok hızlı, kırılgan, seri atış",
+  "class.heavy.desc": "Yavaş, çok sağlam, yıkıcı top, sekme",
+  "class.standard.desc": "Her işi gören dengeli tank",
+  "class.artillery.desc": "Engel üstünden kavisli atış, min. menzil",
+  "class.trapper.desc": "Tüm haritayı görür, tuzak kurar",
+  "stat.speed": "Hız",
+  "stat.armor": "Zırh",
+  "stat.power": "Ateş",
+  "stat.vision": "Görüş"
 }

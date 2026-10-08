@@ -1,0 +1,22 @@
+{
+  "$comment": "Terrain tuning (brief §7). speedMul multiplies tank speed; moveCost is the A* cost; concealment: 0 = none, 1 = only visible from very close.",
+  "ground": {
+    "grass":   { "id": 0, "speedMul": 1.0,  "moveCost": 1.0, "passable": true },
+    "dirt":    { "id": 1, "speedMul": 1.05, "moveCost": 0.95, "passable": true },
+    "sand":    { "id": 2, "speedMul": 0.85, "moveCost": 1.2, "passable": true },
+    "mud":     { "id": 3, "speedMul": 0.6,  "moveCost": 1.8, "passable": true },
+    "shallow": { "id": 4, "speedMul": 0.55, "moveCost": 2.0, "passable": true },
+    "deep":    { "id": 5, "speedMul": 0,    "moveCost": 999, "passable": false }
+  },
+  "feature": {
+    "none":   { "id": 0, "blocksMove": false, "blocksLOS": false, "blocksShots": false, "speedMul": 1.0, "concealment": 0, "hp": 0 },
+    "forest": { "id": 1, "blocksMove": false, "blocksLOS": true,  "blocksShots": false, "speedMul": 0.75, "concealment": 1, "hp": 0 },
+    "rock":   { "id": 2, "blocksMove": true,  "blocksLOS": true,  "blocksShots": true,  "speedMul": 0,   "concealment": 0, "hp": 0 },
+    "wall":   { "id": 3, "blocksMove": true,  "blocksLOS": true,  "blocksShots": true,  "speedMul": 0,   "concealment": 0, "hp": 120 },
+    "crate":  { "id": 4, "blocksMove": true,  "blocksLOS": false, "blocksShots": true,  "speedMul": 0,   "concealment": 0, "hp": 40 },
+    "ruins":  { "id": 5, "blocksMove": false, "blocksLOS": false, "blocksShots": false, "speedMul": 0.8, "concealment": 0, "hp": 0 },
+    "gate":   { "id": 6, "blocksMove": true,  "blocksLOS": true,  "blocksShots": true,  "speedMul": 0,   "concealment": 0, "hp": 300 },
+    "bridge": { "id": 7, "blocksMove": false, "blocksLOS": false, "blocksShots": false, "speedMul": 1.0, "concealment": 0, "hp": 0 }
+  },
+  "elevation": { "levels": 3, "visionBonusPerLevel": 1, "uphillHitPenalty": 0.25 }
+}

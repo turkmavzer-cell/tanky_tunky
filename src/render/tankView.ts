@@ -53,12 +53,43 @@ export class TankView {
     tex.turret.forEach((t, i) => this.turret.push(make(t, base + i)));
   }
 
+  /** Recoil kick in px (decays in update), flash = white hit flash 0..1. */
+  private recoil = 0;
+  private flashT = 0;
+
   setAngles(hull: number, turret: number): void {
     const h = Math.PI / 4 + hull;
     const tr = Math.PI / 4 + turret;
     this.shadow.sprite.rotation = h;
     for (const s of this.hull) s.sprite.rotation = h;
-    for (const s of this.turret) s.sprite.rotation = tr;
+    const ox = -Math.cos(tr) * this.recoil;
+    const oy = -Math.sin(tr) * this.recoil;
+    for (const s of this.turret) {
+      s.sprite.rotation = tr;
+      s.sprite.position.set(ox, oy);
+    }
+  }
+
+  kick(px: number): void {
+    this.recoil = Math.max(this.recoil, px);
+  }
+
+  hitFlash(): void {
+    this.flashT = 1;
+  }
+
+  /** Per-frame visual decay (recoil spring, hit flash). */
+  update(dt: number): void {
+    this.recoil *= Math.exp(-dt * 14);
+    if (this.recoil < 0.05) this.recoil = 0;
+    if (this.flashT > 0) {
+      this.flashT = Math.max(0, this.flashT - dt * 6);
+      const c = Math.round(255 * (1 - this.flashT) + 255 * this.flashT);
+      const g = Math.round(255 - 120 * this.flashT);
+      const tint = (c << 16) | (g << 8) | g;
+      for (const s of this.hull) s.sprite.tint = tint;
+      for (const s of this.turret) s.sprite.tint = tint;
+    }
   }
 
   destroy(): void {

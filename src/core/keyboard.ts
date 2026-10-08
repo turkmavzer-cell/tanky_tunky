@@ -25,6 +25,8 @@ export class KeyboardMouse {
       this.hasMouse = true;
     };
     const md = (e: PointerEvent): void => {
+      // ignore clicks on UI (pause button, overlays)
+      if ((e.target as HTMLElement | null)?.closest?.('button, .overlay, .panel')) return;
       if (e.pointerType === 'mouse' && e.button === 0) this.mouseDown = true;
     };
     const mu = (e: PointerEvent): void => {
@@ -33,15 +35,16 @@ export class KeyboardMouse {
     window.addEventListener('keydown', kd);
     window.addEventListener('keyup', ku);
     window.addEventListener('blur', blur);
-    target.addEventListener('pointermove', mm);
-    target.addEventListener('pointerdown', md);
+    // window-level: the touch-control layer sits above the canvas
+    window.addEventListener('pointermove', mm);
+    window.addEventListener('pointerdown', md);
     window.addEventListener('pointerup', mu);
     this.offs.push(
       () => window.removeEventListener('keydown', kd),
       () => window.removeEventListener('keyup', ku),
       () => window.removeEventListener('blur', blur),
-      () => target.removeEventListener('pointermove', mm),
-      () => target.removeEventListener('pointerdown', md),
+      () => window.removeEventListener('pointermove', mm),
+      () => window.removeEventListener('pointerdown', md),
       () => window.removeEventListener('pointerup', mu),
     );
   }
@@ -68,6 +71,12 @@ export class KeyboardMouse {
 
   abilityHeld(): boolean {
     return this.down('KeyE') || this.down('ShiftLeft');
+  }
+
+  /** Forget held keys/buttons (e.g. when pausing, so nothing stays "stuck"). */
+  reset(): void {
+    this.keys.clear();
+    this.mouseDown = false;
   }
 
   dispose(): void {

@@ -17,6 +17,10 @@ export function hashState(value: unknown): string {
       for (let i = 0; i < v.length; i++) mix(v.charCodeAt(i));
     } else if (typeof v === 'boolean') {
       mix(v ? 1 : 2);
+    } else if (ArrayBuffer.isView(v)) {
+      const b = v as unknown as ArrayLike<number>;
+      mix(0xa2);
+      for (let i = 0; i < b.length; i++) mix(b[i] | 0);
     } else if (Array.isArray(v)) {
       mix(0xa1);
       for (const x of v) walk(x);

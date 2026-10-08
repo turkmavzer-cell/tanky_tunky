@@ -24,5 +24,22 @@
   "hud.fire": "إطلاق",
   "hud.ability": "قدرة",
   "error.title": "حدث خطأ",
-  "error.reload": "إعادة التشغيل"
+  "error.reload": "إعادة التشغيل",
+  "game.respawn": "إعادة الظهور خلال {s}",
+  "menu.chooseClass": "اختر دبابتك",
+  "menu.start": "ابدأ",
+  "class.scout": "الكشّاف",
+  "class.heavy": "الثقيلة",
+  "class.standard": "المتوازنة",
+  "class.artillery": "المدفعية",
+  "class.trapper": "الفخّاخ",
+  "class.scout.desc": "سريعة جدًا، هشة، إطلاق متتابع",
+  "class.heavy.desc": "بطيئة، متينة جدًا، قذائف مرتدة مدمرة",
+  "class.standard.desc": "دبابة متوازنة لكل المهام",
+  "class.artillery.desc": "قذائف مقوسة فوق العوائق، مدى أدنى",
+  "class.trapper.desc": "ترى الخريطة كلها وتنصب الفخاخ",
+  "stat.speed": "السرعة",
+  "stat.armor": "الدروع",
+  "stat.power": "القوة النارية",
+  "stat.vision": "الرؤية"
 }

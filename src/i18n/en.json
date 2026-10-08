@@ -24,5 +24,22 @@
   "hud.fire": "FIRE",
   "hud.ability": "ABILITY",
   "error.title": "Something went wrong",
-  "error.reload": "Restart"
+  "error.reload": "Restart",
+  "game.respawn": "Respawning in {s}",
+  "menu.chooseClass": "Choose your tank",
+  "menu.start": "Start",
+  "class.scout": "Scout",
+  "class.heavy": "Heavy",
+  "class.standard": "Standard",
+  "class.artillery": "Artillery",
+  "class.trapper": "Trapper",
+  "class.scout.desc": "Very fast, fragile, rapid fire",
+  "class.heavy.desc": "Slow, very tough, devastating ricochet shells",
+  "class.standard.desc": "Well-rounded all-rounder",
+  "class.artillery.desc": "Arcing shots over obstacles, minimum range",
+  "class.trapper.desc": "Sees the whole map, lays traps",
+  "stat.speed": "Speed",
+  "stat.armor": "Armor",
+  "stat.power": "Firepower",
+  "stat.vision": "Vision"
 }
