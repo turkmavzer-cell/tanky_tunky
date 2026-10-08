@@ -1,0 +1,63 @@
+name: Android APK
+
+on:
+  push:
+    branches: [main, 'claude/**']
+  workflow_dispatch:
+
+concurrency:
+  group: apk-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  debug-apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      VERSION_CODE: ${{ github.run_number }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21 # Capacitor 8 requires JDK 21
+          cache: gradle
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build web assets
+        run: npm run build
+
+      - name: Sync Capacitor
+        run: npx cap sync android
+
+      - name: Install persistent debug keystore
+        run: |
+          mkdir -p ~/.android
+          cp keystore/debug.keystore ~/.android/debug.keystore
+
+      - name: Build debug APK
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          VERSION_NAME="$(node -p "require('../package.json').version")-debug.${{ github.run_number }}" ./gradlew assembleDebug --no-daemon
+
+      - name: APK size budget (< 40 MB)
+        run: |
+          APK=android/app/build/outputs/apk/debug/app-debug.apk
+          SIZE=$(stat -c%s "$APK")
+          echo "APK size: $((SIZE/1024)) KiB"
+          echo "### APK size: $((SIZE/1024)) KiB" >> "$GITHUB_STEP_SUMMARY"
+          test "$SIZE" -lt 41943040
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tanky-tunky-debug-${{ github.run_number }}
+          path: android/app/build/outputs/apk/debug/app-debug.apk

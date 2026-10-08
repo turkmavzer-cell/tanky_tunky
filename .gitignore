@@ -1,0 +1,23 @@
+node_modules/
+dist/
+.bench-dist/
+bench/out/*.png
+coverage/
+test-results/
+playwright-report/
+e2e/out/
+*.log
+.DS_Store
+# Android build outputs (android/ project itself is committed)
+android/.gradle/
+android/app/build/
+android/build/
+android/capacitor-cordova-android-plugins/build/
+android/local.properties
+android/app/src/main/assets/public/
+android/app/src/main/assets/capacitor.config.json
+android/app/src/main/assets/capacitor.plugins.json
+android/app/src/main/res/xml/config.xml
+# never commit release keys
+*.jks
+keystore/release*
