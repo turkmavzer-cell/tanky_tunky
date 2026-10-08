@@ -17,5 +17,7 @@ same world view (fill-rate-normalised). Real-device numbers are recorded below b
 | 2026-10-08 | engine spike | Phaser 4, same | p95 53.3 ms, 30 FPS, JS work 7.4 ms |
 | 2026-10-08 | phase 3 (first run) | Game, 96×96, 5 tanks fighting, CPU 4x, 0.25 backbuffer | p95 33.3 ms ❌ — JS work 11.8 ms; profile: Pixi batching of off-screen sprites |
 | 2026-10-08 | phase 3 (D-011 fix) | same | **60 FPS, p95 16.7 ms ✅**, JS work mean 6.2 ms (p95 11.3), ~820 sprites |
+| 2026-10-08 | round 01 (before) | 96×96, 6 tanks, fog+vision, CPU 4x — CI runner | p95 33.3 ms ❌ (JS work mean ~10 ms) |
+| 2026-10-08 | round 01 (D-026 ground bake + culler) | same, local | **60 FPS, p95 16.7 ms ✅**, JS work mean 4.6–5.5 ms (p95 11–13), ~1040 sprites |
 
 Profiling helper: `npm run build && node tools/profile.mjs` (top self-time functions of a live match at CPU 4x).

@@ -1,4 +1,7 @@
-import { Application, Container, Graphics, Sprite } from 'pixi.js';
+import { Application, Container, CullerPlugin, Graphics, Sprite, extensions } from 'pixi.js';
+
+// skip rendering of off-screen sprites flagged `cullable` (world features)
+extensions.add(CullerPlugin);
 import { FixedStepLoop } from '../core/loop';
 import { FrameStats } from '../core/frameStats';
 import { KeyboardMouse } from '../core/keyboard';
@@ -167,7 +170,8 @@ export class GameScene {
     this.fx.quality = this.opts.quality === 'low' ? 0.5 : 1;
     this.overlays = new Overlays((x, y) => this.worldView.heightPx(x, y));
     if (!this.opts.noFog) this.fog = new FogLayer(map.width, map.height);
-    this.world.addChild(this.worldView.ground, this.worldView.edges, this.fx.under, this.overlays.ground, this.worldView.objects, this.fx.over, this.overlays.air, this.worldView.bumpLayer);
+    this.worldView.attach(this.app.renderer);
+    this.world.addChild(this.worldView.ground, this.fx.under, this.overlays.ground, this.worldView.objects, this.fx.over, this.overlays.air, this.worldView.bumpLayer);
     if (this.fog) this.world.addChild(this.fog.container);
     this.world.addChild(this.chargeG, this.bars);
     this.app.stage.addChild(this.world);
@@ -540,6 +544,7 @@ export class GameScene {
     this.world.position.set(Math.round(w / 2 - (this.camera.x + this.camera.shakeX) * z), Math.round(h / 2 - (this.camera.y + this.camera.shakeY) * z));
     const l = this.viewLeft();
     const tp = this.viewTop();
+    this.worldView.bakeResolution = Math.min(this.app.renderer.resolution, (this.app.renderer.resolution * z) / 0.8);
     this.worldView.update(l, tp, l + w / z, tp + h / z, dt);
     this.app.render();
   }

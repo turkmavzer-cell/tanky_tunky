@@ -5,7 +5,7 @@
  * Layout is rebuilt only when the visible tile window or the map version changes; camera motion
  * is a container transform, so steady-state cost per frame is near zero.
  */
-import { Container, Graphics, Sprite, Texture } from 'pixi.js';
+import { Container, Graphics, Matrix, RenderTexture, Sprite, Texture, type Renderer } from 'pixi.js';
 import { DIR4, FLAG_RAMP, rampDir, type GameMap } from '../world/map';
 import { cliffDrop, edgeKind, isTileOpen } from '../world/passability';
 import { FEATURE, Feature, Ground } from '../world/terrain';
@@ -57,7 +57,10 @@ function hash(x: number, y: number, s: number): number {
 class Pool {
   private items: Sprite[] = [];
   private n = 0;
-  constructor(readonly container: Container) {}
+  constructor(
+    readonly container: Container,
+    private readonly cull = false,
+  ) {}
   begin(): void {
     this.n = 0;
   }
@@ -65,6 +68,8 @@ class Pool {
     let s = this.items[this.n];
     if (!s) {
       s = new Sprite(tex);
+      // off-screen sprites are skipped by Pixi's CullerPlugin (registered in GameScene)
+      s.cullable = this.cull;
       this.container.addChild(s);
       this.items.push(s);
     }
@@ -86,8 +91,22 @@ class Pool {
 }
 
 export class WorldRenderer {
+  /**
+   * Displayed ground: one baked RenderTexture sprite (static tiles, fringes, cliffs, ramps, decals,
+   * edge lines) + a live layer for animated water. Baking happens only on relayout, so the
+   * per-frame cost of the ground is a single sprite instead of ~800 (perf gate, D-026).
+   */
   readonly ground = new Container();
-  /** Cliff lips, base shadows and (strong mode) striped hazard edges — drawn above the ground. */
+  /** Off-screen root that is baked into `baked`; rendered directly when no renderer is attached. */
+  private readonly bakeRoot = new Container();
+  private readonly bakeTiles = new Container();
+  private readonly waterLive = new Container();
+  private readonly baked = new Sprite();
+  private rt: RenderTexture | null = null;
+  private renderer: Renderer | null = null;
+  /** Texture resolution of the baked ground (≤ device resolution × camera zoom). */
+  bakeResolution = 1;
+  /** Cliff lips, base shadows and (strong mode) striped hazard edges — baked with the ground. */
   readonly edges = new Graphics();
   /** Transient highlight of an impassable edge the player bumped into. */
   readonly bumpLayer = new Graphics();
@@ -98,6 +117,7 @@ export class WorldRenderer {
   /** Depth-sorted layer: features + dynamic objects (tanks, shells…) — add those with zIndex = x + y. */
   readonly objects = new Container();
   private readonly groundPool: Pool;
+  private readonly waterPool: Pool;
   private readonly objectPool: Pool;
   private readonly art: TerrainArt;
   private readonly groundTex: Texture[][];
@@ -133,8 +153,11 @@ export class WorldRenderer {
     this.featureTex = Object.fromEntries(Object.entries(this.art.features).map(([k, v]) => [k, v.map(TS)]));
     this.damagedTex = Object.fromEntries(Object.entries(this.art.damaged).map(([k, v]) => [k, TS(v)]));
     this.decalTex = this.art.decals.map(TS);
-    this.groundPool = new Pool(this.ground);
-    this.objectPool = new Pool(this.objects);
+    this.bakeRoot.addChild(this.bakeTiles, this.edges);
+    this.ground.addChild(this.baked, this.waterLive);
+    this.groundPool = new Pool(this.bakeTiles);
+    this.waterPool = new Pool(this.waterLive);
+    this.objectPool = new Pool(this.objects, true);
     this.objects.sortableChildren = true;
     for (const l of map.lights) this.lightSet.add(l.y * map.width + l.x);
   }
@@ -165,7 +188,7 @@ export class WorldRenderer {
       this.waterFrame = (this.waterFrame + 1) % 4;
       for (const w of this.waterSprites) w.s.texture = this.waterTex[w.kind][this.waterFrame];
     }
-    const MARGIN = 160;
+    const MARGIN = 300; // ground is baked, so a wide margin is cheap and relayouts are rare (D-026)
     const pad = 1;
     const a = screenToWorld(viewLeft - MARGIN, viewTop - MARGIN);
     const b = screenToWorld(viewRight + MARGIN, viewTop - MARGIN);
@@ -189,6 +212,31 @@ export class WorldRenderer {
     this.spriteCount = this.groundPool.used + this.objectPool.used;
   }
 
+  /** Attach the renderer to enable ground baking (without it the ground is drawn live). */
+  attach(renderer: Renderer): void {
+    this.renderer = renderer;
+  }
+
+  private bake(l: number, r: number, t: number, btm: number): void {
+    if (!this.renderer) {
+      if (this.bakeRoot.parent !== this.ground) this.ground.addChildAt(this.bakeRoot, 0);
+      return;
+    }
+    const L = Math.floor(l - TILE_W);
+    const T = Math.floor(t - TILE_H * 2 - LEVEL_PX * 2);
+    const w = Math.ceil(r - l + TILE_W * 2);
+    const h = Math.ceil(btm - t + TILE_H * 4 + LEVEL_PX * 4);
+    // quantised so small zoom changes (charge zoom-out) do not recreate the texture
+    const res = Math.max(0.25, Math.min(2, Math.round(this.bakeResolution * 4) / 4));
+    if (!this.rt || this.rt.width < w || this.rt.height < h || Math.abs(this.rt.source.resolution - res) > 0.05) {
+      this.rt?.destroy(true);
+      this.rt = RenderTexture.create({ width: w, height: h, resolution: res });
+    }
+    this.renderer.render({ container: this.bakeRoot, target: this.rt, clear: true, transform: new Matrix(1, 0, 0, 1, -L, -T) });
+    this.baked.texture = this.rt;
+    this.baked.position.set(L, T);
+  }
+
   /** Forces a relayout next frame (after terrain destruction etc.). */
   invalidate(): void {
     this.lastVersion = -1;
@@ -201,6 +249,7 @@ export class WorldRenderer {
     const op = this.objectPool;
     gp.begin();
     op.begin();
+    this.waterPool.begin();
     this.waterSprites.length = 0;
     const seed = m.seed;
     // painter order: diagonals of increasing x + y
@@ -222,7 +271,7 @@ export class WorldRenderer {
         const gv = this.groundTex[g];
         gp.next(gv[h % gv.length], sx, top, 0.5, 0).tint = ELEV_TINT[Math.min(e, ELEV_TINT.length - 1)];
         if (g === Ground.Shallow || g === Ground.Deep) {
-          const ws = gp.next(this.waterTex[g === Ground.Shallow ? 0 : 1][this.waterFrame], sx, top, 0.5, 0);
+          const ws = this.waterPool.next(this.waterTex[g === Ground.Shallow ? 0 : 1][this.waterFrame], sx, top, 0.5, 0);
           this.waterSprites.push({ s: ws, kind: g === Ground.Shallow ? 0 : 1 });
         }
         // transition fringes from higher-priority neighbours at the same elevation
@@ -277,7 +326,9 @@ export class WorldRenderer {
     }
     gp.end();
     op.end();
+    this.waterPool.end();
     this.finishEdges();
+    this.bake(l, r, t, btm);
   }
 
   private edgeCmds: { kind: 'lip' | 'hazard' | 'shadow'; x0: number; y0: number; x1: number; y1: number; dx?: number; dy?: number }[] = [];
