@@ -331,16 +331,22 @@ export class WorldRenderer {
   /** Flash an impassable edge the local tank pushed against (0.3 s, orange). */
   bump(x: number, y: number, dir: number): void {
     this.bumps.push({ x, y, dir, t: 0.3 });
+    this.bumpCount++;
   }
+
+  /** Total bump highlights shown (diagnostics/tests). */
+  bumpCount = 0;
 
   /** Per-frame transient overlays (bump highlights). */
   updateOverlays(dt: number): void {
     const g = this.bumpLayer;
     g.clear();
     const m = this.map;
+    // cap the fade step so the flash stays visible for several frames even at very low FPS
+    const step = Math.min(dt, 0.1);
     for (let i = this.bumps.length - 1; i >= 0; i--) {
       const b = this.bumps[i];
-      b.t -= dt;
+      b.t -= step;
       if (b.t <= 0) {
         this.bumps.splice(i, 1);
         continue;

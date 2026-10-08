@@ -75,19 +75,17 @@ test('02-03 heights: normal and strong obstacle highlight (debug_heights)', asyn
 
 test('04 bump into a cliff edge flashes it', async ({ page }) => {
   await startMatch(page, 'silent&endless&map=debug_heights&bots=idle');
-  // place the player west of the 1-level cliff block (4..6, 11..13) and drive into it (+x = screen down-right)
+  // place the player in front of the west face of the 1-level cliff block (4..6, 11..13) and drive into
+  // the middle of that face with a single key (screen-right = world (+x, -y)): deterministic on any frame rate
   await page.evaluate(() => {
     const me = (window as unknown as W).__tanky.scene.state.tanks[0];
-    me.x = 2.6;
-    me.y = 12.5;
+    me.x = 3.3;
+    me.y = 12.9;
   });
   await page.keyboard.down('KeyD');
-  await page.keyboard.down('KeyS');
-  // screenshot while the orange edge highlight is active
-  await page.waitForFunction(() => ((window as unknown as { __tanky: { scene: { worldView: { bumps: unknown[] } } } }).__tanky.scene.worldView.bumps.length ?? 0) > 0, null, { timeout: 30_000, polling: 'raf' });
+  await page.waitForFunction(() => (window as unknown as { __tanky: { scene: { worldView: { bumps: unknown[] } } } }).__tanky.scene.worldView.bumps.length > 0, null, { timeout: 60_000, polling: 'raf' });
   await shot(page, '04-bump-cliff');
   await page.keyboard.up('KeyD');
-  await page.keyboard.up('KeyS');
 });
 
 test('05 enemy bot attacks the player', async ({ page }) => {
