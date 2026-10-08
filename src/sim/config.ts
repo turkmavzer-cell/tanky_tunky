@@ -39,7 +39,7 @@ export type Curve = readonly (readonly number[])[];
 export interface CombatDef {
   charge: { tapThreshold: number; perfectWindow: number; perfectBonus: number; overheatAfter: number; overheatLock: number };
   scaling: { damage: Curve; speed: Curve; range: Curve; radius: Curve; knockback: Curve };
-  shell: { hitRadius: number; knockback: number; splashFalloff: number; uphillMissChance: number; selfDamage: boolean; terrainDamageMul: number };
+  shell: { hitRadius: number; knockback: number; splashFalloff: number; artillerySplash: number; uphillMissChance: number; selfDamage: boolean; terrainDamageMul: number };
   tankCollision: { push: number };
   respawnTime: number;
   targeting: { switchRatio: number; leadIterations: number };

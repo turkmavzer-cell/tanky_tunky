@@ -43,6 +43,7 @@ export function elevationStepOk(m: GameMap, ia: number, ib: number): boolean {
 export function isPassable(m: GameMap, ax: number, ay: number, bx: number, by: number, cls?: TankClassId): boolean {
   if (!isTileOpen(m, bx, by, cls)) return false;
   if (ax === bx && ay === by) return true;
+  if (!isTileOpen(m, ax, ay, cls)) return false; // symmetric: both tiles must be open
   const W = m.width;
   const ia = ay * W + ax;
   const ib = by * W + bx;
@@ -70,4 +71,17 @@ export function edgeKind(m: GameMap, x: number, y: number, dir: number): EdgeKin
   }
   if (!isTileOpen(m, x, y) || !isTileOpen(m, nx, ny)) return 'blocked';
   return 'open';
+}
+
+/**
+ * Number of rock-face levels the renderer draws below tile (x, y) toward DIR4 neighbour `dir`
+ * (0 for ramps, open edges and rising edges). Pure — shared by the renderer and the property test.
+ */
+export function cliffDrop(m: GameMap, x: number, y: number, dir: number): number {
+  const k = edgeKind(m, x, y, dir);
+  const e = m.elev[y * m.width + x];
+  if (k === 'mapEdge') return e;
+  if (k !== 'cliffDown') return 0;
+  const [dx, dy] = DIR4[dir];
+  return e - m.elev[(y + dy) * m.width + x + dx];
 }

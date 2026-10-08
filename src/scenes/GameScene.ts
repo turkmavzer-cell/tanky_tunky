@@ -3,40 +3,57 @@ import { FixedStepLoop } from '../core/loop';
 import { FrameStats } from '../core/frameStats';
 import { KeyboardMouse } from '../core/keyboard';
 import { haptic } from '../core/platform';
-import { COMBAT, SIM_DT, TANKS, type TankClassId } from '../sim/config';
-import { BTN_ABILITY, BTN_FIRE, EMPTY_INPUT, quantizeAim, quantizeMove, type PlayerInput } from '../sim/input';
-import { chargeLevel, createState, step } from '../sim/sim';
+import { ABILITIES, COMBAT, MATCH, SIM_DT, TANKS, type AbilityId, type TankClassId } from '../sim/config';
+import { AIM_AUTO, BTN_ABILITY, BTN_FIRE, EMPTY_INPUT, quantizeAim, quantizeMove, type PlayerInput } from '../sim/input';
+import { chargeLevel } from '../sim/sim';
 import type { SimEvent, SimState } from '../sim/state';
 import { lerp, lerpAngle } from '../sim/dmath';
+import { canSeeTank, isInvisible, tileVisible } from '../sim/visibility';
 import { Camera } from '../render/camera';
 import { WorldRenderer } from '../render/worldRenderer';
 import { TankView } from '../render/tankView';
 import { Fx } from '../render/fx';
+import { FogLayer } from '../render/fogLayer';
+import { Overlays } from '../render/overlays';
+import { LEVEL_PX } from '../render/terrainArt';
 import { generateMap, type MapSize } from '../world/generator';
+import { loadAsciiMap, type AsciiMap } from '../world/mapLoader';
 import { Ground } from '../world/terrain';
 import { screenAngleToWorld, screenDirToWorld, screenToWorld, worldAngleToScreen, worldToScreenX, worldToScreenY } from '../world/iso';
 import type { Quality } from '../core/save';
 import type { TouchControls } from '../ui/touchControls';
-import { DummyBot } from '../ai/dummyBot';
+import { Minimap } from '../ui/minimap';
+import { createMatch, defaultTeams, scoreboard, stepMatch, type MatchHandle, type ScoreRow } from '../game/matchSetup';
 import { createAudioSystem, createSilentAudio, type AudioSystem, type EngineHandle, type SfxName } from '../audio';
+import debugHeights from '../../maps/debug_heights.json';
 
 export interface GameSceneOptions {
   quality: Quality;
   fpsCap: 30 | 60;
   reduceShake: boolean;
-  aimAssist: boolean;
+  /** Auto turret targeting (settings, default on). */
+  autoAim: boolean;
+  /** Obstacle highlight (settings): normal | strong. */
+  edgeHighlight: 'normal' | 'strong';
+  /** Dev: ability cooldown multiplier 0.1x–3x. */
+  cooldownMul: number;
   volume: { master: number; sfx: number; music: number };
   seed?: number;
   mapSize?: MapSize;
+  /** Hand-made map name (e.g. "debug_heights"). */
+  mapName?: string;
   playerClass?: TankClassId;
-  /** Disable audio (tests/headless). */
   silent?: boolean;
-  /** Override backbuffer resolution (perf gate: fill-rate normalisation). */
   renderScale?: number;
-  /** Debug: bots send no input (static targets for visual tests). */
-  idleBots?: boolean;
-  /** Debug: lock the camera on a world point with a fixed zoom (visual QA screenshots). */
   debugView?: { x: number; y: number; zoom: number };
+  /** Debug: 'all' = every bot idle, 'allies' = only the player's team idle (staged tests). */
+  idleBots?: boolean | 'allies';
+  /** No timer (sandbox / visual tests). */
+  endless?: boolean;
+  /** Disable fog rendering (debug screenshots of whole maps). */
+  noFog?: boolean;
+  /** Override match length (s) — tests. */
+  duration?: number;
 }
 
 export interface HudSnapshot {
@@ -48,11 +65,20 @@ export interface HudSnapshot {
   deaths: number;
   charge: number;
   overheat: number;
-  teamScore: [number, number];
+  phase: 'countdown' | 'playing' | 'ended';
+  countdown: number;
+  timeLeft: number;
+  abilityId: AbilityId;
+  abilityName: string;
+  abilityActive: number;
+  abilityCooldown: number;
+  abilityCooldownMax: number;
+  protect: number;
+  cls: TankClassId;
+  endless: boolean;
 }
 
 const RES_CAP: Record<Quality, number> = { low: 1, medium: 1.5, high: 2 };
-/** World px per artillery arc unit (screen lift). */
 const ARC_PX = 46;
 
 interface ShellView {
@@ -61,11 +87,14 @@ interface ShellView {
   seen: number;
 }
 
-/** The in-match scene: owns the Pixi app, the fixed-step loop, input, bots, fx/audio and the simulation. */
+/** The in-match scene: Pixi app + fixed-step loop + match (sim + bots) + fx/audio/haptics. */
 export class GameScene {
   readonly app = new Application();
   readonly stats = new FrameStats();
-  state!: SimState;
+  match!: MatchHandle;
+  get state(): SimState {
+    return this.match.state;
+  }
   private prev: { x: number; y: number; hull: number; turret: number }[] = [];
   private loop!: FixedStepLoop;
   private kb!: KeyboardMouse;
@@ -73,25 +102,29 @@ export class GameScene {
   private world = new Container();
   worldView!: WorldRenderer;
   private fx!: Fx;
+  private fog: FogLayer | null = null;
+  private overlays!: Overlays;
   private bars = new Graphics();
   private chargeG = new Graphics();
   private tankViews: TankView[] = [];
   private shellViews = new Map<number, ShellView>();
-  private bots: DummyBot[] = [];
   private lastRender = 0;
   private raf = 0;
   private disposed = false;
   private frameEvents: SimEvent[] = [];
-  private trackAcc: number[] = [];
   private lastTrack: { x: number; y: number }[] = [];
   private wreckSmoke: number[] = [];
   private audio: AudioSystem;
   private engines: EngineHandle[] = [];
   private chargeSoundOn = false;
   private baseZoom = 1;
-  /** Latest sampled input for the local player (tank 0). */
+  private mouseMovedAt = -1e9;
+  private lastMouse = { x: 0, y: 0 };
   private localInput: PlayerInput = { ...EMPTY_INPUT };
+  private readonly inputs: PlayerInput[] = [];
   touch: TouchControls | null = null;
+  minimap: Minimap | null = null;
+  onMatchEnd: ((rows: ScoreRow[]) => void) | null = null;
   readonly localId = 0;
 
   constructor(private readonly opts: GameSceneOptions) {
@@ -102,7 +135,7 @@ export class GameScene {
     const resolution = this.opts.renderScale ?? Math.min(window.devicePixelRatio || 1, RES_CAP[this.opts.quality]);
     await this.app.init({
       resizeTo: host,
-      background: '#0b0d12',
+      background: '#06080d',
       antialias: false,
       autoStart: false,
       autoDensity: true,
@@ -115,37 +148,40 @@ export class GameScene {
     this.camera.reduceShake = this.opts.reduceShake;
     this.audio.setVolumes(this.opts.volume);
 
-    const seed = this.opts.seed ?? 1;
-    const map = generateMap({ seed, size: this.opts.mapSize ?? 64 });
-    const b0 = map.bases[0];
-    const b1 = map.bases[1];
-    const players: { team: number; cls: TankClassId; x: number; y: number }[] = [
-      { team: 0, cls: this.opts.playerClass ?? 'standard', x: b0.spawns[0].x + 0.5, y: b0.spawns[0].y + 0.5 },
-      { team: 0, cls: 'scout', x: b0.spawns[1].x + 0.5, y: b0.spawns[1].y + 0.5 },
-      { team: 1, cls: 'standard', x: b1.spawns[0].x + 0.5, y: b1.spawns[0].y + 0.5 },
-      { team: 1, cls: 'heavy', x: b1.spawns[1].x + 0.5, y: b1.spawns[1].y + 0.5 },
-      { team: 1, cls: 'artillery', x: b1.spawns[2].x + 0.5, y: b1.spawns[2].y + 0.5 },
-    ];
-    this.state = createState({ seed, map, players });
-    for (let i = 1; i < players.length; i++) this.bots[i] = new DummyBot(i, seed, 1);
+    const seed = this.opts.seed ?? ((Date.now() / 1000) | 0);
+    const map = this.opts.mapName === 'debug_heights' ? loadAsciiMap(debugHeights as AsciiMap, seed) : generateMap({ seed, size: this.opts.mapSize ?? (MATCH as { mapSize?: MapSize }).mapSize ?? 40 });
+    this.match = createMatch({
+      seed,
+      map,
+      teams: defaultTeams(seed, this.opts.playerClass ?? 'standard'),
+      humanPlayer: true,
+      rules: { cooldownMul: this.opts.cooldownMul, endless: this.opts.endless ?? false, ...(this.opts.duration ? { duration: this.opts.duration } : {}) },
+    });
+    if (this.opts.idleBots === 'allies') this.match.bots = this.match.bots.map((b, i) => (this.state.tanks[i].team === 0 ? null : b));
+    else if (this.opts.idleBots) this.match.bots = this.match.bots.map(() => null);
     this.snapshotPrev();
 
     this.worldView = new WorldRenderer(map);
+    this.worldView.edgeMode = this.opts.edgeHighlight;
     this.fx = new Fx(this.opts.quality === 'low' ? 350 : 700);
     this.fx.quality = this.opts.quality === 'low' ? 0.5 : 1;
-    this.world.addChild(this.worldView.ground, this.fx.under, this.worldView.objects, this.fx.over, this.chargeG, this.bars);
+    this.overlays = new Overlays((x, y) => this.worldView.heightPx(x, y));
+    if (!this.opts.noFog) this.fog = new FogLayer(map.width, map.height);
+    this.world.addChild(this.worldView.ground, this.worldView.edges, this.fx.under, this.overlays.ground, this.worldView.objects, this.fx.over, this.overlays.air, this.worldView.bumpLayer);
+    if (this.fog) this.world.addChild(this.fog.container);
+    this.world.addChild(this.chargeG, this.bars);
     this.app.stage.addChild(this.world);
     for (const t of this.state.tanks) {
       const v = new TankView(t.cls, t.team);
       this.worldView.objects.addChild(v.root);
       this.tankViews.push(v);
-      this.trackAcc.push(0);
       this.lastTrack.push({ x: t.x, y: t.y });
       this.wreckSmoke.push(0);
       this.engines.push(this.audio.createEngine(t.cls));
     }
+    if (this.state.tanks[this.localId].cls === 'trapper') this.minimap = new Minimap();
     const p = this.state.tanks[this.localId];
-    this.camera.snap(worldToScreenX(p.x, p.y), worldToScreenY(p.x, p.y) - this.worldView.heightPx(p.x, p.y));
+    this.camera.snap(this.sx(p.x, p.y), this.sy(p.x, p.y));
     this.updateBaseZoom();
     this.camera.zoom = this.baseZoom;
 
@@ -167,7 +203,6 @@ export class GameScene {
     this.raf = requestAnimationFrame(frame);
   }
 
-  /** Show roughly 11 tile rows vertically regardless of device (phone landscape ≈ 0.55). */
   private updateBaseZoom(): void {
     const h = this.app.screen.height;
     this.baseZoom = Math.max(0.42, Math.min(1.15, h / 700));
@@ -185,63 +220,39 @@ export class GameScene {
     }
   }
 
-  /** Nearest living enemy within `range` tiles of the local tank (aim assist). Phase 4 restricts this to visible tanks. */
-  private assistTarget(range: number): { x: number; y: number } | null {
-    const me = this.state.tanks[this.localId];
-    let best: { x: number; y: number } | null = null;
-    let bd = range * range;
-    for (const e of this.state.tanks) {
-      if (!e.alive || e.team === me.team) continue;
-      const d = (e.x - me.x) * (e.x - me.x) + (e.y - me.y) * (e.y - me.y);
-      if (d < bd) {
-        bd = d;
-        best = e;
-      }
-    }
-    return best;
-  }
-
   private sampleInput(): PlayerInput {
     const me = this.state.tanks[this.localId];
-    const def = TANKS[me.cls];
-    let aim = this.localInput.aim;
     const touch = this.touch?.state;
     if (touch?.active) {
       const w = screenDirToWorld(touch.moveX, touch.moveY);
+      let aim: number;
       if (touch.aimAngle !== null) aim = quantizeAim(screenAngleToWorld(touch.aimAngle));
-      else {
-        const tgt = this.opts.aimAssist ? this.assistTarget(def.range * 1.15) : null;
-        if (tgt) aim = quantizeAim(Math.atan2(tgt.y - me.y, tgt.x - me.x));
-        else if (Math.abs(w.x) + Math.abs(w.y) > 0.1) aim = quantizeAim(Math.atan2(w.y, w.x));
-      }
+      else if (this.opts.autoAim) aim = AIM_AUTO;
+      else aim = Math.abs(w.x) + Math.abs(w.y) > 0.1 ? quantizeAim(Math.atan2(w.y, w.x)) : quantizeAim(me.turret);
       return { moveX: quantizeMove(w.x), moveY: quantizeMove(w.y), aim, buttons: (touch.fire ? BTN_FIRE : 0) | (touch.ability ? BTN_ABILITY : 0) };
     }
     const mv = this.kb.moveVector();
     const w = screenDirToWorld(mv.x, mv.y);
-    if (this.kb.hasMouse) {
+    if (this.kb.mouseX !== this.lastMouse.x || this.kb.mouseY !== this.lastMouse.y) {
+      this.lastMouse = { x: this.kb.mouseX, y: this.kb.mouseY };
+      this.mouseMovedAt = performance.now();
+    }
+    let aim: number;
+    const mouseActive = this.kb.hasMouse && (!this.opts.autoAim || performance.now() - this.mouseMovedAt < 1200);
+    if (mouseActive) {
       const sx = this.kb.mouseX / this.camera.zoom + this.viewLeft();
       const sy = this.kb.mouseY / this.camera.zoom + this.viewTop() + this.worldView.heightPx(me.x, me.y);
       const m = screenToWorld(sx, sy);
       aim = quantizeAim(Math.atan2(m.y - me.y, m.x - me.x));
-    } else if (mv.x || mv.y) {
-      aim = quantizeAim(Math.atan2(w.y, w.x));
-    }
-    return {
-      moveX: quantizeMove(w.x),
-      moveY: quantizeMove(w.y),
-      aim,
-      buttons: (this.kb.fireHeld() ? BTN_FIRE : 0) | (this.kb.abilityHeld() ? BTN_ABILITY : 0),
-    };
+    } else if (this.opts.autoAim) aim = AIM_AUTO;
+    else aim = mv.x || mv.y ? quantizeAim(Math.atan2(w.y, w.x)) : quantizeAim(me.turret);
+    return { moveX: quantizeMove(w.x), moveY: quantizeMove(w.y), aim, buttons: (this.kb.fireHeld() ? BTN_FIRE : 0) | (this.kb.abilityHeld() ? BTN_ABILITY : 0) };
   }
-
-  private readonly inputs: PlayerInput[] = [];
 
   private tick(): void {
     this.localInput = this.sampleInput();
-    this.inputs[this.localId] = this.localInput;
-    for (let i = 0; i < this.state.tanks.length; i++) if (this.bots[i]) this.inputs[i] = this.opts.idleBots ? EMPTY_INPUT : this.bots[i].input(this.state);
     this.snapshotPrev();
-    step(this.state, this.inputs);
+    stepMatch(this.match, this.localInput, this.inputs);
     for (const e of this.state.events) this.frameEvents.push(e);
   }
 
@@ -261,20 +272,32 @@ export class GameScene {
     return worldToScreenY(x, y) - this.worldView.heightPx(x, y);
   }
 
+  private get myTeam(): number {
+    return this.state.tanks[this.localId].team;
+  }
+
+  /** May the local player perceive an effect at world (x, y)? (fog rule for fx/sfx) */
+  private seenAt(x: number, y: number): boolean {
+    return !this.fog || tileVisible(this.state, this.myTeam, x, y);
+  }
+
   private play(name: SfxName, x?: number, y?: number, intensity?: number): void {
-    this.audio.play(name, x === undefined ? undefined : { x, y, intensity });
+    if (x === undefined || y === undefined) this.audio.play(name);
+    else this.audio.play(name, { x, y, intensity, muffled: !this.seenAt(x, y) });
   }
 
   private handleEvents(): void {
-    const me = this.state.tanks[this.localId];
+    const s = this.state;
+    const me = s.tanks[this.localId];
     for (const e of this.frameEvents) {
       switch (e.type) {
         case 'fire': {
-          const t = this.state.tanks[e.tank];
-          const v = this.tankViews[e.tank];
-          v.kick(6 + e.charge * 10);
-          const a = worldAngleToScreen(e.angle);
-          this.fx.muzzle(this.sx(e.x, e.y), this.sy(e.x, e.y) - 14, a, e.charge, e.kind === 'heavy');
+          const t = s.tanks[e.tank];
+          const visible = t.team === this.myTeam || this.seenAt(e.x, e.y);
+          if (visible) {
+            this.tankViews[e.tank].kick(6 + e.charge * 10);
+            this.fx.muzzle(this.sx(e.x, e.y), this.sy(e.x, e.y) - 14, worldAngleToScreen(e.angle), e.charge, e.kind === 'heavy');
+          }
           const snd: SfxName = e.charge >= 0.95 ? 'fire_charged' : e.kind === 'artillery' ? 'fire_artillery' : t.cls === 'heavy' ? 'fire_heavy' : t.cls === 'scout' ? 'fire_light' : 'fire_medium';
           this.play(snd, e.x, e.y, e.charge);
           if (e.tank === this.localId) {
@@ -296,24 +319,35 @@ export class GameScene {
           }
           break;
         case 'bounce':
-          this.fx.sparks(this.sx(e.x, e.y), this.sy(e.x, e.y) - 10, 10);
+          if (this.seenAt(e.x, e.y)) this.fx.sparks(this.sx(e.x, e.y), this.sy(e.x, e.y) - 10, 10);
           this.play('ricochet', e.x, e.y);
           break;
         case 'explode': {
+          const seen = this.seenAt(e.x, e.y) || s.tanks[e.owner]?.team === this.myTeam;
           const px = this.sx(e.x, e.y);
           const py = this.sy(e.x, e.y);
-          this.fx.explosion(px, py - 6, e.radius * 90, e.charge);
-          this.play(e.radius > 0.8 || e.charge > 0.6 ? 'explosion_big' : 'explosion_small', e.x, e.y, e.charge);
+          if (e.kind === 'rumble') {
+            this.overlays.ring(e.x, e.y, e.radius);
+            if (seen) for (let k = 0; k < 14; k++) this.fx.dust(px + (Math.random() - 0.5) * e.radius * 120, py + (Math.random() - 0.5) * e.radius * 60, 0xb8a080);
+            this.play('siege_on', e.x, e.y);
+            this.play('explosion_big', e.x, e.y, 0.6);
+            if (e.owner === this.localId) haptic('heavy');
+          } else {
+            if (seen) this.fx.explosion(px, py - 6, e.radius * 90, e.charge);
+            this.play(e.kind === 'mine' ? 'mine_explode' : e.radius > 0.8 || e.charge > 0.6 ? 'explosion_big' : 'explosion_small', e.x, e.y, e.charge);
+          }
           const d = Math.hypot(e.x - me.x, e.y - me.y);
-          if (d < 9) this.camera.addTrauma((0.1 + e.charge * 0.25) * (1 - d / 9));
+          if (d < 9) this.camera.addTrauma((0.1 + e.charge * 0.25 + (e.kind === 'rumble' ? 0.3 : 0)) * (1 - d / 9));
           break;
         }
         case 'hit': {
-          const v = this.tankViews[e.target];
-          v.hitFlash();
-          const t = this.state.tanks[e.target];
-          this.fx.damageNumber(this.sx(t.x, t.y), this.sy(t.x, t.y) - 50, e.damage, e.damage >= 30);
-          this.fx.sparks(this.sx(t.x, t.y), this.sy(t.x, t.y) - 16, 8);
+          const t = s.tanks[e.target];
+          const visible = canSeeTank(s, this.myTeam, t) || t.team === this.myTeam;
+          if (visible) {
+            this.tankViews[e.target].hitFlash();
+            this.fx.damageNumber(this.sx(t.x, t.y), this.sy(t.x, t.y) - 50, e.damage, e.damage >= 30);
+            this.fx.sparks(this.sx(t.x, t.y), this.sy(t.x, t.y) - 16, 8);
+          }
           this.play('hit_metal', t.x, t.y);
           if (e.target === this.localId) {
             this.camera.addTrauma(0.3);
@@ -322,15 +356,17 @@ export class GameScene {
           break;
         }
         case 'graze':
-          this.fx.sparks(this.sx(e.x, e.y), this.sy(e.x, e.y) - 12, 5);
+          if (this.seenAt(e.x, e.y)) this.fx.sparks(this.sx(e.x, e.y), this.sy(e.x, e.y) - 12, 5);
           this.play('ricochet', e.x, e.y);
           break;
         case 'destroyed': {
-          const px = this.sx(e.x, e.y);
-          const py = this.sy(e.x, e.y);
-          this.fx.explosion(px, py - 10, 140, 1);
-          this.fx.sparks(px, py - 20, 24, 0xffb060);
-          this.wreckSmoke[e.tank] = 2.5;
+          if (this.seenAt(e.x, e.y) || s.tanks[e.tank].team === this.myTeam) {
+            const px = this.sx(e.x, e.y);
+            const py = this.sy(e.x, e.y);
+            this.fx.explosion(px, py - 10, 140, 1);
+            this.fx.sparks(px, py - 20, 24, 0xffb060);
+            this.wreckSmoke[e.tank] = 2.5;
+          }
           this.play('destroy_tank', e.x, e.y);
           if (e.tank === this.localId || e.by === this.localId) haptic('heavy');
           if (Math.hypot(e.x - me.x, e.y - me.y) < 10) this.camera.addTrauma(0.45);
@@ -338,16 +374,55 @@ export class GameScene {
         }
         case 'terrain':
           if (e.destroyed) {
-            this.fx.explosion(this.sx(e.x + 0.5, e.y + 0.5), this.sy(e.x + 0.5, e.y + 0.5) - 10, 70, 0.3);
+            if (this.seenAt(e.x + 0.5, e.y + 0.5)) this.fx.explosion(this.sx(e.x + 0.5, e.y + 0.5), this.sy(e.x + 0.5, e.y + 0.5) - 10, 70, 0.3);
             this.play('wall_break', e.x + 0.5, e.y + 0.5);
           } else {
-            this.fx.sparks(this.sx(e.x + 0.5, e.y + 0.5), this.sy(e.x + 0.5, e.y + 0.5) - 14, 6, 0xd8c8a8);
+            if (this.seenAt(e.x + 0.5, e.y + 0.5)) this.fx.sparks(this.sx(e.x + 0.5, e.y + 0.5), this.sy(e.x + 0.5, e.y + 0.5) - 14, 6, 0xd8c8a8);
             this.play('hit_wall', e.x + 0.5, e.y + 0.5);
           }
           break;
         case 'respawn':
-          this.prev[e.tank].x = this.state.tanks[e.tank].x;
-          this.prev[e.tank].y = this.state.tanks[e.tank].y;
+          this.prev[e.tank].x = s.tanks[e.tank].x;
+          this.prev[e.tank].y = s.tanks[e.tank].y;
+          this.lastTrack[e.tank] = { x: s.tanks[e.tank].x, y: s.tanks[e.tank].y };
+          if (e.tank === this.localId) this.camera.snap(this.sx(me.x, me.y), this.sy(me.x, me.y));
+          break;
+        case 'bump':
+          if (e.tank === this.localId) {
+            this.worldView.bump(e.x, e.y, e.dir);
+            haptic('light');
+            this.play('ui_click');
+          }
+          break;
+        case 'ability': {
+          const t = s.tanks[e.tank];
+          const mine = t.team === this.myTeam;
+          if (e.phase === 'start') {
+            if (e.id === 'hide') this.play('hologram', t.x, t.y);
+            if (e.id === 'swift') this.play('dash', t.x, t.y);
+            if (e.id === 'barrage' && mine) this.play('alarm');
+          } else {
+            if (e.id === 'hide') this.play('shield_hit', t.x, t.y);
+            if (e.id === 'mine' && mine) this.play('trap_place', t.x, t.y);
+          }
+          if (e.tank === this.localId && e.phase === 'start') haptic(e.id === 'rumble' ? 'heavy' : 'medium');
+          break;
+        }
+        case 'matchStart':
+          this.play('ui_confirm');
+          break;
+        case 'matchTick':
+          this.play('notify');
+          break;
+        case 'matchEnd': {
+          const rows = scoreboard(s);
+          const myKills = s.tanks.filter((t) => t.team === this.myTeam).reduce((a, t) => a + t.kills, 0);
+          const theirKills = s.tanks.filter((t) => t.team !== this.myTeam).reduce((a, t) => a + t.kills, 0);
+          this.play(myKills >= theirKills ? 'victory' : 'defeat');
+          this.onMatchEnd?.(rows);
+          break;
+        }
+        default:
           break;
       }
     }
@@ -356,16 +431,30 @@ export class GameScene {
 
   private render(alpha: number, dtMs: number): void {
     const dt = dtMs / 1000;
+    const s = this.state;
     this.handleEvents();
-    const tanks = this.state.tanks;
+    const tanks = s.tanks;
     const me = tanks[this.localId];
     this.audio.setListener(me.x, me.y);
     this.bars.clear();
+    this.overlays.begin(dt);
+    const time = performance.now() / 1000;
     for (let i = 0; i < tanks.length; i++) {
       const t = tanks[i];
       const p = this.prev[i];
       const v = this.tankViews[i];
-      v.root.visible = t.alive;
+      const own = t.team === this.myTeam;
+      const seen = !this.fog || canSeeTank(s, this.myTeam, t);
+      const invisible = isInvisible(t);
+      // enemy hit while invisible: brief shimmer cue in visible tiles
+      const shimmer = !own && invisible && t.shimmer > 0 && tileVisible(s, this.myTeam, t.x, t.y);
+      v.root.visible = t.alive && (seen || shimmer);
+      let a = 1;
+      if (own && invisible) a = 0.42;
+      if (shimmer) a = 0.12 + 0.18 * Math.abs(Math.sin(time * 40));
+      if (t.protect > 0) a *= 0.55 + 0.45 * Math.abs(Math.sin(time * 14));
+      v.root.alpha = a;
+      v.setGlow(t.ability.id === 'swift' && t.ability.active > 0 ? 0xfff0d6 : null);
       const x = lerp(p.x, t.x, alpha);
       const y = lerp(p.y, t.y, alpha);
       const sx = this.sx(x, y);
@@ -376,18 +465,24 @@ export class GameScene {
       v.update(dt);
       const def = TANKS[t.cls];
       const speed = Math.hypot(t.vx, t.vy);
-      this.audio.updateEngine(this.engines[i], { x, y, speed: t.alive ? Math.min(1, speed / def.maxSpeed) : 0, load: t.charging ? 0.6 + 0.4 * chargeLevel(t) : Math.min(1, speed / def.maxSpeed) * 0.5, muffled: false });
+      const audible = t.alive && !(invisible && !own);
+      this.audio.updateEngine(this.engines[i], { x, y, speed: audible ? Math.min(1, speed / def.maxSpeed) : 0, load: t.charging ? 0.6 + 0.4 * chargeLevel(t) : Math.min(1, speed / def.maxSpeed) * 0.5, muffled: !seen || invisible });
       if (this.wreckSmoke[i] > 0) {
         this.wreckSmoke[i] -= dt;
         if (Math.random() < 0.5) this.fx.emit(this.fx.tex.smoke, sx + (Math.random() - 0.5) * 20, sy - 10, { vy: -40, g: -10, drag: 0.8, life: 1.4, s0: 0.4, s1: 1.4, a0: 0.5, a1: 0, tint: 0x302c28, rot: Math.random() * 6 });
       }
-      if (!t.alive) continue;
+      if (!t.alive || !v.root.visible || (invisible && !own)) continue;
+      // Swift: exhaust flames + speed lines
+      if (t.ability.id === 'swift' && t.ability.active > 0) {
+        const back = worldAngleToScreen(t.hull) + Math.PI;
+        this.fx.emit(this.fx.tex.dot, sx + Math.cos(back) * 30, sy - 8 + Math.sin(back) * 15, { vx: Math.cos(back) * 60, vy: Math.sin(back) * 30, life: 0.22, s0: 0.9, s1: 0.2, a0: 1, a1: 0, add: true, tint: Math.random() < 0.5 ? 0xffa030 : 0xff5a20 });
+        if (speed > 0.5) this.overlays.speedLines(x, y, t.vx, t.vy);
+      }
       // track marks + dust
       const lt = this.lastTrack[i];
-      const moved = Math.hypot(t.x - lt.x, t.y - lt.y);
-      if (moved > 0.28) {
+      if (Math.hypot(t.x - lt.x, t.y - lt.y) > 0.28) {
         this.fx.trackMark(sx, sy + 2, worldAngleToScreen(t.hull));
-        const g = this.state.map.ground[Math.floor(t.y) * this.state.map.width + Math.floor(t.x)];
+        const g = s.map.ground[Math.floor(t.y) * s.map.width + Math.floor(t.x)];
         if (g === Ground.Sand || g === Ground.Dirt || g === Ground.Mud) this.fx.dust(sx, sy + 4, g === Ground.Mud ? 0x4a3a28 : 0xc8b088);
         lt.x = t.x;
         lt.y = t.y;
@@ -397,45 +492,100 @@ export class GameScene {
       const hpF = t.hp / def.hp;
       const by = sy - 62;
       this.bars.rect(sx - w / 2 - 1, by - 1, w + 2, 7).fill({ color: 0x000000, alpha: 0.6 });
-      this.bars.rect(sx - w / 2, by, w * hpF, 5).fill(t.team === me.team ? (i === this.localId ? 0x7ee07e : 0x6aa9ff) : 0xff5a4a);
+      this.bars.rect(sx - w / 2, by, w * hpF, 5).fill(own ? (i === this.localId ? 0x7ee07e : 0x6aa9ff) : 0xff5a4a);
+      if (!own) {
+        // enemy marker: red triangle above the bar (colour-blind friendly shape + colour)
+        this.bars.poly([sx - 6, by - 12, sx + 6, by - 12, sx, by - 4]).fill(0xff3b30);
+      }
     }
-    // shells
+    // lock-on reticle (job 1)
+    if (me.alive && me.target >= 0) {
+      const tg = tanks[me.target];
+      if (tg.alive) this.overlays.reticle(tg.x, tg.y);
+    }
+    // mines (job 5): own team clearly, enemy mines only as a faint glimmer up close & in sight
+    const glimmer = Number(ABILITIES.mine.glimmerRange);
+    for (const m of s.mines) {
+      if (m.team === this.myTeam) this.overlays.mine(m.x, m.y, true, m.arm <= 0);
+      else if (me.alive && Math.hypot(m.x - me.x, m.y - me.y) <= glimmer && this.seenAt(m.x, m.y)) this.overlays.mine(m.x, m.y, false, true);
+    }
+    this.renderShells(alpha);
+    this.renderCharge(me);
+    this.touch?.update(dt);
+    const ab = me.ability;
+    const cdMax = Number(ABILITIES[ab.id].cooldown) * Math.max(0.1, s.rules.cooldownMul);
+    this.touch?.setFeedback(me.charging ? chargeLevel(me) : 0, me.fullT > 0 && me.fullT <= COMBAT.charge.perfectWindow, me.overheat / COMBAT.charge.overheatLock, ab.active > 0 ? 0 : cdMax > 0 ? ab.cooldown / cdMax : 0, ab.active > 0);
+    this.fx.update(dt);
+    this.overlays.end(dt);
+    this.worldView.updateOverlays(dt);
+    if (this.fog) this.fog.update(s.vision[this.myTeam], Math.floor(s.tick / 4));
+    if (this.minimap) this.minimap.draw(s, this.localId, dt);
+
+    // camera
+    this.updateBaseZoom();
+    const c = chargeLevel(me);
+    this.camera.targetZoom = this.baseZoom * (1 - 0.12 * (me.charging ? c : 0));
+    const px = lerp(this.prev[this.localId].x, me.x, alpha);
+    const py = lerp(this.prev[this.localId].y, me.y, alpha);
+    const look = 0.35;
+    const dv = this.opts.debugView;
+    if (dv) {
+      this.camera.snap(this.sx(dv.x, dv.y), this.sy(dv.x, dv.y));
+      this.camera.zoom = dv.zoom;
+    } else this.camera.update(dt, this.sx(px, py), this.sy(px, py), worldToScreenX(me.vx, me.vy) * look, worldToScreenY(me.vx, me.vy) * look);
+    const w = this.app.screen.width;
+    const h = this.app.screen.height;
+    const z = this.camera.zoom;
+    this.world.scale.set(z);
+    this.world.position.set(Math.round(w / 2 - (this.camera.x + this.camera.shakeX) * z), Math.round(h / 2 - (this.camera.y + this.camera.shakeY) * z));
+    const l = this.viewLeft();
+    const tp = this.viewTop();
+    this.worldView.update(l, tp, l + w / z, tp + h / z, dt);
+    this.app.render();
+  }
+
+  private renderShells(alpha: number): void {
+    const s = this.state;
     for (const v of this.shellViews.values()) v.seen = 0;
-    for (const s of this.state.shells) {
-      let v = this.shellViews.get(s.id);
+    for (const sh of s.shells) {
+      // barrage warning circles are shown to everyone, even through fog (job 5)
+      if (sh.warn) this.overlays.warning(sh.tx, sh.ty, sh.radius, Math.min(1, sh.t / sh.flight));
+      const ownShell = s.tanks[sh.owner]?.team === this.myTeam;
+      if (!ownShell && !this.seenAt(sh.x, sh.y)) continue;
+      let v = this.shellViews.get(sh.id);
       if (!v) {
-        const sp = new Sprite(s.kind === 'heavy' || s.kind === 'artillery' ? this.fx.tex.shellHeavy : this.fx.tex.shell);
+        const sp = new Sprite(sh.kind === 'heavy' || sh.kind === 'artillery' ? this.fx.tex.shellHeavy : this.fx.tex.shell);
         sp.anchor.set(0.5);
         sp.blendMode = 'add';
-        const sh = new Sprite(this.fx.tex.shadow);
-        sh.anchor.set(0.5);
-        this.worldView.objects.addChild(sh, sp);
-        v = { s: sp, shadow: sh, seen: 1 };
-        this.shellViews.set(s.id, v);
+        const shd = new Sprite(this.fx.tex.shadow);
+        shd.anchor.set(0.5);
+        this.worldView.objects.addChild(shd, sp);
+        v = { s: sp, shadow: shd, seen: 1 };
+        this.shellViews.set(sh.id, v);
       }
       v.seen = 1;
       let x: number;
       let y: number;
       let lift = 0;
-      if (s.kind === 'artillery') {
-        const k = Math.min(1, (s.t + alpha * SIM_DT) / s.flight);
-        x = s.sx + (s.tx - s.sx) * k;
-        y = s.sy + (s.ty - s.sy) * k;
-        lift = 4 * s.arc * k * (1 - k) * ARC_PX;
+      if (sh.kind === 'artillery') {
+        const k = Math.min(1, (sh.t + alpha * SIM_DT) / sh.flight);
+        x = sh.sx + (sh.tx - sh.sx) * k;
+        y = sh.sy + (sh.ty - sh.sy) * k;
+        lift = 4 * sh.arc * k * (1 - k) * ARC_PX;
       } else {
-        x = s.x + s.vx * SIM_DT * alpha;
-        y = s.y + s.vy * SIM_DT * alpha;
+        x = sh.x + sh.vx * SIM_DT * alpha;
+        y = sh.y + sh.vy * SIM_DT * alpha;
       }
       const gx = this.sx(x, y);
-      const gy = worldToScreenY(x, y) - s.level * 24;
+      const gy = worldToScreenY(x, y) - sh.level * LEVEL_PX;
       v.s.position.set(gx, gy - 16 - lift);
-      v.s.rotation = worldAngleToScreen(Math.atan2(s.vy, s.vx));
-      v.s.scale.set(1 + s.charge * 0.6);
+      v.s.rotation = worldAngleToScreen(Math.atan2(sh.vy, sh.vx));
+      v.s.scale.set(1 + sh.charge * 0.6);
       v.s.zIndex = x + y + 0.2;
       v.shadow.position.set(gx, gy);
       v.shadow.zIndex = x + y - 0.3;
-      v.shadow.scale.set(0.5 + s.charge * 0.3);
-      if (s.charge > 0.5 && Math.random() < 0.6) this.fx.emit(this.fx.tex.dot, gx, gy - 16 - lift, { life: 0.25, s0: 0.5 + s.charge * 0.5, s1: 0.1, a0: 0.7, a1: 0, add: true, tint: 0xffb050 });
+      v.shadow.scale.set(0.5 + sh.charge * 0.3);
+      if (sh.charge > 0.5 && Math.random() < 0.6) this.fx.emit(this.fx.tex.dot, gx, gy - 16 - lift, { life: 0.25, s0: 0.5 + sh.charge * 0.5, s1: 0.1, a0: 0.7, a1: 0, add: true, tint: 0xffb050 });
     }
     for (const [id, v] of this.shellViews) {
       if (!v.seen) {
@@ -444,7 +594,9 @@ export class GameScene {
         this.shellViews.delete(id);
       }
     }
-    // local charge ring around the tank + audio/touch feedback
+  }
+
+  private renderCharge(me: SimState['tanks'][number]): void {
     this.chargeG.clear();
     const c = chargeLevel(me);
     const perfect = me.fullT > 0 && me.fullT <= COMBAT.charge.perfectWindow;
@@ -468,37 +620,12 @@ export class GameScene {
       this.audio.chargeStop();
       this.chargeSoundOn = false;
     }
-    this.touch?.update(dt);
-    this.touch?.setFeedback(me.charging ? c : 0, perfect, me.overheat / COMBAT.charge.overheatLock, 0);
-    this.fx.update(dt);
-
-    // camera: follow with look-ahead, zoom out while charging
-    this.updateBaseZoom();
-    this.camera.targetZoom = this.baseZoom * (1 - 0.12 * (me.charging ? c : 0));
-    const lx = this.sx(lerp(this.prev[this.localId].x, me.x, alpha), lerp(this.prev[this.localId].y, me.y, alpha));
-    const ly = this.sy(lerp(this.prev[this.localId].x, me.x, alpha), lerp(this.prev[this.localId].y, me.y, alpha));
-    const look = 0.35;
-    const dv = this.opts.debugView;
-    if (dv) {
-      this.camera.targetZoom = dv.zoom;
-      this.camera.snap(this.sx(dv.x, dv.y), this.sy(dv.x, dv.y));
-      this.camera.zoom = dv.zoom;
-    } else this.camera.update(dt, lx, ly, worldToScreenX(me.vx, me.vy) * look, worldToScreenY(me.vx, me.vy) * look);
-    const w = this.app.screen.width;
-    const h = this.app.screen.height;
-    const z = this.camera.zoom;
-    this.world.scale.set(z);
-    this.world.position.set(Math.round(w / 2 - (this.camera.x + this.camera.shakeX) * z), Math.round(h / 2 - (this.camera.y + this.camera.shakeY) * z));
-    const l = this.viewLeft();
-    const tp = this.viewTop();
-    this.worldView.update(l, tp, l + w / z, tp + h / z, dt);
-    this.app.render();
   }
 
   hud(): HudSnapshot {
-    const me = this.state.tanks[this.localId];
-    const score: [number, number] = [0, 0];
-    for (const t of this.state.tanks) score[t.team === 0 ? 0 : 1] += t.kills;
+    const s = this.state;
+    const me = s.tanks[this.localId];
+    const ab = me.ability;
     return {
       hp: Math.ceil(me.hp),
       maxHp: TANKS[me.cls].hp,
@@ -508,7 +635,17 @@ export class GameScene {
       deaths: me.deaths,
       charge: chargeLevel(me),
       overheat: me.overheat,
-      teamScore: score,
+      phase: s.match.phase,
+      countdown: Math.max(0, Math.ceil(MATCH.countdown - s.match.t)),
+      timeLeft: s.match.timeLeft,
+      abilityId: ab.id,
+      abilityName: String(ABILITIES[ab.id].name),
+      abilityActive: ab.active,
+      abilityCooldown: ab.cooldown,
+      abilityCooldownMax: Number(ABILITIES[ab.id].cooldown) * Math.max(0.1, s.rules.cooldownMul),
+      protect: me.protect,
+      cls: me.cls,
+      endless: s.rules.endless,
     };
   }
 

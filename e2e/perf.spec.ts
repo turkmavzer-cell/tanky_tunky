@@ -1,3 +1,4 @@
+import { startMatch } from './helpers';
 import { expect, test } from '@playwright/test';
 import { mkdirSync, writeFileSync } from 'node:fs';
 
@@ -10,10 +11,7 @@ type TankyWindow = Window & { __tanky?: { scene: { state: { tick: number }; worl
  */
 test('perf gate: 96x96 map at CPU 4x throttle', async ({ page }) => {
   test.setTimeout(120_000);
-  await page.goto('/?silent&map=96&seed=7&renderScale=0.25');
-  await page.getByTestId('play').click();
-  await page.getByTestId('start').click();
-  await page.waitForFunction(() => ((window as TankyWindow).__tanky?.scene.state.tick ?? 0) > 30);
+  await startMatch(page, 'silent&endless&map=96&seed=7&renderScale=0.25');
   const cdp = await page.context().newCDPSession(page);
   await cdp.send('Emulation.setCPUThrottlingRate', { rate: 4 });
   // drive around and fire

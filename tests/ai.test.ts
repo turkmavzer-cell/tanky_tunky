@@ -115,3 +115,30 @@ describe('A* navigation', () => {
     expect(cy).toBe(b.y);
   });
 });
+
+describe('artillery bot charge solver', () => {
+  it('the solved charge lands the shell at the requested distance', async () => {
+    const { artilleryChargeFor } = await import('../src/systems/ai/bot');
+    const { TANKS, COMBAT, evalCurve } = await import('../src/sim/config');
+    const s = arena([{ team: 0, cls: 'artillery', x: 5.5, y: 5.5 }]);
+    const def = TANKS.artillery;
+    for (const d of [3.5, 5, 7, 9, 12]) {
+      const c = artilleryChargeFor(s.tanks[0], d);
+      const landed = def.minRange + (def.range * evalCurve(COMBAT.scaling.range, c) - def.minRange) * c;
+      expect(landed).toBeCloseTo(Math.min(d, def.range * evalCurve(COMBAT.scaling.range, 1)), 1);
+    }
+  });
+});
+
+describe('AI robustness', () => {
+  it('40 random headless matches never throw (fuzz)', async () => {
+    const { runHeadless } = await import('../src/game/matchSetup');
+    const { TANK_CLASSES } = await import('../src/sim/config');
+    const { Rng } = await import('../src/sim/rng');
+    const r = new Rng(77);
+    for (let g = 0; g < 40; g++) {
+      const pick = () => TANK_CLASSES[r.int(0, 4)];
+      expect(() => runHeadless({ seed: r.nextU32(), mapSize: 40, teams: [[pick(), pick(), pick()], [pick(), pick(), pick()]], rules: { duration: 20 } })).not.toThrow();
+    }
+  }, 120_000);
+});

@@ -7,6 +7,7 @@
 import { clamp, dcos, dsin } from '../dmath';
 import { nextId } from '../combat';
 import { canSeeTank } from '../visibility';
+import { selectTarget } from '../targeting';
 import { abilityParam } from './params';
 import type { AbilityModule } from './types';
 import type { Shell } from '../state';
@@ -14,9 +15,11 @@ import type { Shell } from '../state';
 export const barrage: AbilityModule = {
   activate: ({ s, t }) => {
     const a = t.ability;
+    // same selection as auto-aim (works for bots and manual-aim players too)
+    const id = selectTarget(s, t, t.target);
+    const tgt = id >= 0 ? s.tanks[id] : null;
     a.counter = 0;
-    const tgt = t.target >= 0 ? s.tanks[t.target] : null;
-    if (tgt && canSeeTank(s, t.team, tgt)) {
+    if (tgt) {
       a.tx = tgt.x;
       a.ty = tgt.y;
     } else {
@@ -31,7 +34,8 @@ export const barrage: AbilityModule = {
     const shots = abilityParam(t, 'shots');
     const interval = abilityParam(t, 'interval');
     // follow the target while it stays visible
-    const tgt = t.target >= 0 ? s.tanks[t.target] : null;
+    const tid = selectTarget(s, t, t.target);
+    const tgt = tid >= 0 ? s.tanks[tid] : null;
     if (tgt && canSeeTank(s, t.team, tgt)) {
       a.tx = tgt.x;
       a.ty = tgt.y;

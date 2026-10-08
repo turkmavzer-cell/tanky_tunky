@@ -79,6 +79,19 @@ export class TankView {
     this.flashT = 1;
   }
 
+  /** Persistent colour glow (Swift) — null to clear. */
+  private glow: number | null = null;
+  setGlow(color: number | null): void {
+    if (color === this.glow) return;
+    this.glow = color;
+    if (this.flashT <= 0) this.applyTint(color ?? 0xffffff);
+  }
+
+  private applyTint(tint: number): void {
+    for (const s of this.hull) s.sprite.tint = tint;
+    for (const s of this.turret) s.sprite.tint = tint;
+  }
+
   /** Per-frame visual decay (recoil spring, hit flash). */
   update(dt: number): void {
     this.recoil *= Math.exp(-dt * 14);
@@ -88,8 +101,7 @@ export class TankView {
       const c = Math.round(255 * (1 - this.flashT) + 255 * this.flashT);
       const g = Math.round(255 - 120 * this.flashT);
       const tint = (c << 16) | (g << 8) | g;
-      for (const s of this.hull) s.sprite.tint = tint;
-      for (const s of this.turret) s.sprite.tint = tint;
+      this.applyTint(this.flashT > 0 ? tint : (this.glow ?? 0xffffff));
     }
   }
 

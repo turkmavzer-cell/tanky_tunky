@@ -73,7 +73,9 @@
     "splashFalloff": 0.5,
     "uphillMissChance": 0.25,
     "selfDamage": false,
-    "terrainDamageMul": 1.0
+    "terrainDamageMul": 1.0,
+    "artillerySplash": 1.0,
+    "$artillerySplash": "Arcing shells never score a 'direct' hit; their blast deals artillerySplash x damage at the centre, falling to 0 at the edge."
   },
   "tankCollision": {
     "push": 0.5

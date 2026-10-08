@@ -5,8 +5,9 @@
  * Layout is rebuilt only when the visible tile window or the map version changes; camera motion
  * is a container transform, so steady-state cost per frame is near zero.
  */
-import { Container, Sprite, Texture } from 'pixi.js';
+import { Container, Graphics, Sprite, Texture } from 'pixi.js';
 import { DIR4, FLAG_RAMP, rampDir, type GameMap } from '../world/map';
+import { cliffDrop, edgeKind, isTileOpen } from '../world/passability';
 import { FEATURE, Feature, Ground } from '../world/terrain';
 import { TILE_H, TILE_W, screenToWorld } from '../world/iso';
 import { EDGE_PRIORITY, LEVEL_PX, buildTerrainArt, type ArtSprite, type TerrainArt } from './terrainArt';
@@ -30,6 +31,16 @@ const FEATURE_KEY: Record<number, keyof TerrainArt['features'] | null> = {
   [Feature.Gate]: 'gate',
   [Feature.Bridge]: 'bridge',
 };
+
+/** Elevation colour language (job 2): low ground cooler/darker, high ground lighter/warmer. */
+const ELEV_TINT = [0xaab4c4, 0xe4ddd2, 0xffffff];
+/** Screen-space corners (relative to the tile's top vertex) of each DIR4 edge: +x = SE, -x = NW, +y = SW, -y = NE. */
+const EDGE_PTS: readonly [number, number, number, number][] = [
+  [TILE_W / 2, TILE_H / 2, 0, TILE_H], // +x: right vertex → bottom vertex
+  [-TILE_W / 2, TILE_H / 2, 0, 0], // -x: left vertex → top vertex
+  [0, TILE_H, -TILE_W / 2, TILE_H / 2], // +y: bottom vertex → left vertex
+  [0, 0, TILE_W / 2, TILE_H / 2], // -y: top vertex → right vertex
+];
 
 interface TexSprite {
   tex: Texture;
@@ -76,6 +87,14 @@ class Pool {
 
 export class WorldRenderer {
   readonly ground = new Container();
+  /** Cliff lips, base shadows and (strong mode) striped hazard edges — drawn above the ground. */
+  readonly edges = new Graphics();
+  /** Transient highlight of an impassable edge the player bumped into. */
+  readonly bumpLayer = new Graphics();
+  /** 'normal' | 'strong' (settings → "Engel vurgusu"). */
+  edgeMode: 'normal' | 'strong' = 'normal';
+  /** Active bump highlights (public for tests). */
+  readonly bumps: { x: number; y: number; dir: number; t: number }[] = [];
   /** Depth-sorted layer: features + dynamic objects (tanks, shells…) — add those with zIndex = x + y. */
   readonly objects = new Container();
   private readonly groundPool: Pool;
@@ -201,7 +220,7 @@ export class WorldRenderer {
         const isRamp = (m.flags[i] & FLAG_RAMP) !== 0;
         // ground diamond
         const gv = this.groundTex[g];
-        gp.next(gv[h % gv.length], sx, top, 0.5, 0);
+        gp.next(gv[h % gv.length], sx, top, 0.5, 0).tint = ELEV_TINT[Math.min(e, ELEV_TINT.length - 1)];
         if (g === Ground.Shallow || g === Ground.Deep) {
           const ws = gp.next(this.waterTex[g === Ground.Shallow ? 0 : 1][this.waterFrame], sx, top, 0.5, 0);
           this.waterSprites.push({ s: ws, kind: g === Ground.Shallow ? 0 : 1 });
@@ -224,11 +243,13 @@ export class WorldRenderer {
           gp.next(dcl.tex, sx + ox, top + TILE_H / 2 + oy, dcl.ax, dcl.ay);
         }
         // cliff faces under the two front edges (SW = left face toward +y, SE = right face toward +x)
-        const eSW = y + 1 < m.height ? m.elev[i + W] : 0;
-        const eSE = x + 1 < W ? m.elev[i + 1] : 0;
-        for (let k = 0; k < e - eSW; k++) gp.next(this.cliffL[(h >>> (k + 3)) % this.cliffL.length], sx - TILE_W / 2, top + TILE_H / 2 + k * LEVEL_PX, 0, 0);
-        for (let k = 0; k < e - eSE; k++) gp.next(this.cliffR[(h >>> (k + 5)) % this.cliffR.length], sx, top + TILE_H / 2 + k * LEVEL_PX, 0, 0);
+        // Driven by passability.edgeKind: a ramp connection never gets a rock face (job 2).
+        const dropSW = cliffDrop(m, x, y, 2);
+        const dropSE = cliffDrop(m, x, y, 0);
+        for (let k = 0; k < dropSW; k++) gp.next(this.cliffL[(h >>> (k + 3)) % this.cliffL.length], sx - TILE_W / 2, top + TILE_H / 2 + k * LEVEL_PX, 0, 0);
+        for (let k = 0; k < dropSE; k++) gp.next(this.cliffR[(h >>> (k + 5)) % this.cliffR.length], sx, top + TILE_H / 2 + k * LEVEL_PX, 0, 0);
         if (isRamp) gp.next(this.rampTex[DIR4_TO_ART[rampDir(m, i)]], sx, top, 0.5, 0);
+        this.edgeLines(x, y, sx, top);
         // features
         const f = m.feature[i];
         const key = FEATURE_KEY[f];
@@ -256,6 +277,82 @@ export class WorldRenderer {
     }
     gp.end();
     op.end();
+    this.finishEdges();
+  }
+
+  private edgeCmds: { kind: 'lip' | 'hazard' | 'shadow'; x0: number; y0: number; x1: number; y1: number; dx?: number; dy?: number }[] = [];
+
+  /** Collects edge decorations for tile (x, y) from the single passability rule. */
+  private edgeLines(x: number, y: number, sx: number, top: number): void {
+    const m = this.map;
+    const open = isTileOpen(m, x, y);
+    for (let d = 0; d < 4; d++) {
+      const k = edgeKind(m, x, y, d);
+      const [ax, ay, bx, by] = EDGE_PTS[d];
+      if (k === 'cliffDown') {
+        // light lip along the top edge of a drop
+        this.edgeCmds.push({ kind: 'lip', x0: sx + ax, y0: top + ay, x1: sx + bx, y1: top + by });
+        if (this.edgeMode === 'strong') this.edgeCmds.push({ kind: 'hazard', x0: sx + ax, y0: top + ay, x1: sx + bx, y1: top + by });
+      } else if (k === 'cliffUp' && (d === 1 || d === 3)) {
+        // dark contact shadow on low ground at the foot of a cliff that rises behind it
+        this.edgeCmds.push({ kind: 'shadow', x0: sx + ax, y0: top + ay, x1: sx + bx, y1: top + by, dx: d === 1 ? 10 : -10, dy: 6 });
+      } else if (k === 'blocked' && this.edgeMode === 'strong' && open) {
+        this.edgeCmds.push({ kind: 'hazard', x0: sx + ax, y0: top + ay, x1: sx + bx, y1: top + by });
+      }
+    }
+  }
+
+  private finishEdges(): void {
+    const g = this.edges;
+    g.clear();
+    for (const c of this.edgeCmds) {
+      if (c.kind === 'shadow') {
+        g.poly([c.x0, c.y0, c.x1, c.y1, c.x1 + (c.dx ?? 0), c.y1 + (c.dy ?? 0), c.x0 + (c.dx ?? 0), c.y0 + (c.dy ?? 0)]).fill({ color: 0x000000, alpha: 0.28 });
+      }
+    }
+    for (const c of this.edgeCmds) {
+      if (c.kind === 'lip') g.moveTo(c.x0, c.y0).lineTo(c.x1, c.y1).stroke({ width: 3, color: 0xfff1c8, alpha: 0.75 });
+    }
+    for (const c of this.edgeCmds) {
+      if (c.kind !== 'hazard') continue;
+      // striped yellow/black hazard dashes
+      const n = 6;
+      for (let k = 0; k < n; k++) {
+        const t0 = k / n;
+        const t1 = (k + 1) / n;
+        g.moveTo(c.x0 + (c.x1 - c.x0) * t0, c.y0 + (c.y1 - c.y0) * t0)
+          .lineTo(c.x0 + (c.x1 - c.x0) * t1, c.y0 + (c.y1 - c.y0) * t1)
+          .stroke({ width: 4, color: k % 2 ? 0x1a1a1a : 0xffc400, alpha: 0.95 });
+      }
+    }
+    this.edgeCmds.length = 0;
+  }
+
+  /** Flash an impassable edge the local tank pushed against (0.3 s, orange). */
+  bump(x: number, y: number, dir: number): void {
+    this.bumps.push({ x, y, dir, t: 0.3 });
+  }
+
+  /** Per-frame transient overlays (bump highlights). */
+  updateOverlays(dt: number): void {
+    const g = this.bumpLayer;
+    g.clear();
+    const m = this.map;
+    for (let i = this.bumps.length - 1; i >= 0; i--) {
+      const b = this.bumps[i];
+      b.t -= dt;
+      if (b.t <= 0) {
+        this.bumps.splice(i, 1);
+        continue;
+      }
+      const e = m.elev[b.y * m.width + b.x];
+      const sx = (b.x - b.y) * (TILE_W / 2);
+      const top = (b.x + b.y) * (TILE_H / 2) - e * LEVEL_PX;
+      const [ax, ay, bx, by] = EDGE_PTS[b.dir];
+      const a = b.t / 0.3;
+      g.moveTo(sx + ax, top + ay).lineTo(sx + bx, top + by).stroke({ width: 16, color: 0xff6a20, alpha: 0.45 * a });
+      g.moveTo(sx + ax, top + ay).lineTo(sx + bx, top + by).stroke({ width: 6, color: 0xffc070, alpha: 1 * a });
+    }
   }
 
   /** Orientation of linear structures (gate/bridge): true if `connects` holds along y but not along x. Art variant 0 runs along x, 1 along y. */

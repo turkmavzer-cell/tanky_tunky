@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 
 type TankyWindow = Window & {
-  __tanky?: { scene: { state: { tick: number; tanks: { x: number; y: number }[] }; stats: { summary(): { fps: number } } } };
+  __tanky?: { scene: { state: { tick: number; match: { phase: string }; tanks: { x: number; y: number }[] }; stats: { summary(): { fps: number } } } };
 };
 
 test('menu → match → move with keyboard → pause/resume', async ({ page }) => {
@@ -12,7 +12,9 @@ test('menu → match → move with keyboard → pause/resume', async ({ page }) 
   await page.screenshot({ path: 'e2e/out/01-menu.png' });
   await page.getByTestId('play').click();
   await page.getByTestId('start').click();
-  await page.waitForFunction(() => ((window as TankyWindow).__tanky?.scene.state.tick ?? 0) > 30);
+  // 3-2-1 countdown is shown, then play starts
+  await expect(page.getByTestId('countdown')).toBeVisible();
+  await page.waitForFunction(() => (window as TankyWindow).__tanky?.scene.state.match.phase === 'playing', null, { timeout: 60_000 });
   const before = await page.evaluate(() => ({ ...(window as TankyWindow).__tanky!.scene.state.tanks[0] }));
   await page.keyboard.down('KeyD');
   // wait on simulation progress, not wall time (GPU-less runners render slowly)

@@ -11,7 +11,7 @@
  * Deterministic: own seeded Rng, inputs derived from state only → replays reproduce matches.
  */
 import aiJson from '../../data/ai.json';
-import { ABILITIES, TANKS } from '../../sim/config';
+import { ABILITIES, COMBAT, TANKS } from '../../sim/config';
 import { clamp, datan2, dcos, dhypot, dsin } from '../../sim/dmath';
 import { BTN_ABILITY, BTN_FIRE, EMPTY_INPUT, quantizeAim, quantizeMove, type PlayerInput } from '../../sim/input';
 import { Rng } from '../../sim/rng';
@@ -82,13 +82,14 @@ export class AiBot {
         const src = s.tanks[ev.tank];
         if (src.team === me.team) continue;
         const d = dhypot(ev.x - me.x, ev.y - me.y);
-        if (d <= aiJson.hearingRadius && (!this.known || this.known.t < now - 0.5)) this.known = { id: src.id, x: ev.x + this.rng.range(-1.5, 1.5), y: ev.y + this.rng.range(-1.5, 1.5), t: now };
+        if (d <= aiJson.hearingRadius && (!this.known || this.known.t < now - 0.5))
+          this.known = { id: src.id, x: clamp(ev.x + this.rng.range(-1.5, 1.5), 0.5, s.map.width - 0.5), y: clamp(ev.y + this.rng.range(-1.5, 1.5), 0.5, s.map.height - 0.5), t: now };
       } else if (ev.type === 'hit' && ev.target === me.id && ev.by >= 0) {
         const src = s.tanks[ev.by];
         if (src && src.team !== me.team && !seen) {
           // pain: rough direction toward where the shot came from (no exact hidden position)
           const a = datan2(src.y - me.y, src.x - me.x) + this.rng.range(-0.35, 0.35);
-          this.known = { id: src.id, x: me.x + dcos(a) * 5, y: me.y + dsin(a) * 5, t: now };
+          this.known = { id: src.id, x: clamp(me.x + dcos(a) * 5, 0.5, s.map.width - 0.5), y: clamp(me.y + dsin(a) * 5, 0.5, s.map.height - 0.5), t: now };
         }
       }
     }
@@ -187,7 +188,7 @@ export class AiBot {
       const ang = datan2(p.y - me.y, p.x - me.x) + err;
       aim = quantizeAim(ang);
       const d = dhypot(seen.x - me.x, seen.y - me.y);
-      const aligned = Math.abs(((me.turret - ang + 9.42477796) % 6.28318531) - 3.14159265) < 0.25;
+      const aligned = Math.abs(((me.turret - ang + 9.42477796) % 6.28318531) - 3.14159265) < aiJson.fireAlignment;
       wantFire = this.reaction <= 0 && aligned && d <= def.range * 1.05 && (def.shell === 'artillery' || clearGroundPath(s, me.x, me.y, seen.x, seen.y) || d < 2);
       if (def.shell === 'artillery' && d < def.minRange) wantFire = false;
     } else if (face) aim = quantizeAim(datan2(face.y - me.y, face.x - me.x));
@@ -202,7 +203,11 @@ export class AiBot {
       const d = seen ? dhypot(seen.x - me.x, seen.y - me.y) : 99;
       const ct = chargeTimeOf(me) * 60;
       const roll = this.rng.next();
-      if (d < aiJson.closeRange) this.holding = 2;
+      if (def.shell === 'artillery') {
+        // artillery: charge sets the landing distance — solve for the charge that reaches the target
+        const c = artilleryChargeFor(me, d) * (1 + this.rng.range(-this.lv.aimError, this.lv.aimError));
+        this.holding = Math.max(2, Math.round(Math.min(1, Math.max(0, c)) * ct) + 1);
+      } else if (d < aiJson.closeRange) this.holding = 2;
       else if (roll < this.lv.fullChargeChance) this.holding = Math.round(ct + 4);
       else if (roll < this.lv.fullChargeChance + this.lv.shortChargeChance) this.holding = Math.round(ct * this.rng.range(0.3, 0.6));
       else this.holding = 2;
@@ -335,6 +340,26 @@ export class AiBot {
     const d = dhypot(dx, dy) || 1;
     return { x: dx / d, y: dy / d };
   }
+}
+
+/**
+ * Charge level (0..1) at which an artillery shell lands at distance `d`:
+ * d = minRange + (range·rangeMul(c) − minRange)·c, with rangeMul linear between its curve ends.
+ */
+export function artilleryChargeFor(t: Tank, d: number): number {
+  const def = TANKS[t.cls];
+  const r0 = COMBAT.scaling.range[0][1];
+  const r1 = COMBAT.scaling.range[COMBAT.scaling.range.length - 1][1];
+  const R = def.range;
+  const m = def.minRange;
+  // (R·(r1−r0))·c² + (R·r0 − m)·c + (m − d) = 0
+  const a = R * (r1 - r0);
+  const b = R * r0 - m;
+  const k = m - d;
+  if (Math.abs(a) < 1e-9) return b > 0 ? clamp(-k / b, 0, 1) : 0;
+  const disc = b * b - 4 * a * k;
+  if (disc < 0) return 1;
+  return clamp((-b + Math.sqrt(disc)) / (2 * a), 0, 1);
 }
 
 /** Ability duration helper for UI/tests. */

@@ -104,7 +104,7 @@ function shellExplosion(state: SimState, s: Shell, x: number, y: number, direct:
     y,
     radius: s.radius,
     damage: s.damage,
-    splash: COMBAT.shell.splashFalloff,
+    splash: s.kind === 'artillery' ? COMBAT.shell.artillerySplash : COMBAT.shell.splashFalloff,
     knockback: COMBAT.shell.knockback * evalCurve(COMBAT.scaling.knockback, s.charge),
     owner: s.owner,
     team: s.team,
@@ -208,6 +208,8 @@ export function updateShells(state: SimState, rng: Rng, dt: number): void {
 /** True if a straight path between two points crosses no shot-blocking tile and stays on one elevation (shockwaves). */
 export function clearGroundPath(state: SimState, x0: number, y0: number, x1: number, y1: number): boolean {
   const m = state.map;
+  const inside = (x: number, y: number): boolean => x >= 0 && y >= 0 && x < m.width && y < m.height;
+  if (!inside(x0, y0) || !inside(x1, y1)) return false;
   const e0 = m.elev[Math.floor(y0) * m.width + Math.floor(x0)];
   const dx = x1 - x0;
   const dy = y1 - y0;

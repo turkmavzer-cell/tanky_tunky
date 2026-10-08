@@ -1,6 +1,5 @@
+import { startMatch } from './helpers';
 import { expect, test } from '@playwright/test';
-
-type TankyWindow = Window & { __tanky?: { scene: { state: { tick: number; map: { width: number; bases: { x: number; y: number }[] } } } } };
 
 /** Visual QA: fixed camera shots of map landmarks (river/bridge centre, base, plateau). Inspect e2e/out/visual-*.png. */
 for (const [name, query] of [
@@ -9,10 +8,7 @@ for (const [name, query] of [
   ['wide', 'map=40&seed=11&view=20,20&zoom=0.3'],
 ] as const) {
   test(`visual: ${name}`, async ({ page }) => {
-    await page.goto(`/?silent&${query}`);
-    await page.getByTestId('play').click();
-    await page.getByTestId('start').click();
-    await page.waitForFunction(() => ((window as TankyWindow).__tanky?.scene.state.tick ?? 0) > 20);
+    await startMatch(page, `silent&endless&nofog&${query}`);
     await page.waitForTimeout(500);
     await page.screenshot({ path: `e2e/out/visual-${name}.png` });
     expect(true).toBe(true);
@@ -20,10 +16,7 @@ for (const [name, query] of [
 }
 
 test('visual: combat (charged shot hits an enemy)', async ({ page }) => {
-  await page.goto('/?silent&map=40&seed=11&cls=heavy&bots=idle');
-  await page.getByTestId('play').click();
-  await page.getByTestId('start').click();
-  await page.waitForFunction(() => ((window as TankyWindow).__tanky?.scene.state.tick ?? 0) > 20);
+  await startMatch(page, 'silent&endless&map=40&seed=11&cls=heavy&bots=idle');
   // place enemy 2 just in front of the player on open ground and aim at it
   await page.evaluate(() => {
     type M = { width: number; feature: Uint8Array; elev: Uint8Array; flags: Uint8Array; version: number };

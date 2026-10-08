@@ -24,6 +24,8 @@ export interface TouchOptions {
   leftHanded: boolean;
   sensitivity: number;
   labels: { fire: string; ability: string };
+  /** Ability name shown on the button. */
+  abilityName?: string;
 }
 
 const JOY_RADIUS = 64;
@@ -69,7 +71,7 @@ export class TouchControls {
     this.abilityBtn.dataset.testid = 'ability';
     this.abilityRing = el('div', 'cooldown-ring');
     const al = el('span', 'act-label');
-    al.textContent = opts.labels.ability;
+    al.textContent = opts.abilityName ?? opts.labels.ability;
     this.abilityBtn.append(this.abilityRing, al);
     this.root.append(this.joyBase, this.fireBtn, this.abilityBtn);
     host.appendChild(this.root);
@@ -185,15 +187,18 @@ export class TouchControls {
   /** Visual feedback from the simulation: charge 0..1, flags for perfect window / overheat, ability cooldown 0..1. */
   private lastFeedback = '';
 
-  setFeedback(charge: number, perfect: boolean, overheat: number, abilityCooldown: number): void {
-    const key = `${Math.round(charge * 90)}|${perfect}|${Math.round(overheat * 60)}|${Math.round(abilityCooldown * 60)}`;
+  setFeedback(charge: number, perfect: boolean, overheat: number, abilityCooldown: number, abilityActive = false): void {
+    const key = `${Math.round(charge * 90)}|${perfect}|${Math.round(overheat * 60)}|${Math.round(abilityCooldown * 60)}|${abilityActive}`;
     if (key === this.lastFeedback) return;
     this.lastFeedback = key;
     const deg = Math.round(charge * 360);
     this.fireRing.style.background = overheat > 0 ? `conic-gradient(var(--danger) ${Math.round(overheat * 360)}deg, transparent 0)` : `conic-gradient(${perfect ? '#fff4b0' : 'var(--accent)'} ${deg}deg, transparent 0)`;
     this.fireBtn.classList.toggle('perfect', perfect);
     this.fireBtn.classList.toggle('overheat', overheat > 0);
-    this.abilityRing.style.background = abilityCooldown > 0 ? `conic-gradient(#0009 ${Math.round(abilityCooldown * 360)}deg, transparent 0)` : 'none';
+    // cooldown ring: dark sweep that shrinks as the ability recharges; glowing border while active
+    this.abilityRing.style.background = abilityCooldown > 0 ? `conic-gradient(#000b ${Math.round(abilityCooldown * 360)}deg, transparent 0)` : 'none';
+    this.abilityBtn.classList.toggle('active', abilityActive);
+    this.abilityBtn.classList.toggle('ready', !abilityActive && abilityCooldown <= 0);
   }
 
   dispose(): void {

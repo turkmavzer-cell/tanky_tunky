@@ -55,5 +55,6 @@
       "enemyWithin": 10
     }
   },
-  "patrolObjectiveChance": 0.5
+  "patrolObjectiveChance": 0.5,
+  "fireAlignment": 0.1
 }
