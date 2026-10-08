@@ -20,7 +20,8 @@
       "splash": 0.25,
       "bounces": 0,
       "minRange": 0,
-      "arcHeight": 0
+      "arcHeight": 0,
+      "ability": "hide"
     },
     "heavy": {
       "maxSpeed": 1.5,
@@ -41,7 +42,8 @@
       "splash": 0.55,
       "bounces": 1,
       "minRange": 0,
-      "arcHeight": 0
+      "arcHeight": 0,
+      "ability": "rumble"
     },
     "standard": {
       "maxSpeed": 2.7,
@@ -62,7 +64,8 @@
       "splash": 0.35,
       "bounces": 0,
       "minRange": 0,
-      "arcHeight": 0
+      "arcHeight": 0,
+      "ability": "swift"
     },
     "artillery": {
       "maxSpeed": 1.9,
@@ -83,7 +86,8 @@
       "splash": 0.9,
       "bounces": 0,
       "minRange": 3,
-      "arcHeight": 2.5
+      "arcHeight": 2.5,
+      "ability": "barrage"
     },
     "trapper": {
       "maxSpeed": 2.2,
@@ -104,7 +108,8 @@
       "splash": 0.3,
       "bounces": 0,
       "minRange": 0,
-      "arcHeight": 0
+      "arcHeight": 0,
+      "ability": "mine"
     }
   }
 }

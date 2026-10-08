@@ -1,9 +1,14 @@
 import tanksJson from '../data/tanks.json';
 import combatJson from '../data/combat.json';
+import abilitiesJson from '../data/abilities.json';
+import visionJson from '../data/vision.json';
+import matchJson from '../data/match.json';
 
 export type TankClassId = 'scout' | 'heavy' | 'standard' | 'artillery' | 'trapper';
 export const TANK_CLASSES: readonly TankClassId[] = ['scout', 'heavy', 'standard', 'artillery', 'trapper'];
 export type ShellKind = 'standard' | 'heavy' | 'artillery';
+export type AbilityId = 'hide' | 'rumble' | 'swift' | 'barrage' | 'mine';
+export const ABILITY_IDS: readonly AbilityId[] = ['hide', 'rumble', 'swift', 'barrage', 'mine'];
 
 export interface TankClassDef {
   maxSpeed: number;
@@ -25,6 +30,7 @@ export interface TankClassDef {
   bounces: number;
   minRange: number;
   arcHeight: number;
+  ability: AbilityId;
 }
 
 export const TANKS = tanksJson.classes as Readonly<Record<TankClassId, TankClassDef>>;
@@ -36,6 +42,7 @@ export interface CombatDef {
   shell: { hitRadius: number; knockback: number; splashFalloff: number; uphillMissChance: number; selfDamage: boolean; terrainDamageMul: number };
   tankCollision: { push: number };
   respawnTime: number;
+  targeting: { switchRatio: number; leadIterations: number };
 }
 export const COMBAT = combatJson as CombatDef;
 
@@ -55,3 +62,33 @@ export function evalCurve(c: Curve, x: number): number {
 /** Fixed simulation rate (brief §11). */
 export const SIM_HZ = 60;
 export const SIM_DT = 1 / SIM_HZ;
+
+/** Ability parameters (data/abilities.json). All numbers are base values before modifiers. */
+export interface AbilityDef {
+  name: string;
+  class: TankClassId;
+  duration: number;
+  cooldown: number;
+  [key: string]: number | string | Curve;
+}
+export const ABILITIES = abilitiesJson as unknown as Readonly<Record<AbilityId, AbilityDef>>;
+
+export interface VisionDef {
+  hz: number;
+  forestConcealRange: number;
+  invisibleNoticeRange: number;
+  elevationBonusPerLevel: number;
+  memoryAlpha: number;
+  unexploredAlpha: number;
+}
+export const VISION = visionJson as VisionDef;
+
+export interface MatchDef {
+  duration: number;
+  countdown: number;
+  finalWarning: number;
+  respawnDelay: number;
+  spawnProtection: number;
+  spawn: { minDistanceFromDeath: number; minDistanceFromEnemies: number; avoidRepeat: boolean };
+}
+export const MATCH = matchJson as MatchDef;

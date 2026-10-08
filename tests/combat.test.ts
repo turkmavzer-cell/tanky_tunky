@@ -10,7 +10,7 @@ const idle: PlayerInput = { moveX: 0, moveY: 0, aim: -1, buttons: 0 };
 const aimX = quantizeAim(0); // +x
 
 function arena(players: { team: number; cls: TankClassId; x: number; y: number }[], size = 30): SimState {
-  return createState({ seed: 1, map: createMap(size, size), players });
+  return createState({ seed: 1, map: createMap(size, size), players, rules: { endless: true } });
 }
 
 /** Run n ticks with the given inputs; returns all events. */

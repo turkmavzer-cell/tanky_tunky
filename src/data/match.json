@@ -1,0 +1,15 @@
+{
+  "$comment": "Match rules (round-01 job 4). Times in seconds of SIMULATION time.",
+  "duration": 60,
+  "countdown": 3,
+  "finalWarning": 10,
+  "respawnDelay": 2,
+  "spawnProtection": 2,
+  "spawn": {
+    "minDistanceFromDeath": 8,
+    "minDistanceFromEnemies": 6,
+    "avoidRepeat": true
+  },
+  "mapSize": 40,
+  "$mapSize": "Quick Match map size (40/64/96). 60 s matches need contact: 40x40 by default."
+}

@@ -3,6 +3,7 @@
  * Tile (x, y) occupies world [x, x+1) × [y, y+1).
  */
 import { ELEVATION, FEATURE, Feature, GROUND, Ground } from './terrain';
+import { isPassable, isTileOpen } from './passability';
 
 /** flags bits */
 export const FLAG_RAMP = 1; // tile connects its height level with neighbours one level lower
@@ -61,6 +62,8 @@ export interface GameMap {
   objectives: MapPoint[];
   /** Torches / light sources (night lighting). */
   lights: MapPoint[];
+  /** Respawn candidates spread over the map (tile coords), all walkable and connected to the main region. */
+  spawnPoints: MapPoint[];
   /** Incremented whenever terrain changes at runtime (destruction) so caches (LOS, paths, render) can refresh. */
   version: number;
 }
@@ -79,6 +82,7 @@ export function createMap(width: number, height: number, seed = 0): GameMap {
     bases: [],
     objectives: [],
     lights: [],
+    spawnPoints: [],
     version: 0,
   };
 }
@@ -86,44 +90,14 @@ export function createMap(width: number, height: number, seed = 0): GameMap {
 export const idx = (m: GameMap, x: number, y: number): number => y * m.width + x;
 export const inBounds = (m: GameMap, x: number, y: number): boolean => x >= 0 && y >= 0 && x < m.width && y < m.height;
 
-/** Can a tank stand on this tile (ignoring elevation transitions)? */
+/** Can a tank stand on this tile (ignoring elevation transitions)? Delegates to passability.ts. */
 export function isWalkable(m: GameMap, x: number, y: number): boolean {
-  if (!inBounds(m, x, y)) return false;
-  const i = y * m.width + x;
-  const f = FEATURE[m.feature[i]];
-  if (f.blocksMove) return false;
-  if (m.feature[i] === Feature.Bridge) return true;
-  return GROUND[m.ground[i]].passable;
+  return isTileOpen(m, x, y);
 }
 
-/**
- * Can a tank move directly between 4/8-neighbour tiles a → b? Equal elevation is fine; a one-level
- * step is allowed only if either tile is a ramp; cliffs (≥2 levels or no ramp) block movement.
- * Diagonal moves additionally require both orthogonal corner tiles to be passable (no corner cutting).
- */
+/** Tile-to-tile movement rule. Delegates to the single source of truth in passability.ts. */
 export function canStep(m: GameMap, ax: number, ay: number, bx: number, by: number): boolean {
-  if (!isWalkable(m, bx, by)) return false;
-  const ia = ay * m.width + ax;
-  const ib = by * m.width + bx;
-  const dh = Math.abs(m.elev[ia] - m.elev[ib]);
-  if (dh > 1) return false;
-  if (dh === 1) {
-    // only along the ramp's direction: high ramp tile → the lower tile it points to
-    const hi = m.elev[ia] > m.elev[ib] ? ia : ib;
-    if (!(m.flags[hi] & FLAG_RAMP)) return false;
-    const d = DIR4[(m.flags[hi] & RAMP_DIR_MASK) >> RAMP_DIR_SHIFT];
-    const lo = hi === ia ? ib : ia;
-    if (lo !== hi + d[0] + d[1] * m.width) return false;
-  }
-  if (ax !== bx && ay !== by) {
-    if (!isWalkable(m, ax, by) || !isWalkable(m, bx, ay)) return false;
-    const e1 = m.elev[ay * m.width + bx];
-    const e2 = m.elev[by * m.width + ax];
-    if (e1 !== m.elev[ia] && e1 !== m.elev[ib]) return false;
-    if (e2 !== m.elev[ia] && e2 !== m.elev[ib]) return false;
-    if (dh === 1) return false; // ramps only orthogonally
-  }
-  return true;
+  return isPassable(m, ax, ay, bx, by);
 }
 
 export function blocksLOS(m: GameMap, x: number, y: number): boolean {

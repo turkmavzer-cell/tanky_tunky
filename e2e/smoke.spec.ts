@@ -15,7 +15,9 @@ test('menu → match → move with keyboard → pause/resume', async ({ page }) 
   await page.waitForFunction(() => ((window as TankyWindow).__tanky?.scene.state.tick ?? 0) > 30);
   const before = await page.evaluate(() => ({ ...(window as TankyWindow).__tanky!.scene.state.tanks[0] }));
   await page.keyboard.down('KeyD');
-  await page.waitForTimeout(800);
+  // wait on simulation progress, not wall time (GPU-less runners render slowly)
+  const t0 = await page.evaluate(() => (window as TankyWindow).__tanky!.scene.state.tick);
+  await page.waitForFunction((t) => (window as TankyWindow).__tanky!.scene.state.tick > t + 50, t0, { timeout: 30_000 });
   await page.keyboard.up('KeyD');
   const after = await page.evaluate(() => ({ ...(window as TankyWindow).__tanky!.scene.state.tanks[0] }));
   // screen-right = world (+x, -y)
