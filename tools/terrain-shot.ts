@@ -19,6 +19,18 @@ const stats = await page.evaluate(() => (window as unknown as { __terrainStats: 
 console.log('stats', JSON.stringify(stats));
 await page.screenshot({ path: `${out}/terrain-preview.png`, fullPage: true });
 
+// cold buildTerrainArt() timing: median over fresh page loads (one cold build each)
+const cold: number[] = [];
+for (let k = 0; k < 7; k++) {
+  const p = await browser.newPage();
+  await p.goto(`${url}?coldonly`);
+  await p.waitForSelector('body[data-ready="1"]', { state: 'attached', timeout: 30000 });
+  cold.push(parseFloat((await p.textContent('#info'))!.replace('cold ', '')));
+  await p.close();
+}
+cold.sort((a, b) => a - b);
+console.log(`cold build ms: ${cold.join(', ')} (median ${cold[3]})`);
+
 const zoom = await browser.newPage({ viewport: { width: 1840, height: 1000 }, deviceScaleFactor: 2 });
 await zoom.goto(url);
 await zoom.waitForSelector('body[data-ready="1"]', { state: 'attached', timeout: 30000 });

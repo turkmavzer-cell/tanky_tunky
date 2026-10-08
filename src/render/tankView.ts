@@ -5,7 +5,8 @@ import { SLICE_PX_PER_TILE, TEAM_PALETTES, drawTankSlices } from './tankArt';
 
 /** Screen px per world tile along a world axis before the isometric squash (= TILE_W / sqrt2). */
 const WORLD_PX = TILE_W / Math.SQRT2;
-const SLICE_SCALE = WORLD_PX / SLICE_PX_PER_TILE;
+/** Tanks are drawn ~15 % larger than their collision footprint so they read well next to 1-tile walls. */
+const SLICE_SCALE = (WORLD_PX / SLICE_PX_PER_TILE) * 1.15;
 const LIFT_PX = 2.6;
 
 interface Slice {

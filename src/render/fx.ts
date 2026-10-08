@@ -139,7 +139,7 @@ export class Fx {
     for (let i = 0; i < smoke; i++) {
       const a = this.rand() * Math.PI * 2;
       const sp = (15 + this.rand() * 60) * k;
-      this.emit(T.smoke, x, y, { vx: Math.cos(a) * sp, vy: Math.sin(a) * sp * 0.5 - 25, g: -12, drag: 1.5, life: 1.0 + this.rand() * 1.2, s0: 0.5 * k, s1: 1.8 * k, a0: 0.6, a1: 0, tint: 0x4a4540, rot: this.rand() * 6, vr: (this.rand() - 0.5) * 1.5 });
+      this.emit(T.smoke, x, y, { vx: Math.cos(a) * sp, vy: Math.sin(a) * sp * 0.5 - 25, g: -12, drag: 1.5, life: 1.0 + this.rand() * 1.2, s0: 0.5 * k, s1: 1.8 * k, a0: 0.42, a1: 0, tint: 0x7a7066, rot: this.rand() * 6, vr: (this.rand() - 0.5) * 1.5 });
     }
     const debris = Math.round((6 + charge * 10) * this.quality);
     for (let i = 0; i < debris; i++) {

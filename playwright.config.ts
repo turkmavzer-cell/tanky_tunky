@@ -20,6 +20,13 @@ export default defineConfig({
   projects: [
     {
       name: 'mobile-landscape',
+      testIgnore: /perf\.spec\.ts/,
+      use: { ...devices['Pixel 7 landscape'], browserName: 'chromium' },
+    },
+    {
+      // Measured alone (run with --workers=1 after the functional suite) so other tests do not steal CPU.
+      name: 'perf',
+      testMatch: /perf\.spec\.ts/,
       use: { ...devices['Pixel 7 landscape'], browserName: 'chromium' },
     },
   ],

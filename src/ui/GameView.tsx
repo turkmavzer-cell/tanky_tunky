@@ -12,8 +12,8 @@ declare global {
   }
 }
 
-/** Dev/test URL overrides: ?silent&map=96&seed=5&renderScale=0.25&cls=heavy */
-function debugParams(): { silent: boolean; mapSize?: 40 | 64 | 96; seed?: number; renderScale?: number; playerClass?: TankClassId } {
+/** Dev/test URL overrides: ?silent&map=96&seed=5&renderScale=0.25&cls=heavy&view=32,32&zoom=0.4&bots=idle */
+function debugParams(): { silent: boolean; mapSize?: 40 | 64 | 96; seed?: number; renderScale?: number; playerClass?: TankClassId; idleBots?: boolean; debugView?: { x: number; y: number; zoom: number } } {
   const q = new URLSearchParams(location.search);
   const map = Number(q.get('map'));
   const cls = q.get('cls') as TankClassId | null;
@@ -22,6 +22,9 @@ function debugParams(): { silent: boolean; mapSize?: 40 | 64 | 96; seed?: number
   if (q.has('seed')) out.seed = Number(q.get('seed'));
   if (q.has('renderScale')) out.renderScale = Number(q.get('renderScale'));
   if (cls && TANK_CLASSES.includes(cls)) out.playerClass = cls;
+  if (q.get('bots') === 'idle') out.idleBots = true;
+  const view = q.get('view')?.split(',').map(Number);
+  if (view && view.length >= 2) out.debugView = { x: view[0], y: view[1], zoom: Number(q.get('zoom') ?? 0.5) };
   return out;
 }
 

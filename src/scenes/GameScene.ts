@@ -33,6 +33,10 @@ export interface GameSceneOptions {
   silent?: boolean;
   /** Override backbuffer resolution (perf gate: fill-rate normalisation). */
   renderScale?: number;
+  /** Debug: bots send no input (static targets for visual tests). */
+  idleBots?: boolean;
+  /** Debug: lock the camera on a world point with a fixed zoom (visual QA screenshots). */
+  debugView?: { x: number; y: number; zoom: number };
 }
 
 export interface HudSnapshot {
@@ -235,7 +239,7 @@ export class GameScene {
   private tick(): void {
     this.localInput = this.sampleInput();
     this.inputs[this.localId] = this.localInput;
-    for (let i = 0; i < this.state.tanks.length; i++) if (this.bots[i]) this.inputs[i] = this.bots[i].input(this.state);
+    for (let i = 0; i < this.state.tanks.length; i++) if (this.bots[i]) this.inputs[i] = this.opts.idleBots ? EMPTY_INPUT : this.bots[i].input(this.state);
     this.snapshotPrev();
     step(this.state, this.inputs);
     for (const e of this.state.events) this.frameEvents.push(e);
@@ -474,7 +478,12 @@ export class GameScene {
     const lx = this.sx(lerp(this.prev[this.localId].x, me.x, alpha), lerp(this.prev[this.localId].y, me.y, alpha));
     const ly = this.sy(lerp(this.prev[this.localId].x, me.x, alpha), lerp(this.prev[this.localId].y, me.y, alpha));
     const look = 0.35;
-    this.camera.update(dt, lx, ly, worldToScreenX(me.vx, me.vy) * look, worldToScreenY(me.vx, me.vy) * look);
+    const dv = this.opts.debugView;
+    if (dv) {
+      this.camera.targetZoom = dv.zoom;
+      this.camera.snap(this.sx(dv.x, dv.y), this.sy(dv.x, dv.y));
+      this.camera.zoom = dv.zoom;
+    } else this.camera.update(dt, lx, ly, worldToScreenX(me.vx, me.vy) * look, worldToScreenY(me.vx, me.vy) * look);
     const w = this.app.screen.width;
     const h = this.app.screen.height;
     const z = this.camera.zoom;

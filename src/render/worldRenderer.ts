@@ -9,17 +9,8 @@ import { Container, Sprite, Texture } from 'pixi.js';
 import { DIR4, FLAG_RAMP, rampDir, type GameMap } from '../world/map';
 import { FEATURE, Feature, Ground } from '../world/terrain';
 import { TILE_H, TILE_W, screenToWorld } from '../world/iso';
-import { LEVEL_PX, buildTerrainArt, type ArtSprite, type TerrainArt } from './terrainArt';
+import { EDGE_PRIORITY, LEVEL_PX, buildTerrainArt, type ArtSprite, type TerrainArt } from './terrainArt';
 
-/** Ground bleeding priority: higher paints its fringe over lower neighbours. */
-const PRIORITY: Record<number, number> = {
-  [Ground.Deep]: 0,
-  [Ground.Shallow]: 1,
-  [Ground.Mud]: 2,
-  [Ground.Sand]: 3,
-  [Ground.Dirt]: 4,
-  [Ground.Grass]: 5,
-};
 /** DIR4 (+x,-x,+y,-y) → art edge/ramp direction (0 NE, 1 SE, 2 SW, 3 NW). */
 const DIR4_TO_ART = [1, 3, 2, 0];
 /** Neighbour offsets per art edge dir: NE (x, y-1), SE (x+1, y), SW (x, y+1), NW (x-1, y). */
@@ -75,6 +66,9 @@ class Pool {
     s.zIndex = 0;
     return s;
   }
+  get used(): number {
+    return this.n;
+  }
   end(): void {
     for (let i = this.n; i < this.items.length; i++) this.items[i].visible = false;
   }
@@ -99,7 +93,12 @@ export class WorldRenderer {
   private readonly waterSprites: { s: Sprite; kind: number }[] = [];
   private waterFrame = 0;
   private waterClock = 0;
-  private lastKey = '';
+  private lastVersion = -1;
+  private lastCx = 0;
+  private lastCy = 0;
+  private lastW = 0;
+  /** Sprites placed by the last layout (perf diagnostics). */
+  spriteCount = 0;
   private readonly lightSet = new Set<number>();
 
   constructor(private readonly map: GameMap) {
@@ -147,26 +146,33 @@ export class WorldRenderer {
       this.waterFrame = (this.waterFrame + 1) % 4;
       for (const w of this.waterSprites) w.s.texture = this.waterTex[w.kind][this.waterFrame];
     }
-    const pad = 2;
-    const a = screenToWorld(viewLeft, viewTop);
-    const b = screenToWorld(viewRight, viewTop);
-    const c = screenToWorld(viewLeft, viewBottom + LEVEL_PX * 3);
-    const d = screenToWorld(viewRight, viewBottom + LEVEL_PX * 3);
+    const MARGIN = 160;
+    const pad = 1;
+    const a = screenToWorld(viewLeft - MARGIN, viewTop - MARGIN);
+    const b = screenToWorld(viewRight + MARGIN, viewTop - MARGIN);
+    const c = screenToWorld(viewLeft - MARGIN, viewBottom + MARGIN + LEVEL_PX * 3);
+    const d = screenToWorld(viewRight + MARGIN, viewBottom + MARGIN + LEVEL_PX * 3);
     const m = this.map;
     const x0 = Math.max(0, Math.floor(Math.min(a.x, b.x, c.x, d.x)) - pad);
     const x1 = Math.min(m.width - 1, Math.ceil(Math.max(a.x, b.x, c.x, d.x)) + pad);
     const y0 = Math.max(0, Math.floor(Math.min(a.y, b.y, c.y, d.y)) - pad);
     const y1 = Math.min(m.height - 1, Math.ceil(Math.max(a.y, b.y, c.y, d.y)) + pad);
-    // quantise the window so small camera moves do not trigger a relayout
-    const key = `${x0 >> 2},${x1 >> 2},${y0 >> 2},${y1 >> 2},${m.version}`;
-    if (key === this.lastKey) return;
-    this.lastKey = key;
-    this.layout(Math.max(0, (x0 >> 2) * 4 - 4), Math.min(m.width - 1, (x1 >> 2) * 4 + 7), Math.max(0, (y0 >> 2) * 4 - 4), Math.min(m.height - 1, (y1 >> 2) * 4 + 7), viewLeft - 600, viewRight + 600, viewTop - 600, viewBottom + 600);
+    // Relayout only when the camera has moved more than half a margin since the last layout.
+    // The laid-out area is the view plus MARGIN px on each side (kept small: every extra sprite costs batching time).
+    const cx = (viewLeft + viewRight) / 2;
+    const cy = (viewTop + viewBottom) / 2;
+    if (m.version === this.lastVersion && Math.abs(cx - this.lastCx) < MARGIN / 2 && Math.abs(cy - this.lastCy) < MARGIN / 2 && viewRight - viewLeft <= this.lastW) return;
+    this.lastVersion = m.version;
+    this.lastCx = cx;
+    this.lastCy = cy;
+    this.lastW = viewRight - viewLeft;
+    this.layout(x0, x1, y0, y1, viewLeft - MARGIN, viewRight + MARGIN, viewTop - MARGIN, viewBottom + MARGIN);
+    this.spriteCount = this.groundPool.used + this.objectPool.used;
   }
 
   /** Forces a relayout next frame (after terrain destruction etc.). */
   invalidate(): void {
-    this.lastKey = '';
+    this.lastVersion = -1;
   }
 
   private layout(x0: number, x1: number, y0: number, y1: number, l: number, r: number, t: number, btm: number): void {
@@ -208,7 +214,7 @@ export class WorldRenderer {
           const j = ny * W + nx;
           if (m.elev[j] !== e) continue;
           const ng = m.ground[j];
-          if (ng !== g && PRIORITY[ng] > PRIORITY[g]) gp.next(this.edgeTex[ng][dir], sx, top, 0.5, 0);
+          if (ng !== g && EDGE_PRIORITY[ng] > EDGE_PRIORITY[g]) gp.next(this.edgeTex[ng][dir], sx, top, 0.5, 0);
         }
         // decals on plain land
         if (m.feature[i] === Feature.None && !isRamp && g !== Ground.Deep && g !== Ground.Shallow && h % 7 === 0) {
@@ -228,12 +234,16 @@ export class WorldRenderer {
         const key = FEATURE_KEY[f];
         const cy = top + TILE_H / 2;
         if (key === 'bridge') {
-          const v = this.featureTex.bridge[h % this.featureTex.bridge.length];
+          const v = this.featureTex.bridge[this.alongY(x, y, (j) => m.feature[j] === Feature.Bridge || m.ground[j] !== Ground.Deep) ? 1 : 0];
           gp.next(v.tex, sx, cy, v.ax, v.ay);
         } else if (key) {
           const def = this.featureTex[key];
           const damaged = (key === 'wall' || key === 'crate' || key === 'gate') && m.hp[i] > 0 && this.isDamaged(i, f);
-          const v = damaged ? this.damagedTex[key] : def[h % def.length];
+          const v = damaged
+            ? this.damagedTex[key]
+            : key === 'gate'
+              ? def[this.alongY(x, y, (j) => m.feature[j] === Feature.Wall || m.feature[j] === Feature.Gate || m.feature[j] === Feature.Ruins) ? 1 : 0]
+              : def[h % def.length];
           const sp = op.next(v.tex, sx, cy, v.ax, v.ay);
           sp.zIndex = x + y + 1;
         }
@@ -246,6 +256,15 @@ export class WorldRenderer {
     }
     gp.end();
     op.end();
+  }
+
+  /** Orientation of linear structures (gate/bridge): true if `connects` holds along y but not along x. Art variant 0 runs along x, 1 along y. */
+  private alongY(x: number, y: number, connects: (i: number) => boolean): boolean {
+    const m = this.map;
+    const at = (xx: number, yy: number): boolean => xx >= 0 && yy >= 0 && xx < m.width && yy < m.height && connects(yy * m.width + xx);
+    const ax = (at(x - 1, y) ? 1 : 0) + (at(x + 1, y) ? 1 : 0);
+    const ay = (at(x, y - 1) ? 1 : 0) + (at(x, y + 1) ? 1 : 0);
+    return ay > ax;
   }
 
   private isDamaged(i: number, f: number): boolean {

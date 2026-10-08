@@ -91,42 +91,21 @@ android/     Capacitor project (committed): sensorLandscape, immersive, keep-scr
   committed debug keystore (updates install over each other), release signing from secrets.
 - GitHub Actions: lint → typecheck → unit → build → E2E; debug APK with 40 MB budget check; tagged signed APK/AAB.
 
-### Phase 2 — Isometric world 🟡 (logic done and tested; rendering being finished)
-- Done and tested:
-  - Terrain model: grass/dirt/sand/mud/shallow/deep water; forest/rock/wall/crate/ruins/gate/bridge; 3 elevation levels; directional ramps.
-  - Generator: seeded, point-symmetric (fair by construction), river with bridges/fords, lakes, plateaus with ramps, ruins, bases with cover/torches/spawns, 3 objectives, connectivity repair, daily seed.
-  - `validateMap`: reachability of spawns/bases/objectives, no isolated regions, objective distance and cover fairness.
-  - Fuzz test: 300 seeds × 40/64 plus 30 seeds × 96 all pass.
-  - Tank vs terrain collision with sliding; cliffs block, ramps only along their direction; terrain speed multipliers.
-- In progress:
-  - `worldRenderer.ts` (painter order, cliffs, ramps, transition fringes, animated water, decals, z-sorted features) is written.
-  - The procedural terrain art (`terrainArt.ts`) is being built and visually verified by a sub-agent.
+### Phase 2 — Isometric world ✅
+Generator + validation + fuzz (300+ seeds), directional ramps, cliffs, collision with sliding, world renderer with procedural
+painted art (sub-agent), visual QA screenshots in `docs/img/`. See `docs/PROGRESS.md` for known gaps.
 
-### Phase 3 — Tank & controls 🟡 (sim done and tested; integration pending)
-- Done and tested (combat unit tests):
-  - Charged fire state machine: tap shot, hold to charge (0–100 %), "perfect" window bonus, overheat lock, slowdown while charging.
-  - Scaling curves in `combat.json` (damage 1x→3x, speed, range, radius, knockback).
-  - Shells: Heavy ricochets once; Artillery arcs over obstacles with min range and charge-controlled distance.
-  - Splash damage, armor, knockback, uphill miss chance, destructible crates/walls/gates, tank–tank pushing, kills/deaths, respawn.
-- Written, not yet run end-to-end:
-  - `touchControls.ts`: floating joystick (dead zone, smoothing, sensitivity), FIRE hold-to-charge ring with drag-to-aim, ABILITY button, left-handed mode, independent pointer IDs for multi-touch.
-  - GameScene wiring: aim assist, muzzle/explosion/spark/smoke/debris/track/dust particles, damage numbers, HP bars, recoil and hit flash, camera shake and zoom-out while charging, haptics by charge level.
-  - HUD (HP, score, respawn) and class select screen.
-  - Placeholder bots: 2 vs 3 match.
-- In progress: the procedural audio engine (`src/audio/`) is being built and verified by a sub-agent.
-- The current HEAD (`9bf3767`, WIP) does **not** typecheck in CI yet, because `GameScene` already imports the audio module, which is not committed. This is the next thing to fix.
+### Phase 3 — Tank & controls ✅ (headless-verified) — **waiting for the owner's on-device feel test**
+Multi-touch joystick/charge/ability (3-finger CDP test), charged combat (16 sim tests), fx/audio/haptics, class select,
+placeholder bots, perf gate 60 FPS / p95 16.7 ms on 96×96 at CPU 4x. Tank list + empty ability table: `docs/TANKS.md`.
 
-## 7. Next steps (immediate)
+## 7. Next steps
 
-1. Integrate the finished terrain art + audio modules, then make typecheck, lint and all unit tests pass.
-2. Run E2E specs:
-   - `smoke` (menu → match → move → pause)
-   - `controls` (3-finger joystick + charge + ability via CDP touch)
-   - `perf` (96×96 map at CPU 4x, gate p95 < 22 ms with a 0.25 backbuffer)
-3. Inspect the screenshots for sorting, cliffs, fog, UI overflow and charge ring, and fix what looks wrong.
-4. Commit, get CI green, and produce the debug APK.
-5. Update `docs/PROGRESS.md` and `docs/PERF.md`.
-6. **STOP after phase 3:** hand the APK to the owner for the on-device feel test (`docs/PLAYTEST_CHECKLIST.md`) and wait for feedback.
+1. Owner installs the debug APK (Actions → "Android APK" → artifact), runs `docs/PLAYTEST_CHECKLIST.md`, sends feedback.
+2. Owner fills in the ability table in `docs/TANKS.md` → implement abilities as data (`tanks.json`) + sim + tests (phase 5 scope).
+3. Optional: owner supplies Nano Banana PNGs → build `tools/import-art` (background removal, trim, diamond mask, atlas, anchors)
+   with procedural art as fallback per key.
+4. Then phase 4 (vision / fog of war).
 
 ## 8. Roadmap (remaining phases, brief §14)
 

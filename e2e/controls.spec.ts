@@ -44,8 +44,8 @@ test('multi-touch: joystick + charged fire + ability at the same time', async ({
   const flags = await page.evaluate(() => ({ ...(window as TankyWindow).__tanky!.scene.touch.state }));
   expect(flags.fire).toBe(true);
   expect(flags.ability).toBe(true);
-  // charge for ~1.2 s (standard chargeTime 1.4 s) while moving
-  await page.waitForTimeout(1100);
+  // charge while moving; wait on simulation time (the GPU-less runner renders slowly, so wall time is meaningless)
+  await page.waitForFunction(() => (window as TankyWindow).__tanky!.scene.state.tanks[0].chargeT > 0.9, null, { timeout: 30_000 });
   const mid = await tank0(page);
   expect(mid.charging).toBe(true);
   expect(mid.chargeT).toBeGreaterThan(0.6);
@@ -55,14 +55,14 @@ test('multi-touch: joystick + charged fire + ability at the same time', async ({
   // release ability then fire (joystick still held)
   await touch(cdp, 'touchEnd', [{ ...joy, x: joy.x + 72 }, fire]);
   await touch(cdp, 'touchEnd', [{ ...joy, x: joy.x + 72 }]);
-  await page.waitForTimeout(80);
+  await page.waitForFunction(() => !(window as TankyWindow).__tanky!.scene.state.tanks[0].charging, null, { timeout: 10_000 });
   const after = await tank0(page);
   expect(after.charging).toBe(false);
   expect(after.cooldown).toBeGreaterThan(0);
   await page.waitForTimeout(250);
   await page.screenshot({ path: 'e2e/out/04-fired.png' });
   await touch(cdp, 'touchEnd', []);
-  await page.waitForTimeout(300);
+  await page.waitForTimeout(1500);
   const stopped = await page.evaluate(() => ({ ...(window as TankyWindow).__tanky!.scene.touch.state }));
   expect(Math.abs(stopped.moveX) + Math.abs(stopped.moveY)).toBeLessThan(0.05);
   expect(errors).toEqual([]);

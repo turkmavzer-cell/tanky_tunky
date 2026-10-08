@@ -318,4 +318,4 @@ function main(): void {
   document.body.dataset.ready = '1';
 }
 
-setTimeout(main, 300);
+main();

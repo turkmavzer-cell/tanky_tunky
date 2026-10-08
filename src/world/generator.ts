@@ -168,8 +168,8 @@ export function generateMap(opts: GenOptions): GameMap {
     } else if (rd < riverHalfWidth + 0.9) {
       g = Ground.Shallow;
       m.elev[i] = 0;
-    } else if (rd < riverHalfWidth + 1.8 && m.elev[i] === 0) g = Ground.Sand;
-    else if (m.elev[i] === 0 && mo < -0.45 + (0.5 - water) * 0.3) g = mo < -0.6 ? Ground.Deep : Ground.Shallow; // lakes
+    } else if (m.elev[i] === 0 && mo < -0.45 + (0.5 - water) * 0.3) g = mo < -0.6 ? Ground.Deep : Ground.Shallow; // lakes (before banks: no sand strips inside water)
+    else if (rd < riverHalfWidth + 1.8 && m.elev[i] === 0) g = Ground.Sand;
     else if (m.elev[i] === 0 && mo < -0.32 + (0.5 - water) * 0.3) g = Ground.Mud;
     else if (mo > 0.55) g = Ground.Dirt;
     if (distToBase(x, y) <= baseR + 1 && g !== Ground.Grass) g = Ground.Grass;

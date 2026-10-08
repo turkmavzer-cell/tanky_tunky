@@ -49,6 +49,9 @@ jobs:
       - name: E2E (Playwright, mobile landscape + touch)
         run: npm run e2e
 
+      - name: Performance gate (96x96, CPU 4x, p95 < 22 ms)
+        run: npm run e2e:perf
+
       - name: Upload E2E screenshots
         if: always()
         uses: actions/upload-artifact@v4

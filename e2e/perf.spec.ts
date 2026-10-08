@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { mkdirSync, writeFileSync } from 'node:fs';
 
-type TankyWindow = Window & { __tanky?: { scene: { state: { tick: number }; stats: { reset(): void; summary(): Record<string, number> } } } };
+type TankyWindow = Window & { __tanky?: { scene: { state: { tick: number }; worldView: { spriteCount: number }; stats: { reset(): void; summary(): Record<string, number> } } } };
 
 /**
  * Performance gate (brief §10.4): 96×96 map, CPU throttled 4x, bots fighting, player driving.
@@ -29,7 +29,10 @@ test('perf gate: 96x96 map at CPU 4x throttle', async ({ page }) => {
   await page.evaluate(() => (window as TankyWindow).__tanky!.scene.stats.reset());
   await page.waitForTimeout(10_000);
   clearInterval(driver);
-  const s = await page.evaluate(() => (window as TankyWindow).__tanky!.scene.stats.summary());
+  const s = await page.evaluate(() => {
+    const sc = (window as TankyWindow).__tanky!.scene;
+    return { ...sc.stats.summary(), sprites: sc.worldView.spriteCount } as Record<string, number>;
+  });
   await cdp.send('Emulation.setCPUThrottlingRate', { rate: 1 });
   mkdirSync('e2e/out', { recursive: true });
   writeFileSync('e2e/out/perf.json', JSON.stringify(s, null, 2));

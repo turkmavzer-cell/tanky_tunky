@@ -12,9 +12,10 @@
     "test": "vitest run",
     "bench:engines": "node bench/run-bench.mjs",
     "audio:check": "vite build -c tools/vite.audio.config.ts && node tools/audio-check.mjs",
-    "e2e": "playwright test",
+    "e2e": "playwright test --project=mobile-landscape",
     "apk:debug": "npm run build && npx cap sync android && cd android && ./gradlew assembleDebug",
-    "check": "npm run lint && npm run typecheck && npm test && npm run build && npm run e2e"
+    "check": "npm run lint && npm run typecheck && npm test && npm run build && npm run e2e && npm run e2e:perf",
+    "e2e:perf": "playwright test --project=perf --workers=1"
   },
   "devDependencies": {
     "@capacitor/cli": "^8.5.3",

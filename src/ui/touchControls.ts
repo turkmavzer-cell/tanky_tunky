@@ -183,7 +183,12 @@ export class TouchControls {
   }
 
   /** Visual feedback from the simulation: charge 0..1, flags for perfect window / overheat, ability cooldown 0..1. */
+  private lastFeedback = '';
+
   setFeedback(charge: number, perfect: boolean, overheat: number, abilityCooldown: number): void {
+    const key = `${Math.round(charge * 90)}|${perfect}|${Math.round(overheat * 60)}|${Math.round(abilityCooldown * 60)}`;
+    if (key === this.lastFeedback) return;
+    this.lastFeedback = key;
     const deg = Math.round(charge * 360);
     this.fireRing.style.background = overheat > 0 ? `conic-gradient(var(--danger) ${Math.round(overheat * 360)}deg, transparent 0)` : `conic-gradient(${perfect ? '#fff4b0' : 'var(--accent)'} ${deg}deg, transparent 0)`;
     this.fireBtn.classList.toggle('perfect', perfect);

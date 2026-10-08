@@ -409,25 +409,26 @@ interface GroundField {
   e2: Float32Array;
 }
 
+/** Scratch arrays reused for every ground type (only valid until the next groundField call). */
+const fieldScratch: GroundField = { t: new Float32Array(N), e1: new Float32Array(N), e2: new Float32Array(N) };
+
 function groundField(type: number): GroundField {
   const G = tileGeom();
   const s = 7919 * (type + 1);
   const A = new Fbm(4, 3, s);
   const Wu = new Fbm(2, 2, s + 1);
-  const Wv = new Fbm(2, 2, s + 2);
-  const F = new Fbm(16, 2, s + 3);
+  const F = new Fbm(32, 1, s + 3);
   const X1 = new Fbm(4, 2, s + 4);
   const X2 = new Fbm(8, 2, s + 5);
   const S = new Fbm(4, 2, s + 6, 4);
-  const t = new Float32Array(N);
-  const e1 = new Float32Array(N);
-  const e2 = new Float32Array(N);
+  const { t, e1, e2 } = fieldScratch;
   for (let i = 0; i < N; i++) {
     if (G.a[i] <= 0) continue;
     const u = G.u[i];
     const v = G.v[i];
+    // one warp field sampled twice (swapped axes) for both warp directions
     const wu = u + (Wu.at(u, v) - 0.5) * 0.5;
-    const wv = v + (Wv.at(u, v) - 0.5) * 0.5;
+    const wv = v + (Wu.at(v + 0.5, u + 0.25) - 0.5) * 0.5;
     const a = A.at(wu, wv);
     const f = F.at(u, v);
     let tt = 0.5 + (a - 0.5) * 2.6 + (f - 0.5) * 0.55;
@@ -643,6 +644,8 @@ interface GroundBuild {
   details: Detail[][];
 }
 
+const dcScratch = new Float32Array(N * 3);
+
 function buildGround(): GroundBuild {
   const G = tileGeom();
   const tiles: HTMLCanvasElement[][] = [];
@@ -652,7 +655,7 @@ function buildGround(): GroundBuild {
   for (let type = 0; type < 6; type++) {
     const f = groundField(type);
     const b = new Float32Array(N * 3);
-    const dc = new Float32Array(N * 3);
+    const dc = dcScratch;
     for (let i = 0; i < N; i++) {
       if (G.a[i] <= 0) continue;
       colourise(type, f.t[i], f.e1[i], f.e2[i], c);
@@ -759,6 +762,8 @@ function buildEdges(gb: GroundBuild): HTMLCanvasElement[][] {
     const row: HTMLCanvasElement[] = [];
     const wBase = EDGE_WIDTH[type];
     const width = (dir: number, along: number): number => wBase * (0.45 + 1.1 * EN.at(along, dir * 0.25 + 0.1));
+    const jit = fieldScratch.t;
+    for (let i = 0; i < N; i++) if (G.a[i] > 0) jit[i] = (J.at(G.u[i], G.v[i]) - 0.5) * 0.18;
     for (let dir = 0; dir < 4; dir++) {
       const [cv, g] = mk(W, H);
       const img = scratchImage(W, H);
@@ -769,7 +774,7 @@ function buildEdges(gb: GroundBuild): HTMLCanvasElement[][] {
         const v = G.v[i];
         if (dirDist(dir, u, v) > wBase * 1.6 + 0.1) continue;
         const w = width(dir, dirAlong(dir, u, v));
-        const x = dirDist(dir, u, v) + (J.at(u, v) - 0.5) * 0.18;
+        const x = dirDist(dir, u, v) + jit[i];
         const a = 1 - ss(w * 0.45, w, x);
         if (a <= 0.003) continue;
         const rim = ss(w * 0.5, w * 0.82, x) * (1 - ss(w * 0.85, w * 1.02, x));
@@ -842,9 +847,9 @@ function buildWaterFrames(): HTMLCanvasElement[][] {
           Math.sin(TAU * (-uu + 2 * vv) - ph) +
           0.7 * Math.sin(TAU * (3 * uu - 2 * vv) + 2 * ph) +
           WM[i];
-        const glint = ss(1.55, 2.0, w);
-        const crest = ss(0.8, 1.35, w) * 0.5;
-        const a = kind === 0 ? glint * 0.6 + crest * 0.14 : glint * 0.42 + crest * 0.1;
+        const glint = ss(1.85, 2.25, w);
+        const crest = ss(0.9, 1.5, w) * 0.5;
+        const a = kind === 0 ? glint * 0.42 + crest * 0.16 : glint * 0.3 + crest * 0.12;
         if (a <= 0.004) continue;
         const j = i * 4;
         d[j] = kind === 0 ? 236 : 150;
@@ -1040,7 +1045,7 @@ function buildRamps(): HTMLCanvasElement[] {
   const rh = H + LEVEL_PX;
   const cn = cliffNoise(900);
   const T = new Fbm(4, 2, 910);
-  const Fd = new Fbm(16, 2, 911);
+  const Fd = new Fbm(32, 1, 911);
   const cc = new Float32Array(3);
   const low = (p: Pt): Pt => [p[0], p[1] + LEVEL_PX];
   const SHADE = [1.0, 0.84, 1.02, 1.12];
