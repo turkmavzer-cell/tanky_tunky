@@ -1,0 +1,9 @@
+{
+  "$comment": "Fog of war / VisibilitySystem tuning (brief \u00a75). Distances in tiles.",
+  "hz": 15,
+  "forestConcealRange": 1.6,
+  "invisibleNoticeRange": 2,
+  "elevationBonusPerLevel": 1,
+  "memoryAlpha": 0.6,
+  "unexploredAlpha": 0.93
+}

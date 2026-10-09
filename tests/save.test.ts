@@ -24,3 +24,20 @@ describe('i18n', () => {
     for (const l of LANGS) expect(missingKeys(l)).toEqual([]);
   });
 });
+
+describe('save schema v2 (round 01)', () => {
+  it('migrates a v1 save: adds edgeHighlight, cooldownMul and records, keeps user values', async () => {
+    const { migrate, recordMatch } = await import('../src/core/save');
+    const v1 = { schemaVersion: 1, credits: 5, settings: { lang: 'en', aimAssist: false } };
+    const m = migrate(v1);
+    expect(m.schemaVersion).toBe(2);
+    expect(m.settings.edgeHighlight).toBe('normal');
+    expect(m.settings.cooldownMul).toBe(1);
+    expect(m.settings.aimAssist).toBe(false);
+    expect(m.records).toEqual({ bestKills: 0, bestKD: 0, matches: 0 });
+    const r1 = recordMatch(m, 4, 2);
+    expect(r1.records).toEqual({ bestKills: 4, bestKD: 2, matches: 1 });
+    const r2 = recordMatch(r1, 3, 0);
+    expect(r2.records).toEqual({ bestKills: 4, bestKD: 3, matches: 2 });
+  });
+});

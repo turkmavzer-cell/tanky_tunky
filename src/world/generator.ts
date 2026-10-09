@@ -331,7 +331,9 @@ export function generateMap(opts: GenOptions): GameMap {
   // 8. Connectivity repair: carve until every sizeable walkable component joins team 0's base.
   repairConnectivity(b);
 
-  // Sanity: keep the map edges free of features so nothing is unreachable along borders.
+  // 9. Respawn points: a symmetric lattice of open, connected, non-ramp tiles + the base spawns.
+  placeSpawnPoints(b);
+
   m.version = 1;
   return m;
 }
@@ -532,6 +534,48 @@ function carvePath(b: Builder, path: number[]): void {
       changed = true;
     }
     if (!changed) return;
+  }
+}
+
+function placeSpawnPoints(b: Builder): void {
+  const m = b.m;
+  const N = b.n;
+  const reach = floodFill(m, m.bases[0].x, m.bases[0].y);
+  const ok = (x: number, y: number): boolean => {
+    if (x < 1 || y < 1 || x >= N - 1 || y >= N - 1) return false;
+    const i = y * N + x;
+    if (!reach[i] || (m.flags[i] & FLAG_RAMP) || m.ground[i] === Ground.Shallow || m.feature[i] !== Feature.None) return false;
+    let open = 0;
+    for (const [dx, dy] of ORTHO) if (reach[(y + dy) * N + x + dx]) open++;
+    return open >= 3;
+  };
+  const step = N >= 64 ? 7 : 6;
+  const seen = new Set<number>();
+  const add = (x: number, y: number): void => {
+    const i = y * N + x;
+    if (seen.has(i)) return;
+    seen.add(i);
+    m.spawnPoints.push({ x, y });
+  };
+  for (const bs of m.bases) for (const sp of bs.spawns) add(sp.x, sp.y);
+  for (let gy = Math.floor(step / 2); gy < N; gy += step) {
+    for (let gx = Math.floor(step / 2); gx < N; gx += step) {
+      if (!b.canonical(gx, gy)) continue;
+      // search a small neighbourhood for a valid tile, mirrored for fairness
+      let found = false;
+      for (let r = 0; r <= 2 && !found; r++)
+        for (let dy = -r; dy <= r && !found; dy++)
+          for (let dx = -r; dx <= r && !found; dx++) {
+            const x = gx + dx;
+            const y = gy + dy;
+            const [mx, my] = b.mirror(x, y);
+            if (ok(x, y) && ok(mx, my)) {
+              add(x, y);
+              add(mx, my);
+              found = true;
+            }
+          }
+    }
   }
 }
 

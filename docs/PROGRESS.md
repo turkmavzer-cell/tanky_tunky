@@ -39,6 +39,25 @@ Works (verified headless):
 - Gates: lint ✅ typecheck ✅ 65 unit ✅ 6 E2E ✅ perf ✅.
 Not done / to verify on device: abilities (owner will define them — `docs/TANKS.md`), real AI (phase 7), fog of war (phase 4), real-device FPS, haptics and audio feel, no-INTERNET-permission WebView behaviour.
 
+## Round 01 — core loop fixes (branch `fix/round-01-core-loop`, 2026-10-08)
+Screenshots (inspected): `docs/screens/round-01/` — lock-on, heights normal/strong, cliff bump, enemy attack, all 5 abilities, minimap, results.
+
+| Job | Status | Evidence |
+|---|---|---|
+| 0. VisibilitySystem (prerequisite, D-015) | ✅ | `tests/visibility.test.ts` (LOS, symmetry, elevation, forest, invisibility, 10 tanks/96² < 2 ms); fog overlay in-game |
+| 1. Auto turret targeting | ✅ | `tests/targeting.test.ts` (visible-only, Hide excluded, 15 % hysteresis, lock kept until out of sight, settle to hull, out-of-range turn, lead, turret speed per class); reticle `01-target-lock.png`; setting "Otomatik hedefleme" |
+| 2. Heights & impassable areas | ✅ | single `isPassable` (`src/world/passability.ts`); property test on 26 maps (>50 000 edges) + `maps/debug_heights.json` cases; elevation tints, lips, base shadows, ramps without rock faces, strong hazard stripes, bump flash + haptic + click; `02/03/04-*.png` |
+| 3. Enemy AI | ✅ | `src/systems/ai` (A* + FSM patrol/suspicion/chase/attack/retreat, hearing, pain, fog-fair); `tests/ai.test.ts` (attack, hears shots, forest-hidden player not tracked, invisible only within 2 tiles, retreat, paths legal, 40-match fuzz); `05-enemy-attack.png` |
+| 4. 60 s match, respawn, scoreboard | ✅ | `tests/match.test.ts` + `tests/headless-match.test.ts` (countdown freeze, 60 s stop, 10 final ticks, respawn delay/protection/reset, spawn never in enemy sight, K = D, same seed = same scoreboard, ranking); HUD timer/K/D; results `11-results.png`; best K/D saved (save schema v2) |
+| 5. Abilities | ✅ | `src/data/abilities.json` + `src/sim/abilities/*`; `tests/abilities.test.ts` (cooldown after effect, dev multiplier, modifiers, Hide rules, Rumble falloff/walls/no water push, Swift 2x without tunnelling, Barrage 5 warned shells + seeded scatter + slow + no normal fire, Mine limit 3 / team rule / credited kill); `06–10-*.png`; AI uses them per class |
+| Balance sim | 🟡 reported, not tuned | `docs/BALANCE_REPORT.md` (300 matches; Heavy/Standard ~68 %, Artillery 27 %) — tuning left to the owner by request |
+
+Gates: lint ✅ typecheck ✅ unit 115 ✅ E2E 16 ✅ perf ✅ (see PERF.md).
+
+Assumptions (details in DECISIONS D-015…D-025): forest is see-through but conceals tanks inside; ramps are the only way up (`freeStep 0`); knockback can't push into water/cliffs; artillery auto-aim lands on the lead point; Quick Match is 3v3 on 40×40.
+
+To try on the phone: auto-aim feel + reticle readability; whether cliffs/ramps are now obvious (try Settings → Engel vurgusu → Güçlü); bump flash/haptic; each ability's timing (Settings → Geliştirici → Bekleme çarpanı); 60 s match pacing and the results screen; Trapper minimap.
+
 ## Open questions for the owner
 - Abilities per class: owner will fill `docs/TANKS.md`.
 - Git flow: the session can only push `claude/tanky-tunky-setup-dw06hp`. Should this branch be merged into a new `main` via PR (and later phases go through PRs)? See D-001.

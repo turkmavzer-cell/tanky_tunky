@@ -1,0 +1,68 @@
+{
+  "$comment": "Class abilities (round-01 job 5). Cooldown starts AFTER the effect ends. Upgrades (ability trees, next round) are modifiers applied to these parameters, see src/sim/abilities/params.ts.",
+  "hide": {
+    "name": "Saklan",
+    "class": "scout",
+    "duration": 5,
+    "cooldown": 5,
+    "noticeRange": 2,
+    "shimmerOnHit": 0.5
+  },
+  "rumble": {
+    "name": "Gümbürtü",
+    "class": "heavy",
+    "duration": 0,
+    "cooldown": 10,
+    "radius": 2.4,
+    "damage": 850,
+    "falloff": [
+      [
+        0,
+        1
+      ],
+      [
+        1,
+        0.35
+      ]
+    ],
+    "knockback": 7,
+    "terrainDamage": 40
+  },
+  "swift": {
+    "name": "Swift",
+    "class": "standard",
+    "duration": 5,
+    "cooldown": 8,
+    "speedMul": 2,
+    "fireRateMul": 2,
+    "chargeTimeMul": 0.5
+  },
+  "barrage": {
+    "name": "Yaylım Ateşi",
+    "class": "artillery",
+    "duration": 1,
+    "cooldown": 10,
+    "shots": 6,
+    "interval": 0.18,
+    "scatter": 1.3,
+    "damage": 450,
+    "radius": 1.1,
+    "moveSlow": 0.6,
+    "fallbackDistance": 6,
+    "flightTime": 1.5
+  },
+  "mine": {
+    "name": "Mayın",
+    "class": "trapper",
+    "duration": 0,
+    "cooldown": 2,
+    "maxActive": 3,
+    "placeTime": 0.3,
+    "armTime": 0.4,
+    "damage": 1500,
+    "radius": 1.2,
+    "knockback": 6,
+    "triggerRadius": 0.45,
+    "glimmerRange": 1.5
+  }
+}

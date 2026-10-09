@@ -73,10 +73,18 @@
     "splashFalloff": 0.5,
     "uphillMissChance": 0.25,
     "selfDamage": false,
-    "terrainDamageMul": 1.0
+    "terrainDamageMul": 0.04,
+    "artillerySplash": 1.0,
+    "$artillerySplash": "Arcing shells never score a 'direct' hit; their blast deals artillerySplash x damage at the centre, falling to 0 at the edge.",
+    "$terrainDamageMul": "Shell damage x this hits destructible terrain. 0.04 = 1/25 keeps wall/crate durability unchanged after the x25 hp/damage scale (D-027)."
   },
   "tankCollision": {
     "push": 0.5
   },
-  "respawnTime": 3
+  "respawnTime": 3,
+  "targeting": {
+    "$comment": "Auto turret targeting (round-01 job 1). switchRatio: a new candidate must be closer than switchRatio x current target distance to take over (0.85 = 15 % closer).",
+    "switchRatio": 0.85,
+    "leadIterations": 2
+  }
 }

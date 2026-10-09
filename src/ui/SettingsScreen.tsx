@@ -49,6 +49,20 @@ export function SettingsScreen({ save, onChange, onBack }: { save: SaveData; onC
         <input type="checkbox" checked={s.haptics} onChange={(e) => set('haptics', e.target.checked)} />
         <label>{t('settings.reduceShake')}</label>
         <input type="checkbox" checked={s.reduceShake} onChange={(e) => set('reduceShake', e.target.checked)} />
+        <label>{t('settings.autoAim')}</label>
+        <input type="checkbox" data-testid="autoaim" checked={s.aimAssist} onChange={(e) => set('aimAssist', e.target.checked)} />
+        <label>{t('settings.edgeHighlight')}</label>
+        <div className="seg">
+          {(['normal', 'strong'] as const).map((m) => (
+            <button key={m} className={m === s.edgeHighlight ? 'on' : ''} data-testid={`edge-${m}`} onClick={() => set('edgeHighlight', m)}>
+              {t(`settings.edgeHighlight.${m}`)}
+            </button>
+          ))}
+        </div>
+        <label className="dev">
+          {t('settings.dev')} · {t('settings.cooldownMul')} ({s.cooldownMul.toFixed(1)}x)
+        </label>
+        <input type="range" min={0.1} max={3} step={0.1} data-testid="cooldown-mul" value={s.cooldownMul} onChange={(e) => set('cooldownMul', Number(e.target.value))} />
       </div>
       <button className="btn" data-testid="back" onClick={onBack}>
         {t('menu.back')}

@@ -1,10 +1,12 @@
 import { expect, test } from '@playwright/test';
 
 type TankyWindow = Window & {
-  __tanky?: { scene: { state: { tick: number; tanks: { x: number; y: number }[] }; stats: { summary(): { fps: number } } } };
+  __tanky?: { scene: { state: { tick: number; match: { phase: string }; tanks: { x: number; y: number }[] }; stats: { summary(): { fps: number } } } };
 };
 
 test('menu → match → move with keyboard → pause/resume', async ({ page }) => {
+  // the inner waits are sized for GPU-less CI runners; the default 60 s budget is shorter than their sum
+  test.setTimeout(150_000);
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));
   await page.goto('/');
@@ -12,10 +14,16 @@ test('menu → match → move with keyboard → pause/resume', async ({ page }) 
   await page.screenshot({ path: 'e2e/out/01-menu.png' });
   await page.getByTestId('play').click();
   await page.getByTestId('start').click();
-  await page.waitForFunction(() => ((window as TankyWindow).__tanky?.scene.state.tick ?? 0) > 30);
+  // 3-2-1 countdown is shown (scene init can take several seconds on GPU-less CI runners), then play starts
+  await page.waitForFunction(() => (window as TankyWindow).__tanky?.scene.state !== undefined, null, { timeout: 60_000 });
+  const phase = await page.evaluate(() => (window as TankyWindow).__tanky!.scene.state.match.phase);
+  if (phase === 'countdown') await expect(page.getByTestId('countdown')).toBeVisible({ timeout: 15_000 });
+  await page.waitForFunction(() => (window as TankyWindow).__tanky?.scene.state.match.phase === 'playing', null, { timeout: 60_000 });
   const before = await page.evaluate(() => ({ ...(window as TankyWindow).__tanky!.scene.state.tanks[0] }));
   await page.keyboard.down('KeyD');
-  await page.waitForTimeout(800);
+  // wait on simulation progress, not wall time (GPU-less runners render slowly)
+  const t0 = await page.evaluate(() => (window as TankyWindow).__tanky!.scene.state.tick);
+  await page.waitForFunction((t) => (window as TankyWindow).__tanky!.scene.state.tick > t + 50, t0, { timeout: 30_000 });
   await page.keyboard.up('KeyD');
   const after = await page.evaluate(() => ({ ...(window as TankyWindow).__tanky!.scene.state.tanks[0] }));
   // screen-right = world (+x, -y)

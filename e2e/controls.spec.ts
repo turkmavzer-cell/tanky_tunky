@@ -1,7 +1,8 @@
+import { startMatch } from './helpers';
 import { expect, test, type CDPSession, type Page } from '@playwright/test';
 
-type Tank = { x: number; y: number; charging: boolean; chargeT: number; cooldown: number; alive: boolean; hp: number };
-type TankyWindow = Window & { __tanky?: { scene: { state: { tick: number; tanks: Tank[]; shells: unknown[] }; touch: { state: { fire: boolean; ability: boolean; moveX: number; moveY: number } } } } };
+type Tank = { x: number; y: number; charging: boolean; chargeT: number; cooldown: number; overheat: number; alive: boolean; hp: number; ability: { active: number } };
+type TankyWindow = Window & { __tanky?: { scene: { state: { tick: number; nextId: number; tanks: Tank[]; shells: unknown[] }; touch: { state: { fire: boolean; ability: boolean; moveX: number; moveY: number } } } } };
 
 interface Pt {
   x: number;
@@ -21,10 +22,7 @@ const tank0 = (page: Page): Promise<Tank> => page.evaluate(() => ({ ...(window a
 test('multi-touch: joystick + charged fire + ability at the same time', async ({ page }) => {
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));
-  await page.goto('/?silent');
-  await page.getByTestId('play').click();
-  await page.getByTestId('start').click();
-  await page.waitForFunction(() => ((window as TankyWindow).__tanky?.scene.state.tick ?? 0) > 30);
+  await startMatch(page, 'silent');
   const cdp = await page.context().newCDPSession(page);
   const vp = page.viewportSize()!;
   const fireBox = (await page.getByTestId('fire').boundingBox())!;
@@ -45,22 +43,28 @@ test('multi-touch: joystick + charged fire + ability at the same time', async ({
   expect(flags.fire).toBe(true);
   expect(flags.ability).toBe(true);
   // charge while moving; wait on simulation time (the GPU-less runner renders slowly, so wall time is meaningless)
-  await page.waitForFunction(() => (window as TankyWindow).__tanky!.scene.state.tanks[0].chargeT > 0.9, null, { timeout: 30_000 });
+  // (the ability is Swift → charge time halves; release before the overheat window, screenshots take sim time)
+  await page.waitForFunction(() => (window as TankyWindow).__tanky!.scene.state.tanks[0].chargeT > 0.45, null, { timeout: 30_000, polling: 'raf' });
   const mid = await tank0(page);
-  expect(mid.charging).toBe(true);
-  expect(mid.chargeT).toBeGreaterThan(0.6);
-  expect(mid.x - before.x).toBeGreaterThan(0.4);
-  expect(before.y - mid.y).toBeGreaterThan(0.4);
-  await page.screenshot({ path: 'e2e/out/03-charging.png' });
+  const idBefore = await page.evaluate(() => (window as TankyWindow).__tanky!.scene.state.nextId);
   // release ability then fire (joystick still held)
   await touch(cdp, 'touchEnd', [{ ...joy, x: joy.x + 72 }, fire]);
   await touch(cdp, 'touchEnd', [{ ...joy, x: joy.x + 72 }]);
+  expect(mid.charging).toBe(true);
+  expect(mid.chargeT).toBeGreaterThan(0.45);
+  await page.screenshot({ path: 'e2e/out/03-charging.png' });
   await page.waitForFunction(() => !(window as TankyWindow).__tanky!.scene.state.tanks[0].charging, null, { timeout: 10_000 });
   const after = await tank0(page);
   expect(after.charging).toBe(false);
-  expect(after.cooldown).toBeGreaterThan(0);
-  await page.waitForTimeout(250);
+  expect(after.overheat).toBe(0);
+  // a shell was created on release (sim ids are allocated per shell/mine)
+  expect(await page.evaluate(() => (window as TankyWindow).__tanky!.scene.state.nextId)).toBeGreaterThan(idBefore);
+  // the ability (Swift for the default class) was triggered by the third finger
+  expect(mid.ability.active).toBeGreaterThan(0);
   await page.screenshot({ path: 'e2e/out/04-fired.png' });
+  const moved = await tank0(page);
+  expect(moved.x - before.x).toBeGreaterThan(0.4);
+  expect(before.y - moved.y).toBeGreaterThan(0.4);
   await touch(cdp, 'touchEnd', []);
   await page.waitForTimeout(1500);
   const stopped = await page.evaluate(() => ({ ...(window as TankyWindow).__tanky!.scene.touch.state }));
