@@ -156,6 +156,13 @@ export function GameView({ settings, playerClass, seed, record, onQuit, onAgain,
                 {hud.hp} / {hud.maxHp}
               </span>
             </div>
+            <div
+              className={'ab-chip ' + (hud.abilityActive > 0 ? 'active' : hud.abilityCooldown > 0 ? 'cooling' : 'ready')}
+              data-testid="ability-chip"
+            >
+              {hud.abilityName}{' '}
+              <b>{hud.abilityActive > 0 ? `${Math.ceil(hud.abilityActive)} ${t('hud.sec')}` : hud.abilityCooldown > 0 ? `${Math.ceil(hud.abilityCooldown)} ${t('hud.sec')}` : t('hud.ready')}</b>
+            </div>
             <div className="kd" data-testid="kd">
               {t('hud.kd')} <b>{hud.kills}</b>/<b>{hud.deaths}</b>
             </div>

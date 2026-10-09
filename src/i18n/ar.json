@@ -62,5 +62,7 @@
   "results.newRecord": "رقم قياسي جديد!",
   "results.record": "الرقم القياسي: {k} قتلى · ق/م {kd}",
   "game.go": "انطلق!",
-  "hud.protected": "محمي"
+  "hud.protected": "محمي",
+  "hud.ready": "جاهز",
+  "hud.sec": "ث"
 }

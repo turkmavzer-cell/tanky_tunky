@@ -124,6 +124,9 @@ export class GameScene {
   private mouseMovedAt = -1e9;
   private lastMouse = { x: 0, y: 0 };
   private localInput: PlayerInput = { ...EMPTY_INPUT };
+  private abPrevActive = 0;
+  private abPrevCooldown = 0;
+  private abActiveMax = 1;
   private readonly inputs: PlayerInput[] = [];
   touch: TouchControls | null = null;
   minimap: Minimap | null = null;
@@ -518,7 +521,17 @@ export class GameScene {
     this.touch?.update(dt);
     const ab = me.ability;
     const cdMax = Number(ABILITIES[ab.id].cooldown) * Math.max(0.1, s.rules.cooldownMul);
-    this.touch?.setFeedback(me.charging ? chargeLevel(me) : 0, me.fullT > 0 && me.fullT <= COMBAT.charge.perfectWindow, me.overheat / COMBAT.charge.overheatLock, ab.active > 0 ? 0 : cdMax > 0 ? ab.cooldown / cdMax : 0, ab.active > 0);
+    this.touch?.setFeedback(me.charging ? chargeLevel(me) : 0, me.fullT > 0 && me.fullT <= COMBAT.charge.perfectWindow, me.overheat / COMBAT.charge.overheatLock);
+    // the effect length is whatever the sim set when it started (includes upgrades)
+    if (ab.active > 0 && this.abPrevActive <= 0) this.abActiveMax = ab.active;
+    this.touch?.setAbility(ab.active, this.abActiveMax, ab.cooldown, cdMax);
+    if (me.alive && ab.active <= 0 && ab.cooldown <= 0 && this.abPrevCooldown > 0) {
+      // ability ready again: click + light buzz (the button flashes in setAbility)
+      this.play('ui_click');
+      haptic('light');
+    }
+    this.abPrevActive = ab.active;
+    this.abPrevCooldown = ab.cooldown;
     this.fx.update(dt);
     this.overlays.end(dt);
     this.worldView.updateOverlays(dt);

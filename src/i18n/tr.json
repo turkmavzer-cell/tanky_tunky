@@ -62,5 +62,7 @@
   "results.newRecord": "Yeni rekor!",
   "results.record": "Rekor: {k} öldürme · Ö/Ö {kd}",
   "game.go": "BAŞLA!",
-  "hud.protected": "Korumalı"
+  "hud.protected": "Korumalı",
+  "hud.ready": "HAZIR",
+  "hud.sec": "sn"
 }
