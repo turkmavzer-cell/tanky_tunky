@@ -11,6 +11,7 @@
     "lint": "eslint .",
     "test": "vitest run",
     "bench:engines": "node bench/run-bench.mjs",
+    "log": "node tools/changelog.mjs",
     "audio:check": "vite build -c tools/vite.audio.config.ts && node tools/audio-check.mjs",
     "e2e": "playwright test --project=mobile-landscape",
     "apk:debug": "npm run build && npx cap sync android && cd android && ./gradlew assembleDebug",

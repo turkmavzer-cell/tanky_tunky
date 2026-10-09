@@ -7,6 +7,7 @@ Offline, landscape-only Android isometric tank game with fog of war and asymmetr
 - Decision log: `docs/DECISIONS.md` · Progress/measurements: `docs/PROGRESS.md` · Perf: `docs/PERF.md`
 - Engine choice + benchmark: `docs/ENGINE_DECISION.md` · Release/signing: `docs/RELEASE.md`
 - Device feel checklist: `docs/PLAYTEST_CHECKLIST.md`
+- **Change/conversation log (read at session start): `docs/CHANGELOG.md`**
 
 User communication: **Turkish**. Code, comments, commits: **English** (Conventional Commits).
 In-game text via i18n: TR (default), EN, AR (RTL).
@@ -68,6 +69,15 @@ android/     Capacitor project (committed): sensorLandscape, immersive, keep-scr
 - Gameplay numbers live in `src/data/*.json`.
 - "Done" requires evidence: lint + typecheck + unit + E2E + screenshots inspected + `docs/PROGRESS.md` updated.
   Never report something as working without running it.
+
+## 4b. Changelog rule (mandatory)
+
+- Read `docs/CHANGELOG.md` at the start of every session (it holds the owner's requests, decisions, reverts, open questions).
+- In the **same commit** as every change, feature, fix, revert, decision or new owner request, add an entry:
+  `npm run log -- <yenilik|degisiklik|duzeltme|geri-alma|karar|konusma|acik-soru> "Short title" "Details"`.
+- Log what was reverted or corrected and why. Log owner requests/decisions made in chat, even when no code changed.
+- Never log something as working unless it was actually run. Mark unverified facts as such.
+- `.github/workflows/changelog-check.yml` warns (non-blocking) when code changes without a changelog entry.
 
 ## 5. Git workflow
 
