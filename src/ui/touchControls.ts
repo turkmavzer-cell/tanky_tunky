@@ -30,7 +30,9 @@ export interface TouchOptions {
 
 const JOY_RADIUS = 64;
 const DEAD_ZONE = 0.14;
-const AIM_DRAG_MIN = 22;
+/** Drag distance (px) from the FIRE button centre before manual aim takes over; large enough that
+ *  a thumb drifting while it holds the button does not steal the auto-aim. */
+export const AIM_DRAG_MIN = 60;
 
 export class TouchControls {
   readonly root: HTMLDivElement;
@@ -168,6 +170,8 @@ export class TouchControls {
     } else if (e.pointerId === this.fireId) {
       this.fireId = -1;
       this.state.fire = false;
+      // manual aim lasts only while the finger is down; afterwards auto-aim takes over again
+      this.state.aimAngle = null;
       this.fireBtn.classList.remove('pressed', 'aiming');
     } else if (e.pointerId === this.abilityId) {
       this.abilityId = -1;
