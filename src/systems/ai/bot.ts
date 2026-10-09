@@ -42,6 +42,9 @@ interface Known {
   t: number;
 }
 
+/** Sim tick of the last A* search by any bot of a match (deterministic: bots run in tank order). */
+const lastSearch = new WeakMap<SimState, number>();
+
 export class AiBot {
   state: AiState = 'patrol';
   private readonly rng: Rng;
@@ -391,11 +394,18 @@ export class AiBot {
     if (dhypot(me.x - this.lastPos.x, me.y - this.lastPos.y) < 0.01) this.stuckT += 1 / 60;
     else this.stuckT = 0;
     this.lastPos = { x: me.x, y: me.y };
-    if (gi !== this.pathGoal || this.repath <= 0 || this.stuckT > aiJson.stuckTime) {
+    // a moving goal (chasing a tank) only forces a new A* search once it drifted away from the
+    // current path's end; far goals are refreshed less often (full visibility: long chases)
+    const pg = this.pathGoal;
+    const drifted = pg < 0 || dhypot((pg % W) - goal.x, Math.floor(pg / W) - goal.y) > 1.5;
+    const wants = drifted || this.repath <= 0 || this.stuckT > aiJson.stuckTime;
+    // spread A* searches over ticks: one per tick, except for a bot that has no path at all
+    if (wants && (this.path.length === 0 || lastSearch.get(s) !== s.tick)) {
+      lastSearch.set(s, s.tick);
       const p = findPath(s.map, Math.floor(me.x), Math.floor(me.y), goal.x, goal.y);
       this.path = p ?? [];
       this.pathGoal = p ? gi : -1;
-      this.repath = aiJson.repathInterval + this.rng.range(0, 0.3);
+      this.repath = aiJson.repathInterval * (1 + dhypot(goal.x - me.x, goal.y - me.y) / 12) + this.rng.range(0, 0.3);
       if (this.stuckT > aiJson.stuckTime) this.stuckT = 0;
     }
     while (this.path.length && dhypot(this.path[0].x + 0.5 - me.x, this.path[0].y + 0.5 - me.y) < 0.45) this.path.shift();

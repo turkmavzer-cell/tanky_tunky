@@ -48,10 +48,11 @@ export function App() {
           <ClassSelect
             initial={cls}
             difficulty={save.settings.difficulty}
+            theme={save.settings.mapTheme}
             onBack={() => setScreen('menu')}
-            onStart={(c, d) => {
+            onStart={(c, d, m) => {
               setCls(c);
-              if (d !== save.settings.difficulty) updateSave({ ...save, settings: { ...save.settings, difficulty: d } });
+              if (d !== save.settings.difficulty || m !== save.settings.mapTheme) updateSave({ ...save, settings: { ...save.settings, difficulty: d, mapTheme: m } });
               setSeed(newSeed());
               setScreen('game');
             }}

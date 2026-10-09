@@ -20,7 +20,7 @@ import { Fx } from '../render/fx';
 import { FogLayer } from '../render/fogLayer';
 import { Overlays } from '../render/overlays';
 import { LEVEL_PX } from '../render/terrainArt';
-import { generateMap, type MapSize } from '../world/generator';
+import type { MapSize } from '../world/generator';
 import { loadAsciiMap, type AsciiMap } from '../world/mapLoader';
 import { Ground } from '../world/terrain';
 import { screenAngleToWorld, screenDirToWorld, screenToWorld, worldAngleToScreen, worldToScreenX, worldToScreenY } from '../world/iso';
@@ -28,6 +28,8 @@ import type { Quality } from '../core/save';
 import type { TouchControls } from '../ui/touchControls';
 import { Minimap } from '../ui/minimap';
 import type { AiLevel } from '../systems/ai/bot';
+import { generateThemed } from '../world/themes';
+import type { MapTheme } from '../world/map';
 import { createMatch, defaultTeams, scoreboard, stepMatch, type MatchHandle, type ScoreRow } from '../game/matchSetup';
 import { createAudioSystem, createSilentAudio, type AudioSystem, type EngineHandle, type SfxName } from '../audio';
 import debugHeights from '../../maps/debug_heights.json';
@@ -40,6 +42,8 @@ export interface GameSceneOptions {
   autoAim: boolean;
   /** Obstacle highlight (settings): normal | strong. */
   edgeHighlight: 'normal' | 'strong';
+  /** Map theme (round 03): desert ruins, modern city or the original forest/river map. */
+  mapTheme?: MapTheme;
   /** Bot difficulty for all bots (allies and enemies). */
   aiLevel?: AiLevel;
   /** Dev: ability cooldown multiplier 0.1x–3x. */
@@ -161,7 +165,8 @@ export class GameScene {
     this.audio.setVolumes(this.opts.volume);
 
     const seed = this.opts.seed ?? ((Date.now() / 1000) | 0);
-    const map = this.opts.mapName === 'debug_heights' ? loadAsciiMap(debugHeights as AsciiMap, seed) : generateMap({ seed, size: this.opts.mapSize ?? (MATCH as { mapSize?: MapSize }).mapSize ?? 40 });
+    const size = this.opts.mapSize ?? (MATCH as { mapSize?: MapSize }).mapSize ?? 40;
+    const map = this.opts.mapName === 'debug_heights' ? loadAsciiMap(debugHeights as AsciiMap, seed) : generateThemed(this.opts.mapTheme ?? 'desert', seed, size);
     this.match = createMatch({
       seed,
       map,

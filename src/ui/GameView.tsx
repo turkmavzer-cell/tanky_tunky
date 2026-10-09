@@ -28,6 +28,7 @@ type DebugParams = Partial<{
   duration: number;
   edgeHighlight: 'normal' | 'strong';
   aiLevel: 'easy' | 'normal' | 'hard' | 'extreme';
+  mapTheme: 'desert' | 'city' | 'forest';
   debugView: { x: number; y: number; zoom: number };
 }>;
 
@@ -47,6 +48,8 @@ function debugParams(): DebugParams {
   if (q.has('endless')) out.endless = true;
   if (q.has('nofog')) out.noFog = true;
   if (q.has('dur')) out.duration = Number(q.get('dur'));
+  const theme = q.get('theme');
+  if (theme === 'desert' || theme === 'city' || theme === 'forest') out.mapTheme = theme;
   const diff = q.get('diff');
   if (diff === 'easy' || diff === 'normal' || diff === 'hard' || diff === 'extreme') out.aiLevel = diff;
   if (q.get('edges') === 'strong') out.edgeHighlight = 'strong';
@@ -88,6 +91,7 @@ export function GameView({ settings, playerClass, seed, record, onQuit, onAgain,
       autoAim: settings.aimAssist,
       edgeHighlight: settings.edgeHighlight,
       aiLevel: settings.difficulty,
+      mapTheme: settings.mapTheme,
       cooldownMul: settings.cooldownMul,
       volume: { master: settings.sound, sfx: 1, music: settings.music },
       playerClass,
@@ -135,7 +139,7 @@ export function GameView({ settings, playerClass, seed, record, onQuit, onAgain,
       sceneRef.current = null;
       delete window.__tanky;
     };
-  }, [settings.quality, settings.fpsCap, settings.reduceShake, settings.aimAssist, settings.edgeHighlight, settings.cooldownMul, settings.difficulty, settings.sound, settings.music, settings.leftHanded, settings.joystickSensitivity, playerClass, seed]);
+  }, [settings.quality, settings.fpsCap, settings.reduceShake, settings.aimAssist, settings.edgeHighlight, settings.cooldownMul, settings.difficulty, settings.mapTheme, settings.sound, settings.music, settings.leftHanded, settings.joystickSensitivity, playerClass, seed]);
 
   const togglePause = (p: boolean): void => {
     sceneRef.current?.setPaused(p);

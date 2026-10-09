@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { ABILITIES, COMBAT, TANKS, TANK_CLASSES, evalCurve, type TankClassId } from '../sim/config';
 import { TEAM_PALETTES, drawTankSlices } from '../render/tankArt';
-import type { Difficulty } from '../core/save';
+import type { Difficulty, MapThemeId } from '../core/save';
 import { t } from '../i18n';
 
 const DIFFICULTIES: Difficulty[] = ['easy', 'normal', 'hard', 'extreme'];
+const THEMES: MapThemeId[] = ['desert', 'city', 'forest'];
 
 /** Rounded number for the cards (no trailing ",0"). */
 function fmt(n: number): string {
@@ -103,16 +104,19 @@ function Card({ cls, on, onPick }: { cls: TankClassId; on: boolean; onPick: () =
 export function ClassSelect({
   initial,
   difficulty,
+  theme,
   onStart,
   onBack,
 }: {
   initial: TankClassId;
   difficulty: Difficulty;
-  onStart: (c: TankClassId, d: Difficulty) => void;
+  theme: MapThemeId;
+  onStart: (c: TankClassId, d: Difficulty, m: MapThemeId) => void;
   onBack: () => void;
 }) {
   const [sel, setSel] = useState<TankClassId>(initial);
   const [diff, setDiff] = useState<Difficulty>(difficulty);
+  const [map, setMap] = useState<MapThemeId>(theme);
   const strip = useRef<HTMLDivElement>(null);
   const settling = useRef(false);
 
@@ -168,6 +172,13 @@ export function ClassSelect({
         <button className="btn" onClick={onBack}>
           {t('menu.back')}
         </button>
+        <div className="seg" role="radiogroup" data-testid="map-theme">
+          {THEMES.map((m) => (
+            <button key={m} role="radio" aria-checked={m === map} className={m === map ? 'on' : ''} data-testid={`map-${m}`} onClick={() => setMap(m)}>
+              {t(`map.${m}`)}
+            </button>
+          ))}
+        </div>
         <div className="seg" role="radiogroup" data-testid="difficulty">
           {DIFFICULTIES.map((d) => (
             <button key={d} role="radio" aria-checked={d === diff} className={d === diff ? 'on' : ''} data-testid={`diff-${d}`} onClick={() => setDiff(d)}>
@@ -175,7 +186,7 @@ export function ClassSelect({
             </button>
           ))}
         </div>
-        <button className="btn btn-primary" data-testid="start" onClick={() => onStart(sel, diff)}>
+        <button className="btn btn-primary" data-testid="start" onClick={() => onStart(sel, diff, map)}>
           {t('menu.start')}
         </button>
       </div>

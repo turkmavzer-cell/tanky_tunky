@@ -89,5 +89,8 @@
   "diff.easy": "Easy",
   "diff.normal": "Normal",
   "diff.hard": "Hard",
-  "diff.extreme": "Extreme"
+  "diff.extreme": "Extreme",
+  "map.desert": "Desert",
+  "map.city": "City",
+  "map.forest": "Forest"
 }

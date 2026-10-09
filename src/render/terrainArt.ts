@@ -37,8 +37,8 @@ export interface ArtSprite {
   anchorY: number;
 }
 
-export type FeatureArtKey = 'forest' | 'rock' | 'wall' | 'crate' | 'ruins' | 'gate' | 'bridge' | 'torch';
-export type DamagedArtKey = 'wall' | 'crate' | 'gate';
+export type FeatureArtKey = 'forest' | 'rock' | 'wall' | 'crate' | 'ruins' | 'gate' | 'bridge' | 'torch' | 'building' | 'adobe' | 'car' | 'palm' | 'lamp';
+export type DamagedArtKey = 'wall' | 'crate' | 'gate' | 'adobe' | 'car';
 
 export interface TerrainArt {
   /** ground[groundId][variant]: 128x64 diamond tiles (>= 4 variants). Ids: 0 grass, 1 dirt, 2 sand, 3 mud, 4 shallow, 5 deep. */
@@ -62,7 +62,7 @@ export interface TerrainArt {
  * Recommended bleed priority per ground id (higher bleeds over lower): sand over grass, grass over
  * mud/dirt, any land over water, shallow over deep.
  */
-export const EDGE_PRIORITY: readonly number[] = [4, 2, 5, 3, 1, 0];
+export const EDGE_PRIORITY: readonly number[] = [4, 2, 5, 3, 1, 0, -1, -1]; // asphalt/pavement: crisp edges, nothing bleeds between them
 
 const W = TILE_W;
 const H = TILE_H;
@@ -399,9 +399,23 @@ const PAL: readonly Stops[] = [
     [0.85, 30, 72, 124],
     [1, 46, 96, 146],
   ],
+  // asphalt
+  [
+    [0, 44, 46, 50],
+    [0.5, 60, 62, 66],
+    [1, 80, 82, 86],
+  ],
+  // pavement
+  [
+    [0, 150, 146, 138],
+    [0.5, 172, 168, 160],
+    [1, 196, 192, 184],
+  ],
 ];
 
 const VARIANTS = 4;
+/** grass, dirt, sand, mud, shallow, deep, asphalt, pavement */
+const GROUND_TYPES = 8;
 
 interface GroundField {
   t: Float32Array;
@@ -610,7 +624,7 @@ function drawDetail(g: CanvasRenderingContext2D, type: number, x: number, y: num
   drawDetailBatch(g, type, [{ x, y, k, s }]);
 }
 
-const DETAIL_COUNT = [190, 26, 50, 60, 40, 0];
+const DETAIL_COUNT = [190, 26, 50, 60, 40, 0, 0, 0];
 const EDGE_BAND = 0.12;
 
 function sharedDetails(type: number): Detail[] {
@@ -652,7 +666,7 @@ function buildGround(): GroundBuild {
   const base: Float32Array[] = [];
   const details: Detail[][] = [];
   const c = new Float32Array(3);
-  for (let type = 0; type < 6; type++) {
+  for (let type = 0; type < GROUND_TYPES; type++) {
     const f = groundField(type);
     const b = new Float32Array(N * 3);
     const dc = dcScratch;
@@ -715,6 +729,49 @@ function buildGround(): GroundBuild {
           g.fillRect(uvx(u, v), uvy(u, v), 1.6, 1.6);
         }
       }
+      if (type === 6) {
+        // asphalt: fine grit + an oil stain or a crack
+        for (let k = 0; k < 140; k++) {
+          g.fillStyle = vr.next() < 0.5 ? 'rgba(20,20,22,0.35)' : 'rgba(140,140,146,0.25)';
+          g.fillRect(uvx(vr.next(), vr.next()), uvy(vr.next(), vr.next()), 1.2, 1.2);
+        }
+        if (vi === 1) {
+          g.fillStyle = 'rgba(16,16,20,0.3)';
+          ellipse(g, uvx(0.5, 0.45), uvy(0.5, 0.45), 14, 6);
+          g.fill();
+        }
+        if (vi === 3) {
+          g.strokeStyle = 'rgba(20,20,22,0.55)';
+          g.lineWidth = 1;
+          g.beginPath();
+          g.moveTo(uvx(0.3, 0.4), uvy(0.3, 0.4));
+          g.lineTo(uvx(0.45, 0.5), uvy(0.45, 0.5));
+          g.lineTo(uvx(0.52, 0.66), uvy(0.52, 0.66));
+          g.stroke();
+        }
+      }
+      if (type === 7) {
+        // pavement: square slabs (3 x 3 per tile) with joints and a light top bevel
+        g.strokeStyle = 'rgba(90,86,80,0.55)';
+        g.lineWidth = 1;
+        for (let k = 0; k <= 3; k++) {
+          const t = k / 3;
+          g.beginPath();
+          g.moveTo(uvx(t, 0), uvy(t, 0));
+          g.lineTo(uvx(t, 1), uvy(t, 1));
+          g.moveTo(uvx(0, t), uvy(0, t));
+          g.lineTo(uvx(1, t), uvy(1, t));
+          g.stroke();
+        }
+        g.strokeStyle = 'rgba(235,230,220,0.35)';
+        for (let k = 0; k < 3; k++) {
+          const t = k / 3 + 0.02;
+          g.beginPath();
+          g.moveTo(uvx(t, 0), uvy(t, 0));
+          g.lineTo(uvx(t, 1), uvy(t, 1));
+          g.stroke();
+        }
+      }
       if (type === 1 && vi >= 2) {
         // faint tyre-ish streaks
         g.strokeStyle = 'rgba(60,40,24,0.16)';
@@ -739,8 +796,8 @@ function buildGround(): GroundBuild {
 // Transition fringes
 // ---------------------------------------------------------------------------------------------
 
-const EDGE_WIDTH = [0.24, 0.2, 0.26, 0.22, 0.3, 0.26];
-const EDGE_RIM = [0.32, 0.18, 0.14, 0.2, 0.0, 0.0];
+const EDGE_WIDTH = [0.24, 0.2, 0.26, 0.22, 0.3, 0.26, 0.2, 0.2];
+const EDGE_RIM = [0.32, 0.18, 0.14, 0.2, 0.0, 0.0, 0.0, 0.0];
 
 function dirDist(dir: number, u: number, v: number): number {
   return dir === 0 ? v : dir === 1 ? 1 - u : dir === 2 ? 1 - v : u;
@@ -755,7 +812,7 @@ function dirUV(dir: number, along: number, dist: number): [number, number] {
 function buildEdges(gb: GroundBuild): HTMLCanvasElement[][] {
   const G = tileGeom();
   const out: HTMLCanvasElement[][] = [];
-  for (let type = 0; type < 6; type++) {
+  for (let type = 0; type < GROUND_TYPES; type++) {
     const EN = new PNoise(8, 4, 3131 + type);
     const J = new Fbm(8, 2, 5151 + type);
     const b = gb.base[type];
@@ -2370,6 +2427,248 @@ function torch(): ArtSprite {
 }
 
 // ---------------------------------------------------------------------------------------------
+// Round 03: desert ruins + modern city (building, adobe wall, car, palm, street lamp)
+// ---------------------------------------------------------------------------------------------
+
+const CONCRETE: RGB[] = [
+  [176, 170, 160],
+  [150, 156, 166],
+  [186, 160, 132],
+  [132, 140, 150],
+];
+const ADOBE: RGB = [206, 168, 118];
+
+/** Facade with a regular window grid (lit windows here and there). */
+function windowPainter(seed: number, wall: RGB, lit: number): Painter {
+  return (g, L, Ht) => {
+    const r = new Rng(seed);
+    g.fillStyle = css(wall);
+    g.fillRect(-2, -2, L + 4, Ht + 4);
+    const cols = Math.max(2, Math.round(L / 12));
+    const cw = L / cols;
+    for (let y = 8; y < Ht - 6; y += 13) {
+      g.fillStyle = css(wall, 0.8, 0.6);
+      g.fillRect(0, y - 3, L, 1);
+      for (let k = 0; k < cols; k++) {
+        const on = r.next() < lit;
+        g.fillStyle = on ? 'rgba(255,224,150,0.95)' : css([46, 58, 74], r.r(0.85, 1.2));
+        g.fillRect(k * cw + cw * 0.22, y, cw * 0.56, 7);
+        g.fillStyle = 'rgba(255,255,255,0.18)';
+        g.fillRect(k * cw + cw * 0.22, y, cw * 0.56, 1.2);
+      }
+    }
+  };
+}
+
+/** City block tile: a tall concrete tower with windows and roof clutter (indestructible). */
+function building(v: number): ArtSprite {
+  const heights = [72, 96, 60, 84];
+  const H0 = heights[v % heights.length];
+  const cw = 132;
+  const ch = HH * 2 + H0 + 30;
+  const ax = 66;
+  const ay = HH + H0 + 24;
+  const [c, g] = mk(cw, ch);
+  const P = projAt(ax, ay);
+  const rng = new Rng(3100 + v * 13);
+  const col = CONCRETE[v % CONCRETE.length];
+  const b: Box = { x0: -0.5, x1: 0.5, y0: -0.5, y1: 0.5, z0: 0, z1: H0 };
+  drawBox(g, P, b, windowPainter(3101 + v, col, 0.18), windowPainter(3102 + v, col, 0.12), flatPainter(3103 + v, mixc(col, [90, 92, 96], 0.45), 10));
+  // roof parapet + AC units / water tank
+  drawBox(g, P, { x0: -0.5, x1: 0.5, y0: -0.5, y1: -0.42, z0: H0, z1: H0 + 4 }, flatPainter(3104, col, 2), flatPainter(3105, col, 2), flatPainter(3106, col, 2), 0.8);
+  drawBox(g, P, { x0: -0.5, x1: -0.42, y0: -0.42, y1: 0.5, z0: H0, z1: H0 + 4 }, flatPainter(3107, col, 2), flatPainter(3108, col, 2), flatPainter(3109, col, 2), 0.8);
+  const n = 1 + (v % 2);
+  for (let k = 0; k < n; k++) {
+    const x = rng.r(-0.3, 0.15);
+    const y = rng.r(-0.3, 0.15);
+    drawBox(g, P, { x0: x, x1: x + 0.18, y0: y, y1: y + 0.14, z0: H0, z1: H0 + 9 }, flatPainter(3110 + k, [120, 124, 128], 2), flatPainter(3111 + k, [110, 114, 118], 2), flatPainter(3112 + k, [160, 164, 168], 2), 0.9);
+  }
+  return { canvas: c, anchorX: ax, anchorY: ay };
+}
+
+/** Sun-baked mud-brick house wall (desert); damaged = crumbling stump. */
+function adobe(v: number, damaged: boolean): ArtSprite {
+  const Hh = 30;
+  const cw = 132;
+  const ch = HH * 2 + Hh + 18;
+  const ax = 66;
+  const ay = HH + Hh + 12;
+  const [c, g] = mk(cw, ch);
+  const P = projAt(ax, ay);
+  const rng = new Rng(3300 + v * 7 + (damaged ? 50 : 0));
+  const col: RGB = v === 1 ? [194, 152, 104] : ADOBE;
+  const b: Box = { x0: -0.5, x1: 0.5, y0: -0.5, y1: 0.5, z0: 0, z1: Hh };
+  if (!damaged) {
+    const plaster: Painter = (gg, L, Ht) => {
+      flatPainter(3301 + v, col, 14)(gg, L, Ht);
+      // exposed mud bricks where the plaster fell off
+      const r = new Rng(3302 + v);
+      for (let k = 0; k < 2; k++) {
+        const x = r.r(4, L - 20);
+        const y = r.r(4, Ht - 12);
+        for (let j = 0; j < 4; j++) {
+          gg.fillStyle = css([170, 120, 80], r.r(0.85, 1.1));
+          gg.fillRect(x + (j % 2) * 8 + (Math.floor(j / 2) % 2) * 4, y + Math.floor(j / 2) * 5, 7, 4);
+        }
+      }
+      if (v === 1) {
+        // small dark window
+        gg.fillStyle = 'rgba(40,26,16,0.9)';
+        gg.fillRect(L * 0.4, Ht * 0.25, L * 0.18, Ht * 0.3);
+      }
+    };
+    drawBox(g, P, b, plaster, plaster, flatPainter(3305, mixc(col, [120, 84, 52], 0.35), 10));
+    // roof lip and a broken corner on top, vertical cracks on the faces
+    drawBox(g, P, { x0: -0.5, x1: 0.5, y0: 0.38, y1: 0.5, z0: Hh, z1: Hh + 3 }, flatPainter(3306, col, 2), flatPainter(3307, col, 2), flatPainter(3308, mixc(col, [255, 240, 210], 0.2), 2), 0.8);
+    drawBox(g, P, { x0: 0.38, x1: 0.5, y0: -0.5, y1: 0.38, z0: Hh, z1: Hh + 3 }, flatPainter(3309, col, 2), flatPainter(3310, col, 2), flatPainter(3311, mixc(col, [255, 240, 210], 0.2), 2), 0.8);
+    g.strokeStyle = 'rgba(90,58,30,0.7)';
+    g.lineWidth = 1.1;
+    for (let k = 0; k < 2; k++) {
+      let p = P(rng.r(-0.4, 0.3), 0.5, Hh - 1);
+      g.beginPath();
+      g.moveTo(p[0], p[1]);
+      for (let j = 0; j < 3; j++) {
+        p = [p[0] + rng.r(-3, 3), p[1] + rng.r(4, 7)];
+        g.lineTo(p[0], p[1]);
+      }
+      g.stroke();
+    }
+  } else {
+    drawBrokenBox(g, P, b, rng, 8, 22, col, 3320);
+    rubble(g, rng, ax + 4, ay + 20, 9, 38, 6, col);
+  }
+  return { canvas: c, anchorX: ax, anchorY: ay };
+}
+
+/** Parked car: low body + cabin, a few colours; damaged = burnt wreck. */
+function car(v: number, damaged: boolean): ArtSprite {
+  const cw = 120;
+  const ch = 90;
+  const ax = 60;
+  const ay = 60;
+  const [c, g] = mk(cw, ch);
+  const P = projAt(ax, ay);
+  const paints: RGB[] = [
+    [196, 58, 48],
+    [58, 104, 176],
+    [226, 222, 210],
+    [232, 186, 52],
+  ];
+  const body: RGB = damaged ? [56, 50, 46] : paints[v % paints.length];
+  const alongX = v % 2 === 0;
+  // car axis along world x (v even) or y (v odd)
+  const L = 0.42;
+  const Wd = 0.2;
+  const bx = alongX ? { x0: -L, x1: L, y0: -Wd, y1: Wd } : { x0: -Wd, x1: Wd, y0: -L, y1: L };
+  shadow(g, ax + 4, ay + 6, 46, 18, 0.4);
+  // wheels
+  g.fillStyle = '#1c1c1e';
+  for (const [wx, wy] of alongX
+    ? [
+        [-0.26, Wd],
+        [0.26, Wd],
+        [0.26, -Wd],
+      ]
+    : [
+        [Wd, -0.26],
+        [Wd, 0.26],
+        [-Wd, 0.26],
+      ]) {
+    const p = P(wx, wy, 4);
+    ellipse(g, p[0], p[1], 5, 4);
+    g.fill();
+  }
+  drawBox(g, P, { ...bx, z0: 4, z1: 15 }, flatPainter(3401 + v, body, 4), flatPainter(3402 + v, body, 4), flatPainter(3403 + v, mixc(body, [255, 255, 255], 0.12), 3));
+  const cab = alongX ? { x0: -0.18, x1: 0.16, y0: -Wd + 0.02, y1: Wd - 0.02 } : { x0: -Wd + 0.02, x1: Wd - 0.02, y0: -0.18, y1: 0.16 };
+  const glass: Painter = (gg, Ln, Ht) => {
+    gg.fillStyle = damaged ? '#1a1614' : css(body, 0.9);
+    gg.fillRect(-2, -2, Ln + 4, Ht + 4);
+    gg.fillStyle = damaged ? 'rgba(20,16,14,0.9)' : 'rgba(120,170,210,0.9)';
+    gg.fillRect(2, 1.5, Ln - 4, Ht - 3);
+  };
+  drawBox(g, P, { ...cab, z0: 15, z1: 24 }, glass, glass, flatPainter(3404 + v, damaged ? [40, 36, 32] : mixc(body, [255, 255, 255], 0.2), 2));
+  if (damaged) {
+    const rng = new Rng(3410 + v);
+    for (let k = 0; k < 6; k++) {
+      g.fillStyle = `rgba(30,24,20,${rng.r(0.3, 0.6)})`;
+      ellipse(g, ax + rng.r(-20, 20), ay - rng.r(8, 24), rng.r(4, 9), rng.r(3, 6));
+      g.fill();
+    }
+  }
+  return { canvas: c, anchorX: ax, anchorY: ay };
+}
+
+/** Date palm (desert squares / city plazas). */
+function palm(v: number): ArtSprite {
+  const cw = 110;
+  const ch = 130;
+  const ax = 55;
+  const ay = 118;
+  const [c, g] = mk(cw, ch);
+  const rng = new Rng(3500 + v * 5);
+  shadow(g, ax + 6, ay, 26, 9, 0.4);
+  const top: Pt = [ax + rng.r(-8, 8), ay - 80 - v * 6];
+  // trunk: segmented curve
+  for (let k = 0; k <= 12; k++) {
+    const t = k / 12;
+    const x = ax + (top[0] - ax) * t * t;
+    const y = ay - (ay - top[1]) * t;
+    g.fillStyle = k % 2 ? '#8a6a44' : '#a0805a';
+    g.strokeStyle = OUTLINE;
+    g.lineWidth = 1;
+    ellipse(g, x, y, 4.2 - t * 1.2, 3);
+    g.fill();
+    g.stroke();
+  }
+  // fronds
+  for (let k = 0; k < 7; k++) {
+    const an = (k / 7) * TAU + rng.r(-0.2, 0.2);
+    const len = rng.r(28, 38);
+    const ex = top[0] + Math.cos(an) * len;
+    const ey = top[1] + Math.sin(an) * len * 0.45 + 10;
+    g.strokeStyle = '#2f5a24';
+    g.lineWidth = 6;
+    g.lineCap = 'round';
+    g.beginPath();
+    g.moveTo(top[0], top[1]);
+    g.quadraticCurveTo((top[0] + ex) / 2, top[1] - 12, ex, ey);
+    g.stroke();
+    g.strokeStyle = '#5f9a3a';
+    g.lineWidth = 3;
+    g.stroke();
+  }
+  g.fillStyle = '#6a4a2a';
+  ellipse(g, top[0], top[1] + 2, 5, 4);
+  g.fill();
+  return { canvas: c, anchorX: ax, anchorY: ay };
+}
+
+/** Modern street lamp (city lights). */
+function lamp(): ArtSprite {
+  const cw = 48;
+  const ch = 96;
+  const ax = 24;
+  const ay = 88;
+  const [c, g] = mk(cw, ch);
+  const gl = g.createRadialGradient(ax + 8, 14, 0, ax + 8, 14, 22);
+  gl.addColorStop(0, 'rgba(255,240,190,0.55)');
+  gl.addColorStop(1, 'rgba(255,240,190,0)');
+  g.fillStyle = gl;
+  g.fillRect(0, 0, cw, 40);
+  shadow(g, ax + 2, ay + 1, 8, 3, 0.45);
+  g.fillStyle = '#3a4048';
+  g.strokeStyle = OUTLINE;
+  g.lineWidth = 1;
+  g.fillRect(ax - 2, 14, 4, ay - 14);
+  g.strokeRect(ax - 2, 14, 4, ay - 14);
+  g.fillRect(ax - 2, 12, 14, 3);
+  g.fillStyle = '#fff3c8';
+  ellipse(g, ax + 10, 16, 5, 2.5);
+  g.fill();
+  return { canvas: c, anchorX: ax, anchorY: ay };
+}
+
+// ---------------------------------------------------------------------------------------------
 // Decals
 // ---------------------------------------------------------------------------------------------
 
@@ -2513,11 +2812,18 @@ export function buildTerrainArt(): TerrainArt {
     gate: [0, 1].map((v) => gate(v, false)),
     bridge: [0, 1].map(bridge),
     torch: [torch()],
+    building: [0, 1, 2, 3].map(building),
+    adobe: [0, 1].map((v) => adobe(v, false)),
+    car: [0, 1, 2, 3].map((v) => car(v, false)),
+    palm: [0, 1].map(palm),
+    lamp: [lamp()],
   };
   const damaged: Record<DamagedArtKey, ArtSprite> = {
     wall: wall(0, true),
     crate: crate(0, true),
     gate: gate(0, true),
+    adobe: adobe(0, true),
+    car: car(0, true),
   };
   const decals: ArtSprite[] = [];
   for (let v = 0; v < 10; v++) decals.push(decal(v));

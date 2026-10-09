@@ -89,5 +89,8 @@
   "diff.easy": "Kolay",
   "diff.normal": "Normal",
   "diff.hard": "Zor",
-  "diff.extreme": "Ekstrem"
+  "diff.extreme": "Ekstrem",
+  "map.desert": "Çöl",
+  "map.city": "Şehir",
+  "map.forest": "Orman"
 }
