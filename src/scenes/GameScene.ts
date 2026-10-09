@@ -26,6 +26,7 @@ import { screenAngleToWorld, screenDirToWorld, screenToWorld, worldAngleToScreen
 import type { Quality } from '../core/save';
 import type { TouchControls } from '../ui/touchControls';
 import { Minimap } from '../ui/minimap';
+import type { AiLevel } from '../systems/ai/bot';
 import { createMatch, defaultTeams, scoreboard, stepMatch, type MatchHandle, type ScoreRow } from '../game/matchSetup';
 import { createAudioSystem, createSilentAudio, type AudioSystem, type EngineHandle, type SfxName } from '../audio';
 import debugHeights from '../../maps/debug_heights.json';
@@ -38,6 +39,8 @@ export interface GameSceneOptions {
   autoAim: boolean;
   /** Obstacle highlight (settings): normal | strong. */
   edgeHighlight: 'normal' | 'strong';
+  /** Bot difficulty for all bots (allies and enemies). */
+  aiLevel?: AiLevel;
   /** Dev: ability cooldown multiplier 0.1x–3x. */
   cooldownMul: number;
   volume: { master: number; sfx: number; music: number };
@@ -161,6 +164,7 @@ export class GameScene {
       map,
       teams: defaultTeams(seed, this.opts.playerClass ?? 'standard'),
       humanPlayer: true,
+      aiLevel: this.opts.aiLevel,
       rules: { cooldownMul: this.opts.cooldownMul, endless: this.opts.endless ?? false, ...(this.opts.duration ? { duration: this.opts.duration } : {}) },
     });
     if (this.opts.idleBots === 'allies') this.match.bots = this.match.bots.map((b, i) => (this.state.tanks[i].team === 0 ? null : b));

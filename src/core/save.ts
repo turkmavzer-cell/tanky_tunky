@@ -23,7 +23,11 @@ export interface Settings {
   edgeHighlight: 'normal' | 'strong';
   /** Developer: ability cooldown multiplier 0.1x–3x (round-01 job 5). */
   cooldownMul: number;
+  /** Bot difficulty for Quick Match, allies and enemies (round-02). */
+  difficulty: Difficulty;
 }
+
+export type Difficulty = 'easy' | 'normal' | 'hard' | 'extreme';
 
 export interface Records {
   bestKills: number;
@@ -40,7 +44,7 @@ export interface SaveData {
   records: Records;
 }
 
-export const SCHEMA_VERSION = 2;
+export const SCHEMA_VERSION = 3;
 
 export function defaultSave(): SaveData {
   return {
@@ -60,6 +64,7 @@ export function defaultSave(): SaveData {
       joystickSensitivity: 1,
       edgeHighlight: 'normal',
       cooldownMul: 1,
+      difficulty: 'normal',
     },
     credits: 0,
     tutorialDone: false,
@@ -75,6 +80,7 @@ export function migrate(raw: unknown): SaveData {
   const version = typeof r.schemaVersion === 'number' ? r.schemaVersion : 0;
   if (version > SCHEMA_VERSION) return { ...def, ...r, schemaVersion: version } as SaveData; // newer build wrote it; keep as-is
   // v0 → v1: no structural changes. v1 → v2: settings.edgeHighlight, settings.cooldownMul, records.
+  // v2 → v3: settings.difficulty (defaults filled in from defaultSave).
   return {
     ...def,
     ...r,

@@ -7,7 +7,10 @@
  *   - hearing: enemy shots within hearingRadius (position becomes a suspicion point)
  *   - pain: being hit reveals roughly where the shooter was
  * It never reads hidden enemy positions. Targeting uses the same `selectTarget` as the player's
- * auto-aim; aim error / reaction time / charge habits come from data/ai.json.
+ * auto-aim; aim error / charge habits come from data/ai.json.
+ * Difficulty (data/ai.json → levels): `fireDelay` = seconds after a visible enemy enters the gun's
+ * range before the first shot; `strategic` = cover/retreat, strafing, situational abilities;
+ * `clumsy` = wandering, hesitant driving; `focusFire` = shoot the weakest visible enemy in range.
  * Deterministic: own seeded Rng, inputs derived from state only → replays reproduce matches.
  */
 import aiJson from '../../data/ai.json';
@@ -26,6 +29,8 @@ import { isTileOpen } from '../../world/passability';
 export type AiState = 'patrol' | 'suspicion' | 'chase' | 'attack' | 'retreat';
 
 type Level = (typeof aiJson.levels)['normal'];
+export type AiLevel = keyof typeof aiJson.levels;
+export const AI_LEVELS = Object.keys(aiJson.levels) as AiLevel[];
 export const AI = aiJson;
 
 interface Known {
@@ -44,7 +49,12 @@ export class AiBot {
   private pathGoal = -1;
   private repath = 0;
   private stateT = 0;
-  private reaction = 0;
+  /** Seconds a visible enemy has been inside the gun's range (difficulty fire delay). */
+  engageT = 0;
+  private outOfRangeT = 0;
+  private wobbleA = 0;
+  private wobbleT = 0;
+  private pauseT = 0;
   private holding = 0;
   private lastPos = { x: 0, y: 0 };
   private stuckT = 0;
@@ -57,7 +67,7 @@ export class AiBot {
   constructor(
     readonly id: number,
     seed: number,
-    level: keyof typeof aiJson.levels = (aiJson.difficulty as keyof typeof aiJson.levels) ?? 'normal',
+    level: AiLevel = (aiJson.difficulty as AiLevel) ?? 'normal',
   ) {
     this.rng = new Rng((seed ^ Math.imul(id + 1, 0x9e3779b1)) >>> 0);
     this.lv = aiJson.levels[level];
@@ -70,7 +80,7 @@ export class AiBot {
   /** Everything this bot is allowed to know this tick. */
   private perceive(s: SimState, me: Tank): Tank | null {
     const now = this.now(s);
-    this.lockId = selectTarget(s, me, this.lockId);
+    this.lockId = this.lv.focusFire ? this.weakestInRange(s, me) : selectTarget(s, me, this.lockId);
     let seen: Tank | null = this.lockId >= 0 ? s.tanks[this.lockId] : null;
     if (!seen) {
       // an invisible enemy that came very close is "noticed"
@@ -94,6 +104,22 @@ export class AiBot {
       }
     }
     return seen;
+  }
+
+  /** Focus fire: the lowest-hp visible enemy inside the gun's range, else the normal auto-aim pick. */
+  private weakestInRange(s: SimState, me: Tank): number {
+    const r = TANKS[me.cls].range;
+    let best = -1;
+    let bestHp = Infinity;
+    for (const e of s.tanks) {
+      if (e.team === me.team || !canSeeTank(s, me.team, e)) continue;
+      if (dhypot(e.x - me.x, e.y - me.y) > r) continue;
+      if (e.hp < bestHp) {
+        bestHp = e.hp;
+        best = e.id;
+      }
+    }
+    return best >= 0 ? best : selectTarget(s, me, this.lockId);
   }
 
   private setState(st: AiState): void {
@@ -121,7 +147,7 @@ export class AiBot {
 
     // ---- transitions
     const hpFrac = me.hp / def.hp;
-    if (hpFrac < aiJson.retreatHp && fresh && this.state !== 'retreat') {
+    if (this.lv.strategic && hpFrac < aiJson.retreatHp && fresh && this.state !== 'retreat') {
       this.setState('retreat');
       this.retreatGoal = this.findCover(s, me, fresh.x, fresh.y);
     }
@@ -129,7 +155,6 @@ export class AiBot {
       if (this.stateT > aiJson.retreatTime) this.setState(seen ? 'attack' : 'patrol');
     } else if (seen) {
       const d = dhypot(seen.x - me.x, seen.y - me.y);
-      if (this.state !== 'attack' && this.state !== 'chase') this.reaction = this.lv.reactionTime;
       this.setState(d <= def.range ? 'attack' : 'chase');
     } else if (fresh) {
       if (this.state === 'attack' || this.state === 'chase') {
@@ -140,7 +165,12 @@ export class AiBot {
     } else if (this.state !== 'patrol') {
       if (this.stateT > aiJson.searchTime || this.state !== 'suspicion') this.setState('patrol');
     }
-    if (this.reaction > 0) this.reaction -= dt;
+    // difficulty fire delay: counts while a visible enemy is inside the gun's range
+    const inRange = seen !== null && canSeeTank(s, me.team, seen) && dhypot(seen.x - me.x, seen.y - me.y) <= def.range * 1.05;
+    if (inRange) {
+      this.engageT += dt;
+      this.outOfRangeT = 0;
+    } else if ((this.outOfRangeT += dt) > aiJson.rangeGrace) this.engageT = 0;
 
     // ---- movement goal per state
     let goal: PathPoint | null = null;
@@ -159,7 +189,10 @@ export class AiBot {
         if (seen) {
           const d = dhypot(seen.x - me.x, seen.y - me.y);
           const pref = def.range * aiJson.preferredRangeFactor;
-          if (d > pref + 0.8 || !clearGroundPath(s, me.x, me.y, seen.x, seen.y)) goal = { x: Math.floor(seen.x), y: Math.floor(seen.y) };
+          if (!this.lv.strategic) {
+            // no tactics: drive straight at the target until it is comfortably in range, then sit
+            if (d > def.range * 0.9 || !clearGroundPath(s, me.x, me.y, seen.x, seen.y)) goal = { x: Math.floor(seen.x), y: Math.floor(seen.y) };
+          } else if (d > pref + 0.8 || !clearGroundPath(s, me.x, me.y, seen.x, seen.y)) goal = { x: Math.floor(seen.x), y: Math.floor(seen.y) };
           else {
             // strafe around the target at the preferred range
             if (this.rng.next() < 0.01) this.strafe = -this.strafe;
@@ -177,7 +210,7 @@ export class AiBot {
         goal = this.retreatGoal;
         break;
     }
-    const mv = this.steer(s, me, goal);
+    const mv = this.lv.clumsy ? this.fumble(this.steer(s, me, goal), dt) : this.steer(s, me, goal);
 
     // ---- aim
     let aim = quantizeAim(me.turret);
@@ -189,7 +222,7 @@ export class AiBot {
       aim = quantizeAim(ang);
       const d = dhypot(seen.x - me.x, seen.y - me.y);
       const aligned = Math.abs(((me.turret - ang + 9.42477796) % 6.28318531) - 3.14159265) < aiJson.fireAlignment;
-      wantFire = this.reaction <= 0 && aligned && d <= def.range * 1.05 && (def.shell === 'artillery' || clearGroundPath(s, me.x, me.y, seen.x, seen.y) || d < 2);
+      wantFire = this.engageT >= this.lv.fireDelay && aligned && d <= def.range * 1.05 && (def.shell === 'artillery' || clearGroundPath(s, me.x, me.y, seen.x, seen.y) || d < 2);
       if (def.shell === 'artillery' && d < def.minRange) wantFire = false;
     } else if (face) aim = quantizeAim(datan2(face.y - me.y, face.x - me.x));
     else if (Math.abs(mv.x) + Math.abs(mv.y) > 0.1) aim = quantizeAim(datan2(mv.y, mv.x));
@@ -220,13 +253,33 @@ export class AiBot {
     return { moveX: quantizeMove(mv.x * moveScale), moveY: quantizeMove(mv.y * moveScale), aim, buttons };
   }
 
+  /** Clumsy driving (easy): the heading wanders and the bot hesitates now and then. */
+  private fumble(mv: { x: number; y: number }, dt: number): { x: number; y: number } {
+    const c = aiJson.clumsy;
+    if ((this.wobbleT -= dt) <= 0) {
+      this.wobbleT = c.wobbleEvery * this.rng.range(0.6, 1.4);
+      this.wobbleA = this.rng.range(-c.wobble, c.wobble);
+      if (this.rng.next() < c.pauseChance) this.pauseT = c.pauseTime;
+    }
+    if (this.pauseT > 0) {
+      this.pauseT -= dt;
+      return { x: 0, y: 0 };
+    }
+    const ca = dcos(this.wobbleA);
+    const sa = dsin(this.wobbleA);
+    return { x: mv.x * ca - mv.y * sa, y: mv.x * sa + mv.y * ca };
+  }
+
   /** Class-specific ability habits (data/ai.json → ability). */
   private wantsAbility(s: SimState, me: Tank, seen: Tank | null, fresh: Known | null): boolean {
     const a = me.ability;
     if (a.active > 0 || a.cooldown > 0) return false;
+    if (this.lv.clumsy) return this.rng.next() < 0.004; // novice: presses it at random moments
     if (this.rng.next() > this.lv.abilityUse * 0.2) return false; // spread decisions over time
     const cfg = aiJson.ability;
     const dSeen = seen ? dhypot(seen.x - me.x, seen.y - me.y) : Infinity;
+    // no tactics: simply use the ability when an enemy is in sight (mines: when one is near)
+    if (!this.lv.strategic) return a.id === 'mine' ? fresh !== null && dhypot(fresh.x - me.x, fresh.y - me.y) < cfg.mine.enemyWithin : seen !== null;
     switch (a.id) {
       case 'hide':
         // ambush: vanish when an enemy is around but has not engaged yet, or when hurt
