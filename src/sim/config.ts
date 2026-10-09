@@ -48,6 +48,8 @@ export interface CombatDef {
   tankCollision: { push: number };
   respawnTime: number;
   targeting: { switchRatio: number; leadIterations: number };
+  upgrades: { perPickup: number; max: number; pickupRadius: number; crateRespawn: number };
+  regen: { outOfCombat: number; interval: number; amount: number };
 }
 export const COMBAT = combatJson as CombatDef;
 

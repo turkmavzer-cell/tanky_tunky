@@ -4,6 +4,7 @@ import type { Rng } from './rng';
 import type { DamageCause, Shell, SimState, Tank } from './state';
 import { damageFeature } from '../world/map';
 import { FEATURE } from '../world/terrain';
+import { damageMul, markCombat, onFeatureDestroyed } from './upgrades';
 
 export function nextId(state: SimState): number {
   return state.nextId++;
@@ -12,8 +13,11 @@ export function nextId(state: SimState): number {
 /** Applies damage (armor, spawn protection), records kills with their cause. */
 export function applyDamage(state: SimState, t: Tank, raw: number, by: number, x: number, y: number, cause: DamageCause): void {
   if (!t.alive || t.protect > 0 || state.match.phase !== 'playing') return;
-  const dmg = raw * (1 - TANKS[t.cls].armor);
+  const src = by >= 0 ? state.tanks[by] : undefined;
+  const dmg = raw * (src ? damageMul(src) : 1) * (1 - TANKS[t.cls].armor);
   if (dmg <= 0) return;
+  markCombat(t);
+  if (src && src.team !== t.team) markCombat(src);
   t.hp -= dmg;
   t.lastHitBy = by;
   if (t.ability.id === 'hide' && t.ability.active > 0) t.shimmer = 0.5;
@@ -92,8 +96,10 @@ export function damageTerrainDisc(state: SimState, x: number, y: number, r: numb
       const dx = tx + 0.5 - x;
       const dy = ty + 0.5 - y;
       if (dx * dx + dy * dy > (r + 0.5) * (r + 0.5)) continue;
+      const was = map.feature[i];
       const destroyed = damageFeature(map, tx, ty, dmg);
       state.events.push({ type: 'terrain', x: tx, y: ty, destroyed });
+      if (destroyed) onFeatureDestroyed(state, tx, ty, was);
     }
   }
 }
@@ -153,8 +159,10 @@ export function updateShells(state: SimState, rng: Rng, dt: number): void {
         if ((f.blocksShots && e >= s.level) || e > s.level) {
           let destroyed = false;
           if (f.hp > 0) {
+            const was = map.feature[ti];
             destroyed = damageFeature(map, tx, ty, s.damage * COMBAT.shell.terrainDamageMul);
             state.events.push({ type: 'terrain', x: tx, y: ty, destroyed });
+            if (destroyed) onFeatureDestroyed(state, tx, ty, was);
           }
           if (s.bounces > 0 && !destroyed) {
             const ptx = Math.floor(px);

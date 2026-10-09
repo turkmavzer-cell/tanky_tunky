@@ -4,7 +4,7 @@ import type { Settings } from '../core/save';
 import { onAppPause } from '../core/platform';
 import { t } from '../i18n';
 import { TouchControls } from './touchControls';
-import { ALL_TANK_CLASSES, type TankClassId } from '../sim/config';
+import { ALL_TANK_CLASSES, COMBAT, type TankClassId } from '../sim/config';
 import type { ScoreRow } from '../game/matchSetup';
 import { ResultsScreen } from './ResultsScreen';
 import { MATCH } from '../sim/config';
@@ -160,6 +160,11 @@ export function GameView({ settings, playerClass, seed, record, onQuit, onAgain,
                 {hud.hp} / {hud.maxHp}
               </span>
             </div>
+            {hud.upgrades > 0 && (
+              <div className="up-chip" data-testid="upgrades">
+                ▲ +%{Math.round(hud.upgrades * COMBAT.upgrades.perPickup * 100)}
+              </div>
+            )}
             <div
               className={'ab-chip ' + (hud.abilityActive > 0 ? 'active' : hud.abilityCooldown > 0 ? 'cooling' : 'ready')}
               data-testid="ability-chip"

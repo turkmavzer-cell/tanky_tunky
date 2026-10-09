@@ -2,7 +2,8 @@
  * Match flow (round-01 job 4): 3-2-1 countdown → `duration` s of play → ended.
  * Respawns happen anywhere on the map at a safe spawn point. All timers use simulation time.
  */
-import { MATCH, TANKS } from './config';
+import { resetUpgrades } from './upgrades';
+import { MATCH } from './config';
 import type { SimState, Tank } from './state';
 import { resetAbility } from './abilities';
 import type { MapPoint } from '../world/map';
@@ -89,7 +90,7 @@ export function respawnTank(s: SimState, t: Tank, deathX: number, deathY: number
   t.x = point.x + 0.5;
   t.y = point.y + 0.5;
   t.vx = t.vy = t.kx = t.ky = 0;
-  t.hp = TANKS[t.cls].hp;
+  resetUpgrades(t); // upgrades are lost on death; full base hp
   t.alive = true;
   t.charging = false;
   t.chargeT = t.fullT = t.cooldown = t.overheat = 0;

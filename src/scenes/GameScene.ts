@@ -11,6 +11,7 @@ import { AIM_AUTO, BTN_ABILITY, BTN_FIRE, EMPTY_INPUT, quantizeAim, quantizeMove
 import { chargeLevel } from '../sim/sim';
 import type { SimEvent, SimState } from '../sim/state';
 import { lerp, lerpAngle } from '../sim/dmath';
+import { maxHp } from '../sim/upgrades';
 import { canSeeTank, inForest, isInvisible, tileVisible } from '../sim/visibility';
 import { Camera } from '../render/camera';
 import { WorldRenderer } from '../render/worldRenderer';
@@ -65,6 +66,8 @@ export interface GameSceneOptions {
 export interface HudSnapshot {
   hp: number;
   maxHp: number;
+  /** Crate upgrades collected this life. */
+  upgrades: number;
   alive: boolean;
   respawn: number;
   kills: number;
@@ -393,6 +396,24 @@ export class GameScene {
             this.play('hit_wall', e.x + 0.5, e.y + 0.5);
           }
           break;
+        case 'pickup': {
+          const t = s.tanks[e.tank];
+          this.fx.sparks(this.sx(e.x, e.y), this.sy(e.x, e.y) - 16, 14, 0xffd84a);
+          this.fx.floatText(this.sx(t.x, t.y), this.sy(t.x, t.y) - 70, `+%${Math.round(e.level * COMBAT.upgrades.perPickup * 100)}`, '#ffd84a', 1.2);
+          this.play('perfect_charge', e.x, e.y);
+          if (e.tank === this.localId) haptic('light');
+          break;
+        }
+        case 'regen': {
+          const t = s.tanks[e.tank];
+          if (canSeeTank(s, this.myTeam, t)) {
+            this.fx.sparks(this.sx(t.x, t.y), this.sy(t.x, t.y) - 20, 8, 0x8aff8a);
+            this.fx.floatText(this.sx(t.x, t.y), this.sy(t.x, t.y) - 56, `+${Math.round(e.amount)}`, '#8aff8a');
+          }
+          break;
+        }
+        case 'crateRespawn':
+          break;
         case 'respawn':
           this.prev[e.tank].x = s.tanks[e.tank].x;
           this.prev[e.tank].y = s.tanks[e.tank].y;
@@ -502,10 +523,12 @@ export class GameScene {
       }
       // health bar
       const w = 44;
-      const hpF = t.hp / def.hp;
+      const hpF = t.hp / maxHp(t);
       const by = sy - 62;
       this.bars.rect(sx - w / 2 - 1, by - 1, w + 2, 7).fill({ color: 0x000000, alpha: 0.6 });
-      this.bars.rect(sx - w / 2, by, w * hpF, 5).fill(own ? (i === this.localId ? 0x7ee07e : 0x6aa9ff) : 0xff5a4a);
+      this.bars.rect(sx - w / 2, by, w * Math.min(1, hpF), 5).fill(own ? (i === this.localId ? 0x7ee07e : 0x6aa9ff) : 0xff5a4a);
+      // crate upgrades: one gold pip each under the bar (round 03)
+      for (let k = 0; k < t.upgrades; k++) this.bars.rect(sx - w / 2 + k * 3.7, by + 7, 3, 3).fill(0xffd84a);
       if (!own) {
         // enemy marker: red triangle above the bar (colour-blind friendly shape + colour)
         this.bars.poly([sx - 6, by - 12, sx + 6, by - 12, sx, by - 4]).fill(0xff3b30);
@@ -516,6 +539,7 @@ export class GameScene {
       const tg = tanks[me.target];
       if (tg.alive) this.overlays.reticle(tg.x, tg.y);
     }
+    for (const p of s.pickups) this.overlays.pickup(p.x, p.y);
     // mines (job 5): own team clearly, enemy mines only as a faint glimmer up close & in sight
     const glimmer = Number(ABILITIES.mine.glimmerRange);
     for (const m of s.mines) {
@@ -652,7 +676,8 @@ export class GameScene {
     const ab = me.ability;
     return {
       hp: Math.ceil(me.hp),
-      maxHp: TANKS[me.cls].hp,
+      maxHp: Math.round(maxHp(me)),
+      upgrades: me.upgrades,
       alive: me.alive,
       respawn: Math.max(0, me.respawn),
       kills: me.kills,

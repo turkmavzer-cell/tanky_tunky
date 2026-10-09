@@ -2,7 +2,8 @@
  * Simulation entry point. `step()` advances exactly one fixed tick (SIM_DT) and is deterministic:
  * the same state + inputs always produce the same next state (replays, lockstep, headless tests).
  */
-import { MATCH, SIM_DT, TANKS, VISION, type TankClassId } from './config';
+import { COMBAT, MATCH, SIM_DT, TANKS, VISION, type TankClassId } from './config';
+import { updatePickups } from './upgrades';
 import type { PlayerInput } from './input';
 import { Rng } from './rng';
 import type { MatchRules, SimState, Tank } from './state';
@@ -67,6 +68,9 @@ export function createState(opts: SimOptions): SimState {
     lastHitBy: -1,
     kills: 0,
     deaths: 0,
+    upgrades: 0,
+    combatT: 0,
+    regenNext: COMBAT.regen.outOfCombat,
   }));
   const s: SimState = {
     tick: 0,
@@ -76,6 +80,8 @@ export function createState(opts: SimOptions): SimState {
     tanks,
     shells: [],
     mines: [],
+    pickups: [],
+    crateRespawns: [],
     nextId: 1,
     vision: createVision(opts.map),
     match: { phase: rules.endless ? 'playing' : 'countdown', t: 0, timeLeft: rules.duration, kills: [] },
@@ -107,6 +113,7 @@ export function step(state: SimState, inputs: readonly PlayerInput[]): void {
     collideTanks(state);
     updateShells(state, rng, dt);
     updateMines(state, dt);
+    if (playing) updatePickups(state, dt);
   }
   if (state.tick % VISION_INTERVAL === 0) updateVision(state);
   state.rng = rng.state();
