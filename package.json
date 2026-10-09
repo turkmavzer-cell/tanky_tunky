@@ -15,7 +15,8 @@
     "e2e": "playwright test --project=mobile-landscape",
     "apk:debug": "npm run build && npx cap sync android && cd android && ./gradlew assembleDebug",
     "check": "npm run lint && npm run typecheck && npm test && npm run build && npm run e2e && npm run e2e:perf",
-    "e2e:perf": "playwright test --project=perf --workers=1"
+    "e2e:perf": "playwright test --project=perf --workers=1",
+    "icons": "node tools/make-icons.mjs"
   },
   "devDependencies": {
     "@capacitor/cli": "^8.5.3",

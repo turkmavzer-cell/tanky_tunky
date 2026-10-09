@@ -71,3 +71,24 @@ test('multi-touch: joystick + charged fire + ability at the same time', async ({
   expect(Math.abs(stopped.moveX) + Math.abs(stopped.moveY)).toBeLessThan(0.05);
   expect(errors).toEqual([]);
 });
+
+test('FIRE drag: thumb drift keeps auto-aim, a real drag aims manually, release returns to auto-aim', async ({ page }) => {
+  type W = Window & { __tanky: { scene: { localInput: { aim: number }; touch: { state: { aimAngle: number | null; fire: boolean } } } } };
+  await startMatch(page, 'silent');
+  const cdp = await page.context().newCDPSession(page);
+  const fireBox = (await page.getByTestId('fire').boundingBox())!;
+  const fire = { x: fireBox.x + fireBox.width / 2, y: fireBox.y + fireBox.height / 2, id: 2 };
+  const aimState = (): Promise<number | null> => page.evaluate(() => (window as unknown as W).__tanky.scene.touch.state.aimAngle);
+
+  await touch(cdp, 'touchStart', [fire]);
+  await touch(cdp, 'touchMove', [{ ...fire, x: fire.x - 30, y: fire.y + 12 }]); // ~32 px thumb drift
+  expect(await aimState()).toBeNull();
+  await touch(cdp, 'touchMove', [{ ...fire, x: fire.x - 120, y: fire.y - 40 }]); // deliberate drag
+  expect(await aimState()).not.toBeNull();
+  await touch(cdp, 'touchEnd', []);
+  expect(await aimState()).toBeNull();
+  // the next simulation input asks for auto-aim again (AIM_AUTO = -2)
+  const t0 = await page.evaluate(() => (window as unknown as { __tanky: { scene: { state: { tick: number } } } }).__tanky.scene.state.tick);
+  await page.waitForFunction((t) => (window as unknown as { __tanky: { scene: { state: { tick: number } } } }).__tanky.scene.state.tick > t + 2, t0);
+  expect(await page.evaluate(() => (window as unknown as W).__tanky.scene.localInput.aim)).toBe(-2);
+});

@@ -9,7 +9,7 @@ import { createState, step, type PlayerSpec } from '../sim/sim';
 import type { MatchRules, SimState } from '../sim/state';
 import { generateMap, type MapSize } from '../world/generator';
 import type { GameMap } from '../world/map';
-import { AiBot } from '../systems/ai/bot';
+import { AiBot, type AiLevel } from '../systems/ai/bot';
 
 export interface MatchOptions {
   seed: number;
@@ -21,7 +21,8 @@ export interface MatchOptions {
   humanPlayer?: boolean;
   playerName?: string;
   rules?: Partial<MatchRules>;
-  aiLevel?: 'easy' | 'normal' | 'hard';
+  /** Bot difficulty for every bot in the match, allies included (owner decision). */
+  aiLevel?: AiLevel;
 }
 
 export interface MatchHandle {

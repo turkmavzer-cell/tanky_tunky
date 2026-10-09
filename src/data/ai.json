@@ -1,27 +1,47 @@
 {
   "$comment": "Bot AI tuning (round-01 job 3). Times in seconds of simulation time, distances in tiles. AI sees only what the VisibilitySystem gives its team (no cheating).",
   "difficulty": "normal",
+  "$levels": "Difficulty (owner spec 2026-10-09, D-030). fireDelay: seconds a bot waits after a visible enemy enters its gun range before its first shot (resets when no enemy has been in range+sight for rangeGrace s). strategic: cover-seeking retreat, strafing at the preferred range, flanking, situational abilities. clumsy: wandering, hesitant movement. focusFire: shoot the weakest visible enemy in range (bots of one team converge on it). Applies to allies and enemies alike.",
   "levels": {
     "easy": {
-      "reactionTime": 0.7,
+      "fireDelay": 5,
       "aimError": 0.22,
       "fullChargeChance": 0.15,
       "shortChargeChance": 0.35,
-      "abilityUse": 0.5
+      "abilityUse": 0.5,
+      "strategic": false,
+      "clumsy": true,
+      "focusFire": false
     },
     "normal": {
-      "reactionTime": 0.4,
+      "fireDelay": 3,
       "aimError": 0.12,
       "fullChargeChance": 0.3,
       "shortChargeChance": 0.45,
-      "abilityUse": 0.8
+      "abilityUse": 0.8,
+      "strategic": false,
+      "clumsy": false,
+      "focusFire": false
     },
     "hard": {
-      "reactionTime": 0.2,
+      "fireDelay": 1,
       "aimError": 0.05,
       "fullChargeChance": 0.45,
       "shortChargeChance": 0.45,
-      "abilityUse": 1.0
+      "abilityUse": 1.0,
+      "strategic": true,
+      "clumsy": false,
+      "focusFire": false
+    },
+    "extreme": {
+      "fireDelay": 0,
+      "aimError": 0.02,
+      "fullChargeChance": 0.55,
+      "shortChargeChance": 0.4,
+      "abilityUse": 1.0,
+      "strategic": true,
+      "clumsy": false,
+      "focusFire": true
     }
   },
   "hearingRadius": 9,
@@ -56,5 +76,12 @@
     }
   },
   "patrolObjectiveChance": 0.5,
-  "fireAlignment": 0.1
+  "fireAlignment": 0.1,
+  "rangeGrace": 0.5,
+  "clumsy": {
+    "wobble": 0.9,
+    "wobbleEvery": 0.7,
+    "pauseChance": 0.25,
+    "pauseTime": 0.8
+  }
 }

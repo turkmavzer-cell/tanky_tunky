@@ -4,7 +4,7 @@
     "name": "Saklan",
     "class": "scout",
     "duration": 5,
-    "cooldown": 5,
+    "cooldown": 4,
     "noticeRange": 2,
     "shimmerOnHit": 0.5
   },
@@ -12,7 +12,7 @@
     "name": "Gümbürtü",
     "class": "heavy",
     "duration": 0,
-    "cooldown": 10,
+    "cooldown": 12,
     "radius": 2.4,
     "damage": 850,
     "falloff": [
@@ -31,7 +31,7 @@
   "swift": {
     "name": "Swift",
     "class": "standard",
-    "duration": 5,
+    "duration": 4,
     "cooldown": 8,
     "speedMul": 2,
     "fireRateMul": 2,

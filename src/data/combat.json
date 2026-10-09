@@ -83,8 +83,8 @@
   },
   "respawnTime": 3,
   "targeting": {
-    "$comment": "Auto turret targeting (round-01 job 1). switchRatio: a new candidate must be closer than switchRatio x current target distance to take over (0.85 = 15 % closer).",
-    "switchRatio": 0.85,
+    "$comment": "Auto turret targeting. switchRatio: a new candidate must be closer than switchRatio x current target distance to take over (0.9 = 10 % closer). A locked target outside the gun's range is dropped at once for a visible enemy inside the range (round-02).",
+    "switchRatio": 0.9,
     "leadIterations": 2
   }
 }

@@ -41,3 +41,32 @@ All values live in `src/data/tanks.json`, `combat.json`, `abilities.json`, `ai.j
 | standard | 69.9 % → 69.0 % | 1.94 → 1.74 | 1.55 → 1.59 |
 | artillery | 27.1 % → 27.6 % | 0.22 → 0.39 | 0.27 → 0.53 |
 | trapper | 44.5 % → 45.5 % | 0.78 → 0.85 | 0.91 → 1.04 |
+
+## Round 02 — option B (D-034), hard bots, 5-minute matches
+
+`npx tsx tools/balance.ts 300 40 hard` (300 matches, same seeds for every run).
+
+| Class | Before B | Round 1 | Round 2 | **Round 3 (current)** |
+|---|---|---|---|---|
+| scout | 42.1 % | 47.4 % | 50.9 % | **48.3 %** ✅ |
+| heavy | 69.2 % | 66.2 % | 62.0 % | **63.4 %** ❌ |
+| standard | 62.6 % | 58.1 % | 58.5 % | **56.5 %** ≈ |
+| artillery | 24.1 % | 26.9 % | 28.0 % | **31.5 %** ❌ |
+| trapper | 51.2 % | 50.3 % | 49.0 % | **50.7 %** ✅ |
+
+Final table:
+
+| Class | Appearances | Win rate (decisive) | K/D | Kills / match | Ability uses / match | Shots / match | Charged shots (≥30 %) | Band 45–55 % |
+|---|---|---|---|---|---|---|---|---|
+| scout | 377 | 48.3 % | 1.01 | 3.90 | 29.13 | 45.1 | 38 % | ✅ |
+| heavy | 356 | 63.4 % | 1.45 | 3.09 | 2.70 | 12.7 | 56 % | ❌ |
+| standard | 369 | 56.5 % | 1.09 | 3.33 | 5.89 | 29.0 | 44 % | ❌ |
+| artillery | 333 | 31.5 % | 0.66 | 2.67 | 16.14 | 112.5 | 92 % | ❌ |
+| trapper | 365 | 50.7 % | 1.01 | 3.88 | 60.68 | 16.5 | 56 % | ✅ |
+
+
+### Why Heavy and Artillery are still outside the band
+- **Artillery** — a probe over 40 matches: **131 damage per shot** on average although the shell's tap damage is 780. Only 54 % of shells touch anyone, and those land near the blast edge (damage falls linearly to 0 at the edge; arcing shells never score a direct hit), so a hit deals about 20 % of the listed damage. More damage/hp barely moves it (+7 points over three rounds). It needs a rule change, e.g. full damage inside the inner half of the blast radius, or a short-range auto-correction of the landing point toward the locked target.
+- **Heavy** — accurate (93 % of shots hit) and very hard to kill; all its option-B levers are at the ±20 % limit. The remaining lever is its hp (5500, owner's anchor value) or Rumble.
+
+Owner decides the next step; nothing outside option B was changed.
