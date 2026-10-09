@@ -74,6 +74,22 @@ Gates: lint ✅ typecheck ✅ unit 125 ✅ E2E 19 ✅ perf ✅ (60 FPS, p95 16.7
 
 To try on the phone: the new launcher icon; swiping the tank cards; each difficulty (Kolay should feel clumsy and slow to shoot, Ekstrem should shoot at once and gang up on a weak tank); the ability button countdown; auto-aim while holding FIRE with a moving thumb; a full 5-minute match.
 
+## Round 03 — maps, upgrades, regen, visibility (branch `fix/round-03-maps`, 2026-10-09)
+
+| Job | Status | Evidence |
+|---|---|---|
+| Signing fix (D-035) | ✅ | explicit debug signing + CI signer check (run #14 verified `05278fc8…`) |
+| Trapper removed, Scout hp 2200 (D-036) | ✅ | 4 cards on the select screen (e2e round03/06) |
+| Full visibility + forest translucency (D-037) | ✅ | `tests/visibility.test.ts` full-visibility suite; `03-forest-concealment.png` |
+| Crate upgrades (D-038) | ✅ | `tests/upgrades.test.ts`; `04a/04b-*.png` |
+| Regeneration (D-039) | ✅ | `tests/upgrades.test.ts`; `05-regen.png` |
+| Desert + city maps, selector (D-040) | ✅ | `tests/themes.test.ts` (30 seeds each); `01/02-*.png`, `06-select-map.png` |
+| Balance | 🟡 reported | BALANCE_REPORT round 03 (Artillery 22 %, Heavy 63–67 %) |
+
+Gates: lint ✅ typecheck ✅ unit 140 ✅ E2E 25 ✅ perf ✅ (p95 16.8 ms; JS work ~9 ms locally, ~+2 ms vs round 02 from busier fights).
+
+To try on the phone: uninstall once (signature fix), then install; both new maps; picking up upgrades from crates; regen after leaving a fight; enemies in trees.
+
 ## Open questions for the owner
 - Balance: Heavy (63 %) and Artillery (31.5 %) are outside the band after option B — see BALANCE_REPORT (artillery blast rule / Heavy hp).
 - Tank art: owner may supply 3D models (.glb) or images (Nano Banana) — pipeline to be planned.

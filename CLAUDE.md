@@ -113,6 +113,10 @@ VisibilitySystem + fog, auto-aim, unified passability + cliff visuals, fog-fair 
 balance option B (Heavy/Artillery still outside the band — owner decision pending). Owner rule: **collect requested changes,
 show the plan, start only after the owner says "uygula"**.
 
+### Round 03 (branch `fix/round-03-maps`, PR stacked on round 02) ✅ — see docs/PROGRESS.md
+Debug signing fix (explicit key + CI check), Trapper disabled, full visibility (forest = translucent ≤ 3 tiles), crate upgrades
+(+5 %/pickup, max 60 %), out-of-combat regen, desert + city maps with selector. Balance reported, not tuned.
+
 ## 7. Next steps
 
 1. Owner installs the debug APK (Actions → "Android APK" → artifact), runs `docs/PLAYTEST_CHECKLIST.md`, sends feedback.
