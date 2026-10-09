@@ -58,6 +58,23 @@ Assumptions (details in DECISIONS D-015…D-025): forest is see-through but conc
 
 To try on the phone: auto-aim feel + reticle readability; whether cliffs/ramps are now obvious (try Settings → Engel vurgusu → Güçlü); bump flash/haptic; each ability's timing (Settings → Geliştirici → Bekleme çarpanı); 60 s match pacing and the results screen; Trapper minimap.
 
+## Round 02 — owner feedback (branch `fix/round-02-feedback`, 2026-10-09)
+
+| # | Job | Status | Evidence |
+|---|---|---|---|
+| 1 | 5-minute matches (D-029) | ✅ | `match.json duration 300`; headless match test runs the full default duration |
+| 2 | Swipeable tank cards + "Yakında" ability tree (D-032) | ✅ | `src/ui/ClassSelect.tsx`; e2e round02 (swipe selects next card, every class reachable, numbers from data); `04/05/06-*.png` |
+| 3 | Ability active / cooldown / ready indicator | ✅ | button ring + seconds, ready flash + click + haptic, HUD chip; e2e round02; `01/02/03-ability-*.png` |
+| 4 | Bot difficulty Kolay/Normal/Zor/Ekstrem, allies included (D-030) | ✅ | `ai.json levels`; `tests/ai.test.ts` (first shot after exactly 5/3/1/0 s, delay restarts, retreat only on hard+, extreme focus fire, easy wanders); selector saved (schema v3, `tests/save.test.ts`) |
+| 5 | Balance option B (D-034) | 🟡 | 3 rounds within ±20 %: Scout 48 %, Trapper 51 % ✅, Standard 56.5 % ≈, Heavy 63 %, Artillery 31.5 % ❌ — cause analysed in `BALANCE_REPORT.md`, needs an owner decision |
+| 6 | Auto-aim "sometimes ignores a nearby enemy" (D-031) | ✅ | root cause: sticky manual aim after a thumb drift on FIRE; `tests/targeting.test.ts` (10 % hysteresis, out-of-range switch) + e2e controls (drift keeps auto-aim, release returns to auto-aim) |
+| 7 | App icon (D-033) | ✅ | `npm run icons`; adaptive + monochrome + legacy; `07-icon-shapes.png` |
+
+Gates: lint ✅ typecheck ✅ unit 125 ✅ E2E 19 ✅ perf ✅ (60 FPS, p95 16.7 ms).
+
+To try on the phone: the new launcher icon; swiping the tank cards; each difficulty (Kolay should feel clumsy and slow to shoot, Ekstrem should shoot at once and gang up on a weak tank); the ability button countdown; auto-aim while holding FIRE with a moving thumb; a full 5-minute match.
+
 ## Open questions for the owner
-- Abilities per class: owner will fill `docs/TANKS.md`.
+- Balance: Heavy (63 %) and Artillery (31.5 %) are outside the band after option B — see BALANCE_REPORT (artillery blast rule / Heavy hp).
+- Tank art: owner may supply 3D models (.glb) or images (Nano Banana) — pipeline to be planned.
 - Git flow: the session can only push `claude/tanky-tunky-setup-dw06hp`. Should this branch be merged into a new `main` via PR (and later phases go through PRs)? See D-001.

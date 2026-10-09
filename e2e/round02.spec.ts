@@ -67,7 +67,7 @@ test('tank select: swipeable cards with stats + ability, difficulty selector (re
   await shot(page, '05-tank-cards-swiped');
   // every card is reachable and shows its own numbers
   for (const [cls, hp] of [
-    ['scout', '1.750'],
+    ['scout', '1.900'],
     ['heavy', '5.500'],
     ['trapper', '2.375'],
   ] as const) {
