@@ -7,7 +7,7 @@
       "hullTurn": 7.0,
       "turretTurn": 9.0,
       "radius": 0.32,
-      "hp": 1900,
+      "hp": 2200,
       "armor": 0.0,
       "vision": 6.0,
       "fireCooldown": 0.28,
@@ -109,7 +109,9 @@
       "bounces": 0,
       "minRange": 0,
       "arcHeight": 0,
-      "ability": "mine"
+      "ability": "mine",
+      "enabled": false
     }
-  }
+  },
+  "$enabled": "enabled:false keeps a class's data (and its ability) in the game files but out of class select, bots and balance runs (owner 2026-10-09: Trapper removed for now, D-036)."
 }

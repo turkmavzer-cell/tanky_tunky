@@ -63,7 +63,6 @@ function Card({ cls, on, onPick }: { cls: TankClassId; on: boolean; onPick: () =
     [t('card.fireRate'), `${fmt(d.fireCooldown)} ${t('hud.sec')}`],
     [t('card.speed'), fmt(d.maxSpeed)],
     [t('card.range'), d.minRange > 0 ? `${fmt(d.minRange)}–${fmt(d.range)}` : fmt(d.range)],
-    [t('card.vision'), cls === 'trapper' ? t('card.visionAll') : fmt(d.vision)],
   ];
   return (
     <button className={'tank-card' + (on ? ' on' : '')} data-testid={`class-${cls}`} data-cls={cls} onClick={onPick}>

@@ -5,7 +5,12 @@ import visionJson from '../data/vision.json';
 import matchJson from '../data/match.json';
 
 export type TankClassId = 'scout' | 'heavy' | 'standard' | 'artillery' | 'trapper';
-export const TANK_CLASSES: readonly TankClassId[] = ['scout', 'heavy', 'standard', 'artillery', 'trapper'];
+/** Every class with data (tanks.json), including disabled ones. */
+export const ALL_TANK_CLASSES: readonly TankClassId[] = ['scout', 'heavy', 'standard', 'artillery', 'trapper'];
+/** Playable classes: class select, bot rosters, balance runs (tanks.json `enabled: false` hides a class). */
+export const TANK_CLASSES: readonly TankClassId[] = ALL_TANK_CLASSES.filter(
+  (c) => (tanksJson.classes as Record<string, { enabled?: boolean }>)[c].enabled !== false,
+);
 export type ShellKind = 'standard' | 'heavy' | 'artillery';
 export type AbilityId = 'hide' | 'rumble' | 'swift' | 'barrage' | 'mine';
 export const ABILITY_IDS: readonly AbilityId[] = ['hide', 'rumble', 'swift', 'barrage', 'mine'];
@@ -80,6 +85,8 @@ export interface VisionDef {
   elevationBonusPerLevel: number;
   memoryAlpha: number;
   unexploredAlpha: number;
+  fullVisibility: boolean;
+  forestAlpha: number;
 }
 export const VISION = visionJson as VisionDef;
 

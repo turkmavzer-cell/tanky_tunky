@@ -2,7 +2,7 @@
  * Simulation entry point. `step()` advances exactly one fixed tick (SIM_DT) and is deterministic:
  * the same state + inputs always produce the same next state (replays, lockstep, headless tests).
  */
-import { MATCH, SIM_DT, TANKS, type TankClassId } from './config';
+import { MATCH, SIM_DT, TANKS, VISION, type TankClassId } from './config';
 import type { PlayerInput } from './input';
 import { Rng } from './rng';
 import type { MatchRules, SimState, Tank } from './state';
@@ -34,7 +34,7 @@ export interface SimOptions {
 
 export function createState(opts: SimOptions): SimState {
   const rng = new Rng(opts.seed);
-  const rules: MatchRules = { cooldownMul: 1, duration: MATCH.duration, endless: false, ...opts.rules };
+  const rules: MatchRules = { cooldownMul: 1, duration: MATCH.duration, endless: false, fullVisibility: VISION.fullVisibility, ...opts.rules };
   const tanks: Tank[] = opts.players.map((p, i) => ({
     id: i,
     team: p.team,

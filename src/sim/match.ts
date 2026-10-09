@@ -63,7 +63,7 @@ export function chooseSpawn(s: SimState, t: Tank, deathX: number, deathY: number
     const cy = p.y + 0.5;
     let nearest = Infinity;
     for (const e of enemies) nearest = Math.min(nearest, Math.sqrt((e.x - cx) * (e.x - cx) + (e.y - cy) * (e.y - cy)));
-    const seen = s.vision[enemyTeam].visible[p.y * W + p.x] === 1;
+    const seen = s.vision[enemyTeam].los[p.y * W + p.x] === 1; // real line of sight, also in full-visibility mode
     const dDeath = Math.sqrt((deathX - cx) * (deathX - cx) + (deathY - cy) * (deathY - cy));
     const repeat = MATCH.spawn.avoidRepeat && i === t.lastSpawn;
     const safety = (seen ? -1000 : 0) + Math.min(nearest, 30);

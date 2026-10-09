@@ -137,7 +137,7 @@ test('09 Artillery — Barrage warnings', async ({ page }) => {
 });
 
 test('10 Trapper — mines + minimap with red dots', async ({ page }) => {
-  await startMatch(page, 'silent&endless&map=40&seed=11&bots=idle', 'trapper');
+  await startMatch(page, 'silent&endless&map=40&seed=11&bots=idle&cls=trapper'); // disabled class, dev URL only
   await stage(page, -1, 0, 0);
   await page.keyboard.down('KeyA');
   for (let k = 0; k < 3; k++) {

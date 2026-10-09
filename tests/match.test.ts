@@ -84,7 +84,7 @@ describe('match flow (round-01 job 4)', () => {
         const { point, index } = chooseSpawn(s, t, t.x, t.y);
         expect(isPassable(s.map, point.x, point.y, point.x, point.y)).toBe(true);
         expect(reach[point.y * s.map.width + point.x]).toBe(1);
-        expect(s.vision[0].visible[point.y * s.map.width + point.x]).toBe(0);
+        expect(s.vision[0].los[point.y * s.map.width + point.x]).toBe(0);
         expect(index).not.toBe(last);
         last = index;
         t.lastSpawn = index;

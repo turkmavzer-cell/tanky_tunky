@@ -139,8 +139,10 @@ export interface MatchState {
 }
 
 export interface TeamVision {
-  /** 1 = tile currently in line of sight of any team member. */
+  /** 1 = tile visible to the team (everything when rules.fullVisibility, else = los). */
   visible: Uint8Array;
+  /** 1 = tile in real line of sight of any team member (spawn safety uses this in every mode). */
+  los: Uint8Array;
   /** 1 = tile was seen at least once (memory / "explored"). */
   explored: Uint8Array;
 }
@@ -152,6 +154,8 @@ export interface MatchRules {
   duration: number;
   /** Play without countdown / timer (sandbox tests). */
   endless: boolean;
+  /** Whole map + every enemy visible (no fog); forest/Hide rules still apply. Default from vision.json. */
+  fullVisibility: boolean;
 }
 
 export type SimEvent =

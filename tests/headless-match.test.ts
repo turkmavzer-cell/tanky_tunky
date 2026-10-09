@@ -23,12 +23,12 @@ describe('headless match (default duration from match.json)', () => {
     expect(scoreboard(a.state)).toEqual(scoreboard(b.state));
   });
 
-  it('respawn points are never visible to the enemy team at the moment of respawn', () => {
+  it('respawn points are never in the enemy team line of sight at the moment of respawn (also with full visibility)', () => {
     for (const seed of [2, 5, 8]) {
       const m = createMatch({ seed, mapSize: 40 });
       let respawns = 0;
       for (let i = 0; i < 60 * 64 && m.state.match.phase !== 'ended'; i++) {
-        const before = m.state.vision.map((v) => v.visible.slice());
+        const before = m.state.vision.map((v) => v.los.slice());
         stepMatch(m, null);
         for (const e of m.state.events) {
           if (e.type !== 'respawn') continue;

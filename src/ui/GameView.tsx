@@ -4,7 +4,7 @@ import type { Settings } from '../core/save';
 import { onAppPause } from '../core/platform';
 import { t } from '../i18n';
 import { TouchControls } from './touchControls';
-import { TANK_CLASSES, type TankClassId } from '../sim/config';
+import { ALL_TANK_CLASSES, type TankClassId } from '../sim/config';
 import type { ScoreRow } from '../game/matchSetup';
 import { ResultsScreen } from './ResultsScreen';
 import { MATCH } from '../sim/config';
@@ -41,7 +41,7 @@ function debugParams(): DebugParams {
   if (q.has('seed')) out.seed = Number(q.get('seed'));
   if (q.has('renderScale')) out.renderScale = Number(q.get('renderScale'));
   const cls = q.get('cls') as TankClassId | null;
-  if (cls && TANK_CLASSES.includes(cls)) out.playerClass = cls;
+  if (cls && ALL_TANK_CLASSES.includes(cls)) out.playerClass = cls;
   if (q.get('bots') === 'idle') out.idleBots = true;
   if (q.get('bots') === 'enemies') out.idleBots = 'allies';
   if (q.has('endless')) out.endless = true;

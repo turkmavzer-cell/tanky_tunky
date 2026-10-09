@@ -6,12 +6,12 @@ import { FixedStepLoop } from '../core/loop';
 import { FrameStats } from '../core/frameStats';
 import { KeyboardMouse } from '../core/keyboard';
 import { haptic } from '../core/platform';
-import { ABILITIES, COMBAT, MATCH, SIM_DT, TANKS, type AbilityId, type TankClassId } from '../sim/config';
+import { ABILITIES, COMBAT, MATCH, SIM_DT, TANKS, VISION, type AbilityId, type TankClassId } from '../sim/config';
 import { AIM_AUTO, BTN_ABILITY, BTN_FIRE, EMPTY_INPUT, quantizeAim, quantizeMove, type PlayerInput } from '../sim/input';
 import { chargeLevel } from '../sim/sim';
 import type { SimEvent, SimState } from '../sim/state';
 import { lerp, lerpAngle } from '../sim/dmath';
-import { canSeeTank, isInvisible, tileVisible } from '../sim/visibility';
+import { canSeeTank, inForest, isInvisible, tileVisible } from '../sim/visibility';
 import { Camera } from '../render/camera';
 import { WorldRenderer } from '../render/worldRenderer';
 import { TankView } from '../render/tankView';
@@ -176,7 +176,8 @@ export class GameScene {
     this.fx = new Fx(this.opts.quality === 'low' ? 350 : 700);
     this.fx.quality = this.opts.quality === 'low' ? 0.5 : 1;
     this.overlays = new Overlays((x, y) => this.worldView.heightPx(x, y));
-    if (!this.opts.noFog) this.fog = new FogLayer(map.width, map.height);
+    // darkening overlay only in line-of-sight mode; the default is full visibility (D-037)
+    if (!this.opts.noFog && !this.state.rules.fullVisibility) this.fog = new FogLayer(map.width, map.height);
     this.worldView.attach(this.app.renderer);
     this.world.addChild(this.worldView.ground, this.fx.under, this.overlays.ground, this.worldView.objects, this.fx.over, this.overlays.air, this.worldView.bumpLayer);
     if (this.fog) this.world.addChild(this.fog.container);
@@ -455,13 +456,14 @@ export class GameScene {
       const p = this.prev[i];
       const v = this.tankViews[i];
       const own = t.team === this.myTeam;
-      const seen = !this.fog || canSeeTank(s, this.myTeam, t);
+      const seen = canSeeTank(s, this.myTeam, t);
       const invisible = isInvisible(t);
       // enemy hit while invisible: brief shimmer cue in visible tiles
       const shimmer = !own && invisible && t.shimmer > 0 && tileVisible(s, this.myTeam, t.x, t.y);
       v.root.visible = t.alive && (seen || shimmer);
       let a = 1;
       if (own && invisible) a = 0.42;
+      else if (inForest(s, t)) a = own ? 0.75 : VISION.forestAlpha; // concealed in the trees
       if (shimmer) a = 0.12 + 0.18 * Math.abs(Math.sin(time * 40));
       if (t.protect > 0) a *= 0.55 + 0.45 * Math.abs(Math.sin(time * 14));
       v.root.alpha = a;
