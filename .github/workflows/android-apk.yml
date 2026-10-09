@@ -38,6 +38,8 @@ jobs:
       - name: Sync Capacitor
         run: npx cap sync android
 
+      # android/app/build.gradle signs debug builds with keystore/debug.keystore directly; the copy below only
+      # keeps any other tool that looks at ~/.android on the same key.
       - name: Install persistent debug keystore
         run: |
           mkdir -p ~/.android
@@ -48,6 +50,19 @@ jobs:
         run: |
           chmod +x gradlew
           VERSION_NAME="$(node -p "require('../package.json').version")-debug.${{ github.run_number }}" ./gradlew assembleDebug --no-daemon
+
+      # Fails the build if the APK is not signed with the committed debug key, so an APK that could not
+      # update the installed game ("paket çakışıyor") never reaches the phone.
+      - name: Verify APK signature (committed debug key)
+        run: |
+          APK=android/app/build/outputs/apk/debug/app-debug.apk
+          APKSIGNER=$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -1)apksigner
+          "$APKSIGNER" verify --print-certs "$APK" | tee signer.txt
+          GOT=$(grep -m1 'certificate SHA-256 digest' signer.txt | awk '{print $NF}')
+          WANT=$(tr -d ' \n' < keystore/debug.sha256)
+          echo "### APK signer SHA-256: \`$GOT\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "### versionCode: ${{ github.run_number }}" >> "$GITHUB_STEP_SUMMARY"
+          if [ "$GOT" != "$WANT" ]; then echo "::error::APK signed with $GOT, expected $WANT (keystore/debug.sha256)"; exit 1; fi
 
       - name: APK size budget (< 40 MB)
         run: |
