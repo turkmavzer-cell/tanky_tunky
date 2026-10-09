@@ -93,4 +93,4 @@ To try on the phone: uninstall once (signature fix), then install; both new maps
 ## Open questions for the owner
 - Balance: Heavy (63 %) and Artillery (31.5 %) are outside the band after option B — see BALANCE_REPORT (artillery blast rule / Heavy hp).
 - Tank art: owner may supply 3D models (.glb) or images (Nano Banana) — pipeline to be planned.
-- Git flow: the session can only push `claude/tanky-tunky-setup-dw06hp`. Should this branch be merged into a new `main` via PR (and later phases go through PRs)? See D-001.
+- Merge the stacked PRs #1 → #2 → #3 so the default branch carries the current game (new sessions start from it).

@@ -4,7 +4,8 @@ Things that cannot be measured headlessly. Tick on a real phone (landscape), not
 Measurable items (frame time, input latency proxies, APK size) are automated — see `PERF.md`.
 
 ## Install / startup
-- [ ] APK installs over the previous debug build without "package conflicts" (persistent debug key).
+- [ ] APK installs over the previous debug build without "package conflicts" (explicit debug key, D-035; one uninstall needed once after round 03).
+- [ ] New launcher icon (isometric tank) looks right in the launcher's icon shape.
 - [ ] Opens straight into landscape, system bars hidden (immersive), screen stays on.
 - [ ] Notch / rounded corners: no HUD element is cut off.
 - [ ] From icon tap to driving a tank < 60 s (target: two taps — "Hızlı Maç").
@@ -22,6 +23,22 @@ Measurable items (frame time, input latency proxies, APK size) are automated —
 - [ ] Holding too long: red overheat, short lock; feels fair, not frustrating.
 - [ ] Tank slows noticeably while charging (heavier classes slow more).
 - [ ] Buttons are comfortable size (≥ 48 dp) and reachable; left-handed mode mirrors them.
+
+## Match & menus (rounds 02–03)
+- [ ] Tank cards: swipe left/right, the centred card is selected, numbers are readable.
+- [ ] Map selector (Çöl / Şehir / Orman) and difficulty (Kolay / Normal / Zor / Ekstrem) are remembered next time.
+- [ ] 5-minute match pacing feels right; the last 10 s are emphasised; results screen + "Tekrar oyna".
+- [ ] Kolay bots feel clumsy and slow to shoot; Ekstrem bots shoot at once and gang up on a weak tank.
+- [ ] Ability button: countdown while active, grey ring + seconds while cooling down, flash + click when ready.
+- [ ] Auto-aim keeps tracking a nearby enemy while the thumb rests/drifts on FIRE; a deliberate drag aims manually.
+
+## Maps, upgrades, regen (round 03)
+- [ ] Desert: streets and half-ruined houses read clearly; houses give cover; rubble can be driven over.
+- [ ] City: roads, pavements, buildings and cars read clearly; tanks behind tall buildings are still findable.
+- [ ] No darkening; enemies everywhere are visible, except in forest (translucent only within ~3 tiles).
+- [ ] Breaking a crate drops a pickup; driving over it shows "+%5" and the HUD chip; pips under the hp bar.
+- [ ] Upgrades are gone after dying; crates come back after ~45 s.
+- [ ] Out of combat the hp bar refills in visible steps (+5 % every 5 s), green "+N" numbers.
 
 ## Hit feel
 - [ ] Muzzle flash + recoil + smoke on every shot; bigger for charged shots.
