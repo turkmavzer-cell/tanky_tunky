@@ -17,13 +17,14 @@ for (const [name, query] of [
 
 test('visual: combat (charged shot hits an enemy)', async ({ page }) => {
   await startMatch(page, 'silent&endless&map=40&seed=11&cls=heavy&bots=idle');
-  // place enemy 2 just in front of the player on open ground and aim at it
-  await page.evaluate(() => {
+  // place the first enemy just in front of the player on open ground and aim at it
+  const foe = await page.evaluate(() => {
     type M = { width: number; feature: Uint8Array; elev: Uint8Array; flags: Uint8Array; version: number };
-    const sc = (window as unknown as { __tanky: { scene: { worldView: { invalidate(): void }; state: { map: M; tanks: { x: number; y: number }[] } } } }).__tanky.scene;
+    const sc = (window as unknown as { __tanky: { scene: { worldView: { invalidate(): void }; state: { map: M; tanks: { x: number; y: number; team: number }[] } } } }).__tanky.scene;
     const st = sc.state;
     const me = st.tanks[0];
-    const e = st.tanks[2];
+    const idx = st.tanks.findIndex((t) => t.team !== me.team);
+    const e = st.tanks[idx];
     // clear a firing lane: no features/elevation within 4 tiles of the player
     for (let y = Math.floor(me.y) - 4; y <= Math.floor(me.y) + 4; y++)
       for (let x = Math.floor(me.x) - 4; x <= Math.floor(me.x) + 4; x++) {
@@ -38,15 +39,17 @@ test('visual: combat (charged shot hits an enemy)', async ({ page }) => {
     // screen-right of the player = world (+x, -y)
     e.x = me.x + 2.1;
     e.y = me.y - 2.1;
+    return idx;
   });
   await page.mouse.move(780, 190);
-  await page.keyboard.down('Space');
   type T = { __tanky: { scene: { state: { tanks: { chargeT: number; fullT: number; hp: number }[] } } } };
+  const hpBefore = await page.evaluate((i) => (window as unknown as T).__tanky.scene.state.tanks[i].hp, foe);
+  await page.keyboard.down('Space');
   await page.waitForFunction(() => (window as unknown as T).__tanky.scene.state.tanks[0].chargeT > 1.4, null, { timeout: 30_000 });
   await page.screenshot({ path: 'e2e/out/visual-charging.png' });
   // release inside the perfect window (screenshots take sim time, so release first)
   await page.waitForFunction(() => (window as unknown as T).__tanky.scene.state.tanks[0].fullT > 0, null, { timeout: 30_000, polling: 'raf' });
   await page.keyboard.up('Space');
-  await page.waitForFunction(() => (window as unknown as T).__tanky.scene.state.tanks[2].hp < 120, null, { timeout: 30_000, polling: 'raf' });
+  await page.waitForFunction(([i, h]) => (window as unknown as T).__tanky.scene.state.tanks[i].hp < h, [foe, hpBefore] as const, { timeout: 30_000, polling: 'raf' });
   await page.screenshot({ path: 'e2e/out/visual-combat-hit.png' });
 });

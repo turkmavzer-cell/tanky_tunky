@@ -349,7 +349,7 @@ export class GameScene {
           const visible = canSeeTank(s, this.myTeam, t) || t.team === this.myTeam;
           if (visible) {
             this.tankViews[e.target].hitFlash();
-            this.fx.damageNumber(this.sx(t.x, t.y), this.sy(t.x, t.y) - 50, e.damage, e.damage >= 30);
+            this.fx.damageNumber(this.sx(t.x, t.y), this.sy(t.x, t.y) - 50, e.damage, e.damage >= TANKS[t.cls].hp * 0.25); // big hit = a quarter of the max hp
             this.fx.sparks(this.sx(t.x, t.y), this.sy(t.x, t.y) - 16, 8);
           }
           this.play('hit_metal', t.x, t.y);

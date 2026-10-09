@@ -109,10 +109,12 @@ test('07 Heavy — Rumble shockwave', async ({ page }) => {
   await startMatch(page, 'silent&endless&map=40&seed=11&bots=idle', 'heavy');
   await stage(page, 3, 1.3, -1.0);
   await ticks(page, 5);
+  const hp3 = () => page.evaluate(() => (window as unknown as W).__tanky.scene.state.tanks[3].hp);
+  const before = await hp3();
   await ability(page);
   await ticks(page, 8);
   await shot(page, '07-ability-rumble');
-  expect(await page.evaluate(() => (window as unknown as W).__tanky.scene.state.tanks[3].hp)).toBeLessThan(120);
+  expect(await hp3()).toBeLessThan(before);
 });
 
 test('08 Standard — Swift', async ({ page }) => {

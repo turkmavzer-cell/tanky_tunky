@@ -123,31 +123,32 @@ describe('Standard — Swift', () => {
 });
 
 describe('Artillery — Barrage', () => {
-  it('fires exactly 5 warned shells ~1 s apart around the target, slows the tank and blocks normal fire', () => {
+  it('fires all its warned shells within its short duration, slows the tank and blocks normal fire meanwhile', () => {
+    const def = ABILITIES.barrage;
     const s = arena([
       { team: 0, cls: 'artillery', x: 5.5, y: 10.5 },
       { team: 1, cls: 'heavy', x: 10.5, y: 10.5 },
     ]);
     run(s, 5, [{ ...idle, aim: AIM_AUTO }, idle]);
     const ev: SimEvent[] = run(s, 1, [{ ...idle, aim: AIM_AUTO, buttons: BTN_ABILITY }, idle]);
-    const fired: number[] = [];
+    const fireTicks: number[] = []; // callback sees the previous step's events → tick k = shot of step k-1
     let tick = 0;
     let speedDuring = 0;
     const evs = ev.concat(
-      run(s, secs(5.2), (st) => {
-        if (tick === secs(3)) speedDuring = Math.hypot(st.tanks[0].vx, st.tanks[0].vy);
+      run(s, secs(Number(def.duration) + 0.5), (st) => {
         tick++;
-        if (st.events.some((e) => e.type === 'fire')) fired.push(tick);
-        return [{ ...idle, aim: AIM_AUTO, moveX: 127, buttons: BTN_FIRE }, idle];
+        if (tick === secs(Number(def.duration) / 2)) speedDuring = Math.hypot(st.tanks[0].vx, st.tanks[0].vy);
+        if (st.events.some((e) => e.type === 'fire')) fireTicks.push(tick);
+        // holds fire the whole time: no normal shot may leave while the barrage lasts
+        return [{ ...idle, aim: AIM_AUTO, moveX: 127, buttons: tick < secs(Number(def.duration)) ? BTN_FIRE : 0 }, idle];
       }),
     );
     const warned = s.shells.filter((x) => x.warn).length + evs.filter((e) => e.type === 'explode' && e.kind === 'artillery').length;
-    expect(warned).toBe(5);
-    const fires = evs.filter((e) => e.type === 'fire').length;
-    expect(fires).toBe(5); // no normal shots while the barrage lasts
+    expect(warned).toBe(def.shots);
+    expect(evs.filter((e) => e.type === 'fire').length).toBe(def.shots);
+    expect(fireTicks[fireTicks.length - 1] - 1).toBeLessThanOrEqual(secs(1));
     expect(speedDuring).toBeGreaterThan(0);
     expect(speedDuring).toBeLessThan(TANKS.artillery.maxSpeed * 0.45);
-    // landing points scatter around the target but within the scatter radius (+target motion 0)
     run(s, 120, [idle, idle]);
   });
 

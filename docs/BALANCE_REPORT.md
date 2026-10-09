@@ -29,3 +29,15 @@ Win rate counts only decisive matches (team with more kills wins). Target band: 
 - Draw rate 14 % with 6 kills/match: matches are short and low-scoring; consider 40×40 maps with fewer spawn points far from the centre.
 
 All values live in `src/data/tanks.json`, `combat.json`, `abilities.json`, `ai.json`; cooldowns can be scaled live in Settings → Developer → "Bekleme çarpanı".
+
+## Update 2026-10-09 — ×25 scale (D-027) + short Barrage (D-028)
+
+300 matches, same seeds. The ×25 scale alone changes nothing (uniform); the differences come from the 6-shells-in-1-s Barrage.
+
+| Class | Win rate before → after | K/D before → after | Kills / match before → after |
+|---|---|---|---|
+| scout | 40.3 % → 40.2 % | 0.65 → 0.64 | 0.92 → 0.97 |
+| heavy | 67.0 % → 66.3 % | 2.91 → 2.69 | 1.43 → 1.34 |
+| standard | 69.9 % → 69.0 % | 1.94 → 1.74 | 1.55 → 1.59 |
+| artillery | 27.1 % → 27.6 % | 0.22 → 0.39 | 0.27 → 0.53 |
+| trapper | 44.5 % → 45.5 % | 0.78 → 0.85 | 0.91 → 1.04 |
