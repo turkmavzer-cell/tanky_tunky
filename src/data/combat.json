@@ -86,5 +86,18 @@
     "$comment": "Auto turret targeting. switchRatio: a new candidate must be closer than switchRatio x current target distance to take over (0.9 = 10 % closer). A locked target outside the gun's range is dropped at once for a visible enemy inside the range (round-02).",
     "switchRatio": 0.9,
     "leadIterations": 2
+  },
+  "upgrades": {
+    "$comment": "Crate upgrades (owner 2026-10-09, D-038): a destroyed crate drops a pickup; each pickup adds perPickup to max hp AND to damage dealt (additive), up to max pickups (12 x 5 % = 60 %). Lost on death. Crates rebuild after crateRespawn s (when no tank stands on the tile).",
+    "perPickup": 0.05,
+    "max": 12,
+    "pickupRadius": 0.65,
+    "crateRespawn": 45
+  },
+  "regen": {
+    "$comment": "Out-of-combat regeneration (owner 2026-10-09, D-039): after outOfCombat s without taking damage, dealing damage or firing, heal amount x max hp, then again every interval s.",
+    "outOfCombat": 5,
+    "interval": 5,
+    "amount": 0.05
   }
 }

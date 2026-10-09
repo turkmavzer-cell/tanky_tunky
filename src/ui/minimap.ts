@@ -39,7 +39,7 @@ export class Minimap {
         const i = y * m.width + x;
         const gr = m.ground[i];
         const f = m.feature[i];
-        let col = ['#4f7a34', '#7a5e3a', '#b8a06a', '#5a4a30', '#3f8fa8', '#1f4a8a'][gr];
+        let col = ['#4f7a34', '#7a5e3a', '#b8a06a', '#5a4a30', '#3f8fa8', '#1f4a8a', '#3c3e42', '#a8a49c'][gr];
         if (f === Feature.Forest) col = '#2f5a2a';
         if (f === Feature.Rock || f === Feature.Wall || f === Feature.Gate) col = '#77736c';
         if (gr !== Ground.Deep && m.elev[i] > 0) col = m.elev[i] > 1 ? '#8aa86a' : '#6a9050';

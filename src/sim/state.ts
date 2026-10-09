@@ -73,6 +73,27 @@ export interface Tank {
   lastHitBy: number;
   kills: number;
   deaths: number;
+  // --- round 03
+  /** Crate upgrades collected since the last spawn (each +perPickup max hp and damage). */
+  upgrades: number;
+  /** Seconds since this tank last took damage, dealt damage or fired (regeneration). */
+  combatT: number;
+  /** combatT at which the next regeneration tick heals. */
+  regenNext: number;
+}
+
+/** Upgrade dropped by a destroyed crate. */
+export interface Pickup {
+  id: number;
+  x: number;
+  y: number;
+}
+
+/** A destroyed crate tile that rebuilds itself after `t` seconds. */
+export interface CrateRespawn {
+  x: number;
+  y: number;
+  t: number;
 }
 
 export interface Shell {
@@ -139,8 +160,10 @@ export interface MatchState {
 }
 
 export interface TeamVision {
-  /** 1 = tile currently in line of sight of any team member. */
+  /** 1 = tile visible to the team (everything when rules.fullVisibility, else = los). */
   visible: Uint8Array;
+  /** 1 = tile in real line of sight of any team member (spawn safety uses this in every mode). */
+  los: Uint8Array;
   /** 1 = tile was seen at least once (memory / "explored"). */
   explored: Uint8Array;
 }
@@ -152,9 +175,15 @@ export interface MatchRules {
   duration: number;
   /** Play without countdown / timer (sandbox tests). */
   endless: boolean;
+  /** Whole map + every enemy visible (no fog); forest/Hide rules still apply. Default from vision.json. */
+  fullVisibility: boolean;
 }
 
 export type SimEvent =
+  | { type: 'pickupSpawn'; id: number; x: number; y: number }
+  | { type: 'pickup'; tank: number; x: number; y: number; level: number }
+  | { type: 'regen'; tank: number; amount: number }
+  | { type: 'crateRespawn'; x: number; y: number }
   | { type: 'fire'; tank: number; x: number; y: number; angle: number; charge: number; perfect: boolean; kind: ShellKind }
   | { type: 'chargeFull'; tank: number }
   | { type: 'overheat'; tank: number }
@@ -182,6 +211,8 @@ export interface SimState {
   tanks: Tank[];
   shells: Shell[];
   mines: Mine[];
+  pickups: Pickup[];
+  crateRespawns: CrateRespawn[];
   nextId: number;
   /** Per-team fog of war, recomputed at vision.hz. Index = team. */
   vision: TeamVision[];

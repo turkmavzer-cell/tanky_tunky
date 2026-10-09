@@ -1,9 +1,12 @@
 {
-  "$comment": "Fog of war / VisibilitySystem tuning (brief \u00a75). Distances in tiles.",
+  "$comment": "Fog of war / VisibilitySystem tuning (brief §5). Distances in tiles.",
   "hz": 15,
-  "forestConcealRange": 1.6,
+  "forestConcealRange": 3,
   "invisibleNoticeRange": 2,
   "elevationBonusPerLevel": 1,
   "memoryAlpha": 0.6,
-  "unexploredAlpha": 0.93
+  "unexploredAlpha": 0.93,
+  "fullVisibility": true,
+  "forestAlpha": 0.4,
+  "$fullVisibility": "Owner 2026-10-09 (D-037): no darkening, the whole map and every enemy are visible. Exceptions: Hide (invisible) and a tank inside a forest, which an enemy only sees (translucent, forestAlpha) from <= forestConcealRange tiles. Line of sight is still computed (spawn safety, rules.fullVisibility=false mode)."
 }

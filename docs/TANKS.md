@@ -8,13 +8,15 @@ hasar 1x → 3x (tam şarj), "mükemmel şarj" +%15, mermi hızı 1x → 1,6x, m
 
 | Sınıf | Kod adı | Rol | Hız | Can | Zırh | Efektif can* | Görüş | Atış tipi |
 |---|---|---|---|---|---|---|---|---|
-| Çevik | `scout` | Kanat / keşif | 4,2 (çok yüksek) | 1.900 | %0 | 1.900 | 6 | Düz, seri |
+| Çevik | `scout` | Kanat / keşif | 4,2 (çok yüksek) | 2.200 | %0 | 2.200 | 6 | Düz, seri |
 | Ağır | `heavy` | Hat tutucu | 1,5 (çok düşük) | 5.500 | %20 | 6.875 | 4,5 | Düz, ağır, 1 kez seker |
 | Dengeli | `standard` | Her işi gören | 2,7 (orta) | 3.000 | %10 | 3.333 | 6 | Düz |
 | Topçu | `artillery` | Arkadan destek | 1,9 (düşük) | 2.550 | %5 | 2.684 | 6 | Kavisli, engel üstünden, alan hasarı |
 | Tuzakçı | `trapper` | Bilgi / kontrol | 2,2 (orta-düşük) | 2.375 | %5 | 2.500 | **Tüm harita** (+ mini harita) | Düz, zayıf |
 
 \* Efektif can = can / (1 − zırh).
+
+**Tur 03 (D-036):** Tuzakçı şimdilik oyundan çıkarıldı (veriler duruyor), Çevik canı 2.200. Kutulardan yükseltme: her biri +%5 can ve hasar, en fazla +%60; çatışma dışında 5 sn'de bir +%5 can.
 
 **Denge turu (2026-10-09, D-034):** B seçeneği uygulandı; aşağıdaki değerler güncel.
 

@@ -46,9 +46,18 @@ describe('save schema v3 (round 02)', () => {
   it('migrates a v2 save: adds difficulty = normal, keeps user values', () => {
     const v2 = { schemaVersion: 2, credits: 1, settings: { lang: 'tr', cooldownMul: 2 }, records: { bestKills: 3, bestKD: 1.5, matches: 4 } };
     const m = migrate(v2);
-    expect(m.schemaVersion).toBe(3);
+    expect(m.schemaVersion).toBe(SCHEMA_VERSION);
     expect(m.settings.difficulty).toBe('normal');
     expect(m.settings.cooldownMul).toBe(2);
     expect(m.records.matches).toBe(4);
+  });
+});
+
+describe('save schema v4 (round 03)', () => {
+  it('migrates a v3 save: adds mapTheme = desert, keeps difficulty', () => {
+    const m = migrate({ schemaVersion: 3, settings: { difficulty: 'hard' } });
+    expect(m.schemaVersion).toBe(4);
+    expect(m.settings.mapTheme).toBe('desert');
+    expect(m.settings.difficulty).toBe('hard');
   });
 });

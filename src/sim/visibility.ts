@@ -5,6 +5,8 @@
  * - Line of sight: symmetric shadowcasting (A. Ford) on the tile grid, radius = class vision
  *   + elevation bonus. Opaque: features with blocksLOS (rock, wall, gate) and tiles higher than
  *   the viewer (cliff edges are seen, what lies beyond is not).
+ * - Full visibility (rules.fullVisibility, the default since D-037): every tile and every enemy is
+ *   visible; line of sight is still computed into `los` (spawn safety, LOS mode for tests/modes).
  * - Forest concealment: a tank standing in forest is only visible from ≤ forestConcealRange.
  * - Invisibility (Scout "Hide"): never visible / targetable; AI may *notice* it within noticeRange.
  * Recomputed at VISION.hz from simulation ticks only (deterministic).
@@ -19,7 +21,7 @@ export const TEAMS = 2;
 export function createVision(map: GameMap): TeamVision[] {
   const n = map.width * map.height;
   const out: TeamVision[] = [];
-  for (let t = 0; t < TEAMS; t++) out.push({ visible: new Uint8Array(n), explored: new Uint8Array(n) });
+  for (let t = 0; t < TEAMS; t++) out.push({ visible: new Uint8Array(n), los: new Uint8Array(n), explored: new Uint8Array(n) });
   return out;
 }
 
@@ -37,15 +39,23 @@ export function updateVision(s: SimState): void {
   const m = s.map;
   for (let team = 0; team < s.vision.length; team++) {
     const v = s.vision[team];
-    v.visible.fill(0);
+    v.los.fill(0);
     for (const t of s.tanks) {
       if (!t.alive || t.team !== team) continue;
-      castFov(m, Math.floor(t.x), Math.floor(t.y), visionRadius(m, t), v.visible);
+      castFov(m, Math.floor(t.x), Math.floor(t.y), visionRadius(m, t), v.los);
     }
+    if (s.rules.fullVisibility) v.visible.fill(1);
+    else v.visible.set(v.los);
     const vis = v.visible;
     const exp = v.explored;
     for (let i = 0; i < vis.length; i++) if (vis[i]) exp[i] = 1;
   }
+}
+
+/** Is tank `t` standing in forest (concealed: enemies see it only up close, translucent)? */
+export function inForest(s: SimState, t: Tank): boolean {
+  const m = s.map;
+  return m.feature[Math.floor(t.y) * m.width + Math.floor(t.x)] === Feature.Forest;
 }
 
 /** Is tank `t` invisible (Hide active)? */

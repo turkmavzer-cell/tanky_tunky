@@ -41,7 +41,7 @@ const ORTHO = [
   [0, -1],
 ];
 
-class Builder {
+export class Builder {
   readonly m: GameMap;
   readonly n: number;
   constructor(size: number, seed: number) {
@@ -418,7 +418,7 @@ function addRamps(b: Builder, rng: Rng): void {
 }
 
 /** Carve symmetric corridors so every walkable component of size >= 8 is reachable from base 0; tiny ones are filled with rock. */
-function repairConnectivity(b: Builder): void {
+export function repairConnectivity(b: Builder): void {
   const m = b.m;
   const N = b.n;
   const base = m.bases[0];
@@ -537,7 +537,7 @@ function carvePath(b: Builder, path: number[]): void {
   }
 }
 
-function placeSpawnPoints(b: Builder): void {
+export function placeSpawnPoints(b: Builder): void {
   const m = b.m;
   const N = b.n;
   const reach = floodFill(m, m.bases[0].x, m.bases[0].y);
