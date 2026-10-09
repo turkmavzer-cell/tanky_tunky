@@ -49,3 +49,40 @@ test('ability button: active → cooling → ready (Swift)', async ({ page }) =>
   await expect(page.getByTestId('ability-chip')).toContainText('HAZIR');
   await shot(page, '03-ability-ready');
 });
+
+test('tank select: swipeable cards with stats + ability, difficulty selector (remembered)', async ({ page }) => {
+  await page.goto('/?silent');
+  await page.getByTestId('play').click();
+  const strip = page.getByTestId('tank-strip');
+  await expect(page.locator('.tank-card.on')).toHaveAttribute('data-cls', 'standard');
+  await expect(page.locator('.tank-card.on')).toContainText('3.000');
+  await expect(page.locator('.tank-card.on')).toContainText('Swift');
+  await expect(page.locator('.tank-card.on')).toContainText('Yakında');
+  await page.waitForTimeout(400); // let the preview draw a few frames
+  await shot(page, '04-tank-cards');
+  // swipe one card to the right → the next class becomes selected
+  await strip.evaluate((el) => el.scrollBy({ left: el.querySelector<HTMLElement>('.tank-card')!.clientWidth + 14 }));
+  await expect(page.locator('.tank-card.on')).toHaveAttribute('data-cls', 'artillery');
+  await expect(page.locator('.tank-card.on')).toContainText('Yaylım Ateşi');
+  await shot(page, '05-tank-cards-swiped');
+  // every card is reachable and shows its own numbers
+  for (const [cls, hp] of [
+    ['scout', '1.750'],
+    ['heavy', '5.500'],
+    ['trapper', '2.375'],
+  ] as const) {
+    await page.getByTestId(`class-${cls}`).click();
+    await expect(page.locator('.tank-card.on')).toHaveAttribute('data-cls', cls);
+    await expect(page.locator('.tank-card.on')).toContainText(hp);
+  }
+  await expect(page.getByTestId('diff-normal')).toHaveAttribute('aria-checked', 'true');
+  await page.getByTestId('diff-extreme').click();
+  await expect(page.getByTestId('diff-extreme')).toHaveAttribute('aria-checked', 'true');
+  await shot(page, '06-difficulty');
+  await page.getByTestId('start').click();
+  await page.waitForFunction(() => (window as unknown as { __tanky?: { scene: { state: unknown } } }).__tanky?.scene.state !== undefined, null, { timeout: 60_000 });
+  await page.getByTestId('pause').click();
+  await page.getByTestId('quit').click();
+  await page.getByTestId('play').click();
+  await expect(page.getByTestId('diff-extreme')).toHaveAttribute('aria-checked', 'true');
+});

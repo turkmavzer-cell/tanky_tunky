@@ -47,9 +47,11 @@ export function App() {
         {screen === 'classSelect' && (
           <ClassSelect
             initial={cls}
+            difficulty={save.settings.difficulty}
             onBack={() => setScreen('menu')}
-            onStart={(c) => {
+            onStart={(c, d) => {
               setCls(c);
+              if (d !== save.settings.difficulty) updateSave({ ...save, settings: { ...save.settings, difficulty: d } });
               setSeed(newSeed());
               setScreen('game');
             }}
