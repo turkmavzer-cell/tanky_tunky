@@ -50,6 +50,10 @@ yenilik, düzeltme, geri alma, karar ve sahibinin (Cihan) isteği kayıtlıdır.
 ## 4. Günlük (en yeni en üstte)
 
 <!-- LOG:START -->
+### 2026-10-10 — [acik-soru] Tank güncellemesi kararları bekliyor
+Sorular: taramalı ateş sadece Çevik'te mi; gümbürtü/görünmezlik şu anki değerleri; ateş edince görünmezlik bozulsun mu; Dengeli/Topçu skill seçimleri; dolma süreleri; sıra (taret+menü önce mi, tank güncellemesi mi). Not: Tuzakçı kodda hâlâ var (sahibi kaldırıldığını söyledi).
+### 2026-10-10 — [konusma] Sahibi tank güncellemesi istedi: hızlı tank, taramalı ateş, 2 skill/tank
+İstekler: (1) Çevik tank biraz daha hızlı; (2) ateşleme taramalı gibi hızlı ve seri, mermi başına hasar düşük; (3) her tankta 2 skill: birincisi hızlı dolan (5 veya 10 sn), ikincisi ulti (30/45 sn); (4) Çevik: 1. görünmezlik, ulti = ateş hızı x3 (10/sn -> 30/sn); (5) Ağır: 1. gümbürtü dalgası biraz daha büyük, merkezden uca aynı hasar, hasar artsın; ulti = canı bir kerede fulle, dolma 45-60 sn; (6) Dengeli ve Topçu için ulti önerisi istendi. Kod okundu: sim'de yetenek mantığı yok (BTN_ABILITY sim.ts içinde kullanılmıyor), ateş = dokun/şarj/bırak. Repoda görünmezlik ve gümbürtü yok, bilgisayardaki oturumda olup olmadığı soruldu. Henüz kod yazılmadı, plan sohbette sunuldu.
 ### 2026-10-10 — [acik-soru] Multiplayer için kararlar bekliyor
 Sorular: (a) online mı, aynı Wi-Fi mı? (b) INTERNET izni eklenmesi (şu an yok, CLAUDE.md) kabul mü? (c) kaç oyuncu, hangi mod? (d) tek oyunculuda yön bulma yardımı (mini harita yok). Netcode: sim deterministik (D-004), kilit adımlı (lockstep) girdi aktarımı mümkün, iki farklı cihazda doğrulanmadı.
 ### 2026-10-10 — [acik-soru] Taret nişanı ekranda görünmeyen düşmanlara kilitleniyor (hata)
