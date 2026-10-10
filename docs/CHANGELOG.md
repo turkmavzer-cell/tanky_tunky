@@ -50,6 +50,12 @@ yenilik, düzeltme, geri alma, karar ve sahibinin (Cihan) isteği kayıtlıdır.
 ## 4. Günlük (en yeni en üstte)
 
 <!-- LOG:START -->
+### 2026-10-10 — [acik-soru] Multiplayer için kararlar bekliyor
+Sorular: (a) online mı, aynı Wi-Fi mı? (b) INTERNET izni eklenmesi (şu an yok, CLAUDE.md) kabul mü? (c) kaç oyuncu, hangi mod? (d) tek oyunculuda yön bulma yardımı (mini harita yok). Netcode: sim deterministik (D-004), kilit adımlı (lockstep) girdi aktarımı mümkün, iki farklı cihazda doğrulanmadı.
+### 2026-10-10 — [acik-soru] Taret nişanı ekranda görünmeyen düşmanlara kilitleniyor (hata)
+Neden (kod okundu, çalıştırılmadı): GameScene.assistTarget() sadece mesafeye bakıyor (menzil x 1,15), ekranda/görüşte olup olmadığına bakmıyor. İstenen: sadece ekranda görünen düşmana nişan. Faz 4'te VisibilitySystem'e bağlanacak. Henüz düzeltilmedi.
+### 2026-10-10 — [konusma] Sahibi yeni istekler: Tek/Çok oyunculu menü, ilerleme modu, büyük harita + düşman
+Sahibi şunları istedi: (1) açılışta Tek Oyunculu ve Çok Oyunculu seçenekleri, gerekirse ek menüler; (2) multiplayer ve ilerleme (progression) modu; (3) singleplayer için daha büyük harita, belirli yerlerde düşman askerler ve savunma kuleleri. Önce karar verilecek, kod yazılmadı. Plan sohbette sunuldu: sıra = taret nişan düzeltmesi + menü iskeleti, görüş sistemi, PvE varlıkları, kampanya haritası, ilerleme, multiplayer (en son).
 
 ### 2026-10-09 — [konusma] Tuzakçı oyundan kaldırıldı (sahibinin kararı)
 Sahibi Tuzakçı'nın oyundan kaldırıldığını bildirdi. Nano Banana prompt listesinden çıkarıldı (4 tank kaldı).
