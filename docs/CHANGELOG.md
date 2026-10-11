@@ -57,6 +57,8 @@ Tam liste ve öneriler: `CLAUDE.md` §1 "Pending owner decisions" (B1, B2, A, K1
 ## 4. Günlük (en yeni en üstte)
 
 <!-- LOG:START -->
+### 2026-10-11 — [karar] PR #1-#3 birleştirildi
+Sahip 'birleştir' dedi (PR #1 → #2 → #3, base'ler varsayılan branch'e çevrilerek). Varsayılan branch artık round 03 oyununu içeriyor (merge f94cbf8). CI (checks, debug-apk, changelog) c2fde90 için yeşildi. Sahip bundan sonra telefondan/bulut oturumundan devam ediyor; masaüstü oturumu çalışmadan önce pull yapar.
 ### 2026-10-11 — [degisiklik] Belgeler güncellendi: CLAUDE.md, TANKS.md, PROGRESS.md, DECISIONS.md, CHANGELOG bölüm 2–3
 CLAUDE.md: durum, PR zinciri, son APK #16, bekleyen kararlar tablosu (B1, B2, A, K1–K11, T, G), iş akışları A–G, yol haritası, iki oturumun paralel çalışma kuralı ve çakışma riski olan dosyalar, riskler (INTERNET izni, taramalı ateş yükü). TANKS.md: Tuzakçı 'kapalı' işaretlendi, 'ÖNERİ — onay bekliyor' bölümü (Çevik güncellemesi, tank başına 2 yetenek). PROGRESS.md: uzlaştırma bölümü ve açık sorular. DECISIONS.md: sadece D-043. CHANGELOG: bölüm 2–3 güncel hâle getirildi, Tur 01–03 ve bu sohbetteki kayıtsız istekler geriye dönük eklendi. Oyun kodu değişmedi.
 ### 2026-10-11 — [acik-soru] Otomatik nişan ekran dışındaki düşmana kilitlenebiliyor

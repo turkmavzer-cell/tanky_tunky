@@ -39,15 +39,10 @@ design is gone with the Trapper, see D-036/D-037 and open decision K3.)
 
 - **Last finished round:** Round 03 (2026-10-09) — see `docs/PROGRESS.md`. 2026-10-11: cloud-session hand-off note
   reconciled, change log merged (D-043). No game code changed since round 03.
-- **Branches / PRs (stacked, not merged yet):**
-  `claude/tanky-tunky-setup-dw06hp` (default, phase 0–3, `5b8654e`) ← PR #1 `fix/round-01-core-loop` ← PR #2
-  `fix/round-02-feedback` ← PR #3 `fix/round-03-maps` (newest code + docs). Merge order: #1 → #2 → #3.
-  `docs/changelog` (cloud session) is merged into `fix/round-03-maps`.
-  - ⚠️ A session that only looks at the default branch sees the **phase-3 game** (no abilities, no AI, Trapper,
-    60 s rounds missing…). That is how the 2026-10-10 cloud hand-off note concluded that most features were missing.
-  - Until the PRs are merged, **start new work from the newest round branch**:
-    `git fetch origin fix/round-03-maps && git checkout -b fix/round-04-<topic> origin/fix/round-03-maps`,
-    and open the PR against that branch. After the owner merges, branch from the default branch.
+- **Branches / PRs:** PR #1–#3 were merged into the default branch `claude/tanky-tunky-setup-dw06hp` on 2026-10-11
+  (owner: "birleştir"; merge head `f94cbf8`). The default branch now holds round 03 + the change log. **Start new work
+  from the default branch**: `git checkout -b fix/round-04-<topic> origin/claude/tanky-tunky-setup-dw06hp`.
+  From 2026-10-11 the owner continues in the cloud/phone session; the desktop session pulls before working.
 - **Latest debug APK:** Android APK run **#16** (round 03 + docs; same game as #15). Signed with the committed debug
   key (`keystore/debug.sha256`), CI fails if the signature differs (D-035). The owner must uninstall **once** after
   D-035, then every newer APK installs over the old one — **not yet confirmed on the phone**.
