@@ -37,7 +37,7 @@ design is gone with the Trapper, see D-036/D-037 and open decision K3.)
 
 ## 1. Where we are now (update every round)
 
-- **Round 08** (branch `fix/round-08-maze-mission`, PR into the round-07 branch) — missions = one maze level (D-054), garage upgrades only in missions (D-055). See `docs/PROGRESS.md`.
+- **Round 08** (branch `fix/round-08-maze-mission`, **PR #8 into the round-07 branch, CI #55 green, not merged**, APK run #31) — missions = one maze level (D-054), garage upgrades only in missions (D-055). See `docs/PROGRESS.md`.
 - **Round 07 (previous):** Round 07 (2026-10-11, branch `fix/round-07-charged-specials`, **PR #7 into the round-06 branch, CI #51/#52 green incl. perf gates, not merged**) — Scout 6 shots/s (D-052),
   charged specials ≥ 30 %: Heavy laser + shock + wreck, Standard pierce, Artillery fire patch (D-053). See `docs/PROGRESS.md`.
 - **Round 06** (branch `fix/round-06-missions-perf-parts`, **PR #6 into the round-05 branch, CI #47/#48 green incl. both perf gates, not merged**) — Kampanya → "Görevler"
