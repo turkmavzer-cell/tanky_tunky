@@ -3,6 +3,7 @@
  * with a `schemaVersion`; `migrate` upgrades data written by any previous version.
  */
 import type { Lang } from '../i18n';
+import type { CombatClassId } from '../sim/config';
 
 export type Quality = 'low' | 'medium' | 'high';
 
@@ -40,15 +41,32 @@ export interface Records {
   matches: number;
 }
 
+/** Garage levels per branch (round 05, stream E; data/progression.json). */
+export interface GarageLevels {
+  armor: number;
+  engine: number;
+  gun: number;
+}
+export type GarageBranch = keyof GarageLevels;
+
+export interface CampaignProgress {
+  /** Best stars per level id (0–3); a level with ≥ 1 star is cleared and unlocks the next one. */
+  stars: Record<string, number>;
+  /** Fastest win per level id (s). */
+  bestTime: Record<string, number>;
+}
+
 export interface SaveData {
   schemaVersion: number;
   settings: Settings;
   credits: number;
   tutorialDone: boolean;
   records: Records;
+  campaign: CampaignProgress;
+  garage: Partial<Record<CombatClassId, GarageLevels>>;
 }
 
-export const SCHEMA_VERSION = 4;
+export const SCHEMA_VERSION = 5;
 
 export function defaultSave(): SaveData {
   return {
@@ -74,6 +92,8 @@ export function defaultSave(): SaveData {
     credits: 0,
     tutorialDone: false,
     records: { bestKills: 0, bestKD: 0, matches: 0 },
+    campaign: { stars: {}, bestTime: {} },
+    garage: {},
   };
 }
 
@@ -86,11 +106,15 @@ export function migrate(raw: unknown): SaveData {
   if (version > SCHEMA_VERSION) return { ...def, ...r, schemaVersion: version } as SaveData; // newer build wrote it; keep as-is
   // v0 → v1: no structural changes. v1 → v2: settings.edgeHighlight, settings.cooldownMul, records.
   // v2 → v3: settings.difficulty. v3 → v4: settings.mapTheme (defaults filled in from defaultSave).
+  // v4 → v5: campaign progress + garage levels (empty for old saves; credits already existed).
   return {
     ...def,
     ...r,
     settings: { ...def.settings, ...(r.settings ?? {}) },
     records: { ...def.records, ...(r.records ?? {}) },
+    campaign: { stars: { ...(r.campaign?.stars ?? {}) }, bestTime: { ...(r.campaign?.bestTime ?? {}) } },
+    garage: { ...(r.garage ?? {}) },
+    credits: typeof r.credits === 'number' && r.credits >= 0 ? r.credits : 0,
     schemaVersion: SCHEMA_VERSION,
   };
 }

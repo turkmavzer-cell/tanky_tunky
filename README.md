@@ -14,6 +14,8 @@ basılı tutarak güçlenen atışlar, her tanka özel yetenekler ve kutulardan 
 - **Basılı tutma:** atış şarj oldukça hasarı artar (×3'e kadar); tam dolunca bırakırsan ekstra bonus alırsın.
 - **Kutulardan yükseltme:** her biri +%5 can ve hasar verir, en fazla +%60; ölünce sıfırlanır.
 - **Can yenilenmesi:** çatışmadan 5 sn uzak kalınca her 5 sn'de +%5 can.
+- **Kampanya (3 bölüm):** büyük haritada karakolları (kuleler + düşman tankları) geçip düşman karargâhını yık; yıldız ve kredi kazan.
+- **Garaj:** kredilerle her tank için Zırh, Motor ve Top yükseltmesi (3'er seviye).
 - **Bot zorluğu:** Kolay, Normal, Zor, Ekstrem.
 - **Otomatik nişan** (ayarlardan kapatılabilir), dokunmatik joystick, ATEŞ ve YETENEK butonları.
 - Türkçe, İngilizce ve Arapça dil desteği.

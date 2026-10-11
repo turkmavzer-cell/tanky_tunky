@@ -42,6 +42,9 @@ export const CLASS_SHAPES: Readonly<Record<TankClassId, ClassShape>> = {
   standard: { hullL: 0.9, hullW: 0.68, trackW: 0.15, turretR: 0.22, barrelL: 0.55, barrelW: 0.08, hullSlices: 4, turretSlices: 3 },
   artillery: { hullL: 0.96, hullW: 0.7, trackW: 0.15, turretR: 0.2, barrelL: 0.74, barrelW: 0.1, hullSlices: 4, turretSlices: 3 },
   trapper: { hullL: 0.88, hullW: 0.72, trackW: 0.17, turretR: 0.2, barrelL: 0.38, barrelW: 0.07, hullSlices: 4, turretSlices: 3 },
+  // campaign structures (round 05): no tracks; the tower is a squat bunker, the HQ a tall block with a radar dome
+  tower: { hullL: 0.92, hullW: 0.92, trackW: 0, turretR: 0.26, barrelL: 0.6, barrelW: 0.1, hullSlices: 5, turretSlices: 3 },
+  hq: { hullL: 1.4, hullW: 1.4, trackW: 0, turretR: 0.32, barrelL: 0, barrelW: 0, hullSlices: 9, turretSlices: 3 },
 };
 
 function canvas(): [HTMLCanvasElement, CanvasRenderingContext2D] {
@@ -110,7 +113,8 @@ export function drawTankSlices(cls: TankClassId, pal: TeamPalette): TankSlices {
     const [c, g] = canvas();
     const top = i === s.hullSlices - 1;
     const trackLevel = i < Math.ceil(s.hullSlices / 2);
-    // tracks
+    // tracks (structures have none)
+    if (s.trackW > 0) {
     g.fillStyle = trackLevel ? '#262421' : '#34312c';
     roundRect(g, -L / 2, -W / 2, L, s.trackW, 0.04);
     g.fill();
@@ -127,6 +131,7 @@ export function drawTankSlices(cls: TankClassId, pal: TeamPalette): TankSlices {
         g.lineTo(k, W / 2);
         g.stroke();
       }
+    }
     }
     // body
     const inset = trackLevel ? s.trackW * 0.6 : s.trackW * 0.3;
@@ -159,14 +164,24 @@ export function drawTankSlices(cls: TankClassId, pal: TeamPalette): TankSlices {
     const [c, g] = canvas();
     const top = i === s.turretSlices - 1;
     // barrel (only on the middle/top slice so it reads as a raised gun)
-    if (i >= s.turretSlices - 2) {
+    if (i >= s.turretSlices - 2 && s.barrelL > 0) {
       g.fillStyle = top ? '#4a4a46' : '#2f2f2c';
       g.fillRect(0, -s.barrelW / 2, s.turretR + s.barrelL, s.barrelW);
       g.fillStyle = '#1d1d1b';
       g.fillRect(s.turretR + s.barrelL - 0.07, -s.barrelW / 2 - 0.015, 0.07, s.barrelW + 0.03);
     }
     g.beginPath();
-    if (cls === 'trapper') {
+    if (cls === 'hq') {
+      // radar dome on the roof
+      g.arc(0, 0, s.turretR * (1 - i * 0.18), 0, Math.PI * 2);
+    } else if (cls === 'tower') {
+      for (let k = 0; k < 6; k++) {
+        const a = (k / 6) * Math.PI * 2;
+        if (k === 0) g.moveTo(Math.cos(a) * s.turretR, Math.sin(a) * s.turretR);
+        else g.lineTo(Math.cos(a) * s.turretR, Math.sin(a) * s.turretR);
+      }
+      g.closePath();
+    } else if (cls === 'trapper') {
       roundRect(g, -s.turretR * 1.2, -s.turretR, s.turretR * 2.2, s.turretR * 2, 0.05);
     } else if (cls === 'artillery') {
       g.moveTo(s.turretR * 1.2, 0);

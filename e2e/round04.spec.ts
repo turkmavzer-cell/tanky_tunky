@@ -104,7 +104,7 @@ test('05 menu: Tek Oyunculu / Çok Oyunculu / Ayarlar', async ({ page }) => {
   await shot(page, '07-menu');
   await page.getByTestId('solo').click();
   await expect(page.getByTestId('play')).toBeVisible();
-  await expect(page.getByTestId('campaign')).toBeDisabled();
+  await expect(page.getByTestId('campaign')).toBeEnabled(); // round 05: campaign is playable
   await shot(page, '08-menu-solo');
   await page.getByTestId('back').click();
   await page.getByTestId('multi').click();

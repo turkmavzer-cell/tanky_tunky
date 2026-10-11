@@ -117,7 +117,10 @@ export function ClassSelect({
   theme,
   onStart,
   onBack,
+  campaign = false,
 }: {
+  /** Campaign: the level fixes the map, so the map selector is hidden. */
+  campaign?: boolean;
   initial: TankClassId;
   difficulty: Difficulty;
   theme: MapThemeId;
@@ -182,13 +185,13 @@ export function ClassSelect({
         <button className="btn" onClick={onBack}>
           {t('menu.back')}
         </button>
-        <div className="seg" role="radiogroup" data-testid="map-theme">
+        {!campaign && <div className="seg" role="radiogroup" data-testid="map-theme">
           {THEMES.map((m) => (
             <button key={m} role="radio" aria-checked={m === map} className={m === map ? 'on' : ''} data-testid={`map-${m}`} onClick={() => setMap(m)}>
               {t(`map.${m}`)}
             </button>
           ))}
-        </div>
+        </div>}
         <div className="seg" role="radiogroup" data-testid="difficulty">
           {DIFFICULTIES.map((d) => (
             <button key={d} role="radio" aria-checked={d === diff} className={d === diff ? 'on' : ''} data-testid={`diff-${d}`} onClick={() => setDiff(d)}>

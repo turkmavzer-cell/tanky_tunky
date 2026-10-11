@@ -6,14 +6,14 @@ import { COMBAT, MATCH, SIM_DT, TANKS, VISION, type AbilityId, type TankClassId 
 import { updatePickups } from './upgrades';
 import type { PlayerInput } from './input';
 import { Rng } from './rng';
-import type { MatchRules, SimState, Tank } from './state';
+import type { MatchRules, SimState, Tank, TankBoost } from './state';
 import type { GameMap } from '../world/map';
 import { collideTanks } from './collision';
 import { updateShells } from './combat';
 import { updateMines } from './abilities/mine';
 import { newAbilityState } from './abilities';
 import { createVision, updateVision, VISION_INTERVAL } from './visibility';
-import { respawnTank, updateMatch } from './match';
+import { canRespawn, checkObjective, respawnTank, updateMatch } from './match';
 import { updateTank } from './tank';
 
 export { chargeLevel, chargeTimeOf } from './tank';
@@ -24,6 +24,8 @@ export interface PlayerSpec {
   x: number;
   y: number;
   name?: string;
+  /** Garage upgrades (human player only). */
+  boost?: TankBoost;
 }
 
 export interface SimOptions {
@@ -35,7 +37,7 @@ export interface SimOptions {
 
 export function createState(opts: SimOptions): SimState {
   const rng = new Rng(opts.seed);
-  const rules: MatchRules = { cooldownMul: 1, duration: MATCH.duration, endless: false, fullVisibility: VISION.fullVisibility, ...opts.rules };
+  const rules: MatchRules = { cooldownMul: 1, duration: MATCH.duration, endless: false, fullVisibility: VISION.fullVisibility, mode: 'versus', ...opts.rules };
   const tanks: Tank[] = opts.players.map((p, i) => ({
     id: i,
     team: p.team,
@@ -49,7 +51,7 @@ export function createState(opts: SimOptions): SimState {
     ky: 0,
     hull: p.team === 0 ? 0.785398163397448 : -2.356194490192345,
     turret: p.team === 0 ? 0.785398163397448 : -2.356194490192345,
-    hp: TANKS[p.cls].hp,
+    hp: TANKS[p.cls].hp * (p.boost?.hp ?? 1),
     alive: true,
     respawn: 0,
     protect: 0,
@@ -73,6 +75,7 @@ export function createState(opts: SimOptions): SimState {
     upgrades: 0,
     combatT: 0,
     regenNext: COMBAT.regen.outOfCombat,
+    boost: { hp: 1, speed: 1, damage: 1, ...p.boost },
   }));
   const s: SimState = {
     tick: 0,
@@ -86,7 +89,7 @@ export function createState(opts: SimOptions): SimState {
     crateRespawns: [],
     nextId: 1,
     vision: createVision(opts.map),
-    match: { phase: rules.endless ? 'playing' : 'countdown', t: 0, timeLeft: rules.duration, kills: [] },
+    match: { phase: rules.endless ? 'playing' : 'countdown', t: 0, timeLeft: rules.duration, kills: [], winner: -1 },
     rules,
     view: null,
     events: [],
@@ -105,7 +108,7 @@ export function step(state: SimState, inputs: readonly PlayerInput[]): void {
     for (let i = 0; i < state.tanks.length; i++) {
       const t = state.tanks[i];
       if (!t.alive) {
-        if (!playing) continue;
+        if (!playing || !canRespawn(state, t)) continue;
         t.respawn -= dt;
         if (t.respawn <= 0) respawnTank(state, t, t.x, t.y);
         continue;
@@ -117,6 +120,7 @@ export function step(state: SimState, inputs: readonly PlayerInput[]): void {
     updateShells(state, rng, dt);
     updateMines(state, dt);
     if (playing) updatePickups(state, dt);
+    if (playing) checkObjective(state);
   }
   if (state.tick % VISION_INTERVAL === 0) updateVision(state);
   state.rng = rng.state();

@@ -84,6 +84,14 @@ export interface Tank {
   combatT: number;
   /** combatT at which the next regeneration tick heals. */
   regenNext: number;
+  /** Garage upgrades (round 05, stream E): multipliers on base max hp, top speed and damage dealt. 1 = none. */
+  boost: TankBoost;
+}
+
+export interface TankBoost {
+  hp: number;
+  speed: number;
+  damage: number;
 }
 
 /** Upgrade dropped by a destroyed crate. */
@@ -161,6 +169,8 @@ export interface MatchState {
   /** Seconds left of play time. */
   timeLeft: number;
   kills: KillRecord[];
+  /** Winning team once decided by an objective (campaign), else -1 (Quick Match ranks by kills). */
+  winner: number;
 }
 
 export interface TeamVision {
@@ -181,6 +191,9 @@ export interface MatchRules {
   endless: boolean;
   /** Whole map + every enemy visible (no fog); forest/Hide rules still apply. Default from vision.json. */
   fullVisibility: boolean;
+  /** 'versus' = Quick Match (kills, everyone respawns); 'campaign' = destroy the enemy HQ before time runs out,
+   *  team 1 never respawns (round 05, stream D). */
+  mode: 'versus' | 'campaign';
 }
 
 export type SimEvent =

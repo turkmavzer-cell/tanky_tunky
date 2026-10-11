@@ -6,10 +6,10 @@ import { FixedStepLoop } from '../core/loop';
 import { FrameStats } from '../core/frameStats';
 import { KeyboardMouse } from '../core/keyboard';
 import { haptic } from '../core/platform';
-import { ABILITIES, COMBAT, MATCH, SIM_DT, TANKS, VISION, type AbilityId, type TankClassId } from '../sim/config';
+import { ABILITIES, COMBAT, MATCH, SIM_DT, TANKS, VISION, isPve, type AbilityId, type CombatClassId, type TankClassId } from '../sim/config';
 import { AIM_AUTO, BTN_ABILITY, BTN_FIRE, BTN_ULT, EMPTY_INPUT, quantizeAim, quantizeMove, type PlayerInput } from '../sim/input';
 import { chargeLevel } from '../sim/sim';
-import type { SimEvent, SimState } from '../sim/state';
+import type { SimEvent, SimState, Tank, TankBoost } from '../sim/state';
 import { lerp, lerpAngle } from '../sim/dmath';
 import { maxHp } from '../sim/upgrades';
 import { canSeeTank, inForest, isInvisible, tileVisible } from '../sim/visibility';
@@ -31,6 +31,7 @@ import type { AiLevel } from '../systems/ai/bot';
 import { generateThemed } from '../world/themes';
 import type { MapTheme } from '../world/map';
 import { createMatch, defaultTeams, scoreboard, stepMatch, type MatchHandle, type ScoreRow } from '../game/matchSetup';
+import { createCampaignMatch, levelById, missionResult, type CampaignLevel, type MissionResult } from '../game/campaign';
 import { createAudioSystem, createSilentAudio, type AudioSystem, type EngineHandle, type SfxName } from '../audio';
 import debugHeights from '../../maps/debug_heights.json';
 
@@ -65,6 +66,10 @@ export interface GameSceneOptions {
   noFog?: boolean;
   /** Override match length (s) — tests. */
   duration?: number;
+  /** Campaign level id (round 05): play that mission instead of a Quick Match. */
+  campaignLevel?: string;
+  /** Garage multipliers for the player's tank (round 05). */
+  playerBoost?: TankBoost;
 }
 
 export interface HudSnapshot {
@@ -95,6 +100,15 @@ export interface HudSnapshot {
   protect: number;
   cls: TankClassId;
   endless: boolean;
+  /** 'campaign' shows the objective chip (enemy HQ hp + direction) instead of K/D only. */
+  mode: 'versus' | 'campaign';
+  hqHp: number;
+  hqMax: number;
+  /** Enemy structures/tanks still standing (campaign). */
+  enemiesLeft: number;
+  /** Screen-space angle (rad) and distance (tiles) from the player to the enemy HQ; null if none. */
+  hqAngle: number | null;
+  hqDist: number;
 }
 
 const RES_CAP: Record<Quality, number> = { low: 1, medium: 1.5, high: 2 };
@@ -150,6 +164,9 @@ export class GameScene {
   touch: TouchControls | null = null;
   minimap: Minimap | null = null;
   onMatchEnd: ((rows: ScoreRow[]) => void) | null = null;
+  /** Campaign: enemy HQ tank id (-1 in Quick Match) and the level being played. */
+  hqId = -1;
+  level: CampaignLevel | null = null;
   readonly localId = 0;
 
   constructor(private readonly opts: GameSceneOptions) {
@@ -175,15 +192,32 @@ export class GameScene {
 
     const seed = this.opts.seed ?? ((Date.now() / 1000) | 0);
     const size = this.opts.mapSize ?? (MATCH as { mapSize?: MapSize }).mapSize ?? 40;
-    const map = this.opts.mapName === 'debug_heights' ? loadAsciiMap(debugHeights as AsciiMap, seed) : generateThemed(this.opts.mapTheme ?? 'desert', seed, size);
-    this.match = createMatch({
-      seed,
-      map,
-      teams: defaultTeams(seed, this.opts.playerClass ?? 'standard'),
-      humanPlayer: true,
-      aiLevel: this.opts.aiLevel,
-      rules: { cooldownMul: this.opts.cooldownMul, endless: this.opts.endless ?? false, ...(this.opts.duration ? { duration: this.opts.duration } : {}) },
-    });
+    const level = this.opts.campaignLevel ? levelById(this.opts.campaignLevel) : undefined;
+    if (level) {
+      const cm = createCampaignMatch({
+        level,
+        playerClass: (this.opts.playerClass ?? 'standard') as CombatClassId,
+        aiLevel: this.opts.aiLevel,
+        playerBoost: this.opts.playerBoost,
+        cooldownMul: this.opts.cooldownMul,
+        duration: this.opts.duration,
+      });
+      this.match = cm;
+      this.hqId = cm.hqId;
+      this.level = level;
+    } else {
+      const map0 = this.opts.mapName === 'debug_heights' ? loadAsciiMap(debugHeights as AsciiMap, seed) : generateThemed(this.opts.mapTheme ?? 'desert', seed, size);
+      this.match = createMatch({
+        seed,
+        map: map0,
+        teams: defaultTeams(seed, this.opts.playerClass ?? 'standard'),
+        humanPlayer: true,
+        aiLevel: this.opts.aiLevel,
+        playerBoost: this.opts.playerBoost,
+        rules: { cooldownMul: this.opts.cooldownMul, endless: this.opts.endless ?? false, ...(this.opts.duration ? { duration: this.opts.duration } : {}) },
+      });
+    }
+    const map = this.state.map;
     if (this.opts.idleBots === 'allies') this.match.bots = this.match.bots.map((b, i) => (this.state.tanks[i].team === 0 ? null : b));
     else if (this.opts.idleBots) this.match.bots = this.match.bots.map(() => null);
     this.snapshotPrev();
@@ -206,7 +240,7 @@ export class GameScene {
       this.tankViews.push(v);
       this.lastTrack.push({ x: t.x, y: t.y });
       this.wreckSmoke.push(0);
-      this.engines.push(this.audio.createEngine(t.cls));
+      this.engines.push(this.audio.createEngine(isPve(t.cls) ? 'heavy' : (t.cls as CombatClassId))); // structures never move → silent
     }
     if (this.state.tanks[this.localId].cls === 'trapper') this.minimap = new Minimap();
     const p = this.state.tanks[this.localId];
@@ -490,7 +524,8 @@ export class GameScene {
           const rows = scoreboard(s);
           const myKills = s.tanks.filter((t) => t.team === this.myTeam).reduce((a, t) => a + t.kills, 0);
           const theirKills = s.tanks.filter((t) => t.team !== this.myTeam).reduce((a, t) => a + t.kills, 0);
-          this.play(myKills >= theirKills ? 'victory' : 'defeat');
+          const won = s.rules.mode === 'campaign' ? s.match.winner === this.myTeam : myKills >= theirKills;
+          this.play(won ? 'victory' : 'defeat');
           this.onMatchEnd?.(rows);
           break;
         }
@@ -539,7 +574,7 @@ export class GameScene {
       const def = TANKS[t.cls];
       const speed = Math.hypot(t.vx, t.vy);
       const audible = t.alive && !(invisible && !own);
-      this.audio.updateEngine(this.engines[i], { x, y, speed: audible ? Math.min(1, speed / def.maxSpeed) : 0, load: t.charging ? 0.6 + 0.4 * chargeLevel(t) : Math.min(1, speed / def.maxSpeed) * 0.5, muffled: !seen || invisible });
+      this.audio.updateEngine(this.engines[i], { x, y, speed: audible ? Math.min(1, speed / Math.max(def.maxSpeed, 0.01)) : 0, load: t.charging ? 0.6 + 0.4 * chargeLevel(t) : Math.min(1, speed / Math.max(def.maxSpeed, 0.01)) * 0.5, muffled: !seen || invisible });
       if (this.wreckSmoke[i] > 0) {
         this.wreckSmoke[i] -= dt;
         if (Math.random() < 0.5) this.fx.emit(this.fx.tex.smoke, sx + (Math.random() - 0.5) * 20, sy - 10, { vy: -40, g: -10, drag: 0.8, life: 1.4, s0: 0.4, s1: 1.4, a0: 0.5, a1: 0, tint: 0x302c28, rot: Math.random() * 6 });
@@ -751,6 +786,30 @@ export class GameScene {
       protect: me.protect,
       cls: me.cls,
       endless: s.rules.endless,
+      mode: s.rules.mode,
+      ...this.objectiveHud(me),
+    };
+  }
+
+  /** Mission result for the campaign results screen (null in Quick Match). */
+  missionResult(): MissionResult | null {
+    return this.level ? missionResult(this.level, this.state, this.localId) : null;
+  }
+
+  private objectiveHud(me: Tank): Pick<HudSnapshot, 'hqHp' | 'hqMax' | 'enemiesLeft' | 'hqAngle' | 'hqDist'> {
+    const s = this.state;
+    const hq = this.hqId >= 0 ? s.tanks[this.hqId] : null;
+    if (!hq) return { hqHp: 0, hqMax: 0, enemiesLeft: 0, hqAngle: null, hqDist: 0 };
+    let left = 0;
+    for (const t of s.tanks) if (t.team !== me.team && t.alive) left++;
+    const dx = hq.x - me.x;
+    const dy = hq.y - me.y;
+    return {
+      hqHp: Math.ceil(hq.hp),
+      hqMax: Math.round(maxHp(hq)),
+      enemiesLeft: left,
+      hqAngle: hq.alive ? worldAngleToScreen(Math.atan2(dy, dx)) : null,
+      hqDist: Math.round(Math.sqrt(dx * dx + dy * dy)),
     };
   }
 

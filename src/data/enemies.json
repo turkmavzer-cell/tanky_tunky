@@ -1,0 +1,7 @@
+{
+  "$comment": "Campaign enemies (round 05, stream D). Tower/HQ stats live in tanks.json (pve:true). threatCost = budget points an outpost spends per unit (levels.json → outposts[].budget). guard: enemy tanks patrol within radius tiles of their outpost and only react to enemies within leash tiles of it, so outposts are fought one at a time. hqClearance: free tiles needed around the HQ. minSpacing: tiles between placed units. All numbers are a first proposal — owner decides (rule 4).",
+  "threatCost": { "tower": 2, "scout": 2, "standard": 3, "artillery": 3, "heavy": 4 },
+  "guard": { "radius": 3, "leash": 9 },
+  "hqClearance": 1,
+  "minSpacing": 2
+}

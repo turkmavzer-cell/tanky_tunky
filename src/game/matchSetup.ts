@@ -6,11 +6,12 @@ import { TANK_CLASSES, type TankClassId } from '../sim/config';
 import { EMPTY_INPUT, type PlayerInput } from '../sim/input';
 import { Rng } from '../sim/rng';
 import { createState, step, type PlayerSpec } from '../sim/sim';
-import type { MatchRules, SimState } from '../sim/state';
+import type { MatchRules, SimState, TankBoost } from '../sim/state';
 import { generateMap, type MapSize } from '../world/generator';
 import type { GameMap, MapTheme } from '../world/map';
 import { generateThemed } from '../world/themes';
 import { AiBot, type AiLevel } from '../systems/ai/bot';
+import type { Controller } from '../systems/ai/tower';
 
 export interface MatchOptions {
   seed: number;
@@ -26,11 +27,14 @@ export interface MatchOptions {
   theme?: MapTheme;
   /** Bot difficulty for every bot in the match, allies included (owner decision). */
   aiLevel?: AiLevel;
+  /** Garage multipliers for the human player's tank (round 05). */
+  playerBoost?: TankBoost;
 }
 
 export interface MatchHandle {
   state: SimState;
-  bots: (AiBot | null)[];
+  /** One controller per tank (AiBot for tanks, TowerBot for campaign towers); null = human or idle. */
+  bots: (Controller | null)[];
 }
 
 /** Default 3v3 roster: player's class + two deterministic bot classes per side. */
@@ -55,7 +59,7 @@ export function createMatch(o: MatchOptions): MatchHandle {
     teams[team].forEach((cls, k) => {
       const sp = base.spawns[k % base.spawns.length];
       const isHuman = o.humanPlayer && team === 0 && k === 0;
-      players.push({ team, cls, x: sp.x + 0.5, y: sp.y + 0.5, name: isHuman ? (o.playerName ?? 'Sen') : BOT_NAMES[nameIdx++ % BOT_NAMES.length] });
+      players.push({ team, cls, x: sp.x + 0.5, y: sp.y + 0.5, name: isHuman ? (o.playerName ?? 'Sen') : BOT_NAMES[nameIdx++ % BOT_NAMES.length], boost: isHuman ? o.playerBoost : undefined });
     });
   }
   const state = createState({ seed: o.seed, map, players, rules: o.rules });

@@ -4,9 +4,11 @@ import type { Settings } from '../core/save';
 import { onAppPause } from '../core/platform';
 import { t } from '../i18n';
 import { TouchControls } from './touchControls';
-import { ALL_TANK_CLASSES, COMBAT, type TankClassId } from '../sim/config';
+import { ALL_TANK_CLASSES, COMBAT, type CombatClassId, type TankClassId } from '../sim/config';
 import type { ScoreRow } from '../game/matchSetup';
-import { ResultsScreen } from './ResultsScreen';
+import { MissionResults, ResultsScreen } from './ResultsScreen';
+import type { MissionResult } from '../game/campaign';
+import type { TankBoost } from '../sim/state';
 import { MATCH } from '../sim/config';
 
 declare global {
@@ -30,6 +32,7 @@ type DebugParams = Partial<{
   aiLevel: 'easy' | 'normal' | 'hard' | 'extreme';
   mapTheme: 'desert' | 'city' | 'forest';
   debugView: { x: number; y: number; zoom: number };
+  campaignLevel: string;
 }>;
 
 /** Dev/test URL overrides: ?silent&map=96|debug_heights&seed=5&renderScale=0.25&cls=heavy&view=32,32&zoom=0.4&bots=idle&endless&nofog&dur=10&diff=hard */
@@ -42,7 +45,7 @@ function debugParams(): DebugParams {
   if (q.has('seed')) out.seed = Number(q.get('seed'));
   if (q.has('renderScale')) out.renderScale = Number(q.get('renderScale'));
   const cls = q.get('cls') as TankClassId | null;
-  if (cls && ALL_TANK_CLASSES.includes(cls)) out.playerClass = cls;
+  if (cls && ALL_TANK_CLASSES.includes(cls as CombatClassId)) out.playerClass = cls;
   if (q.get('bots') === 'idle') out.idleBots = true;
   if (q.get('bots') === 'enemies') out.idleBots = 'allies';
   if (q.has('endless')) out.endless = true;
@@ -53,6 +56,8 @@ function debugParams(): DebugParams {
   const diff = q.get('diff');
   if (diff === 'easy' || diff === 'normal' || diff === 'hard' || diff === 'extreme') out.aiLevel = diff;
   if (q.get('edges') === 'strong') out.edgeHighlight = 'strong';
+  const camp = q.get('campaign');
+  if (camp) out.campaignLevel = camp;
   const view = q.get('view')?.split(',').map(Number);
   if (view && view.length >= 2) out.debugView = { x: view[0], y: view[1], zoom: Number(q.get('zoom') ?? 0.5) };
   return out;
@@ -65,10 +70,26 @@ export interface GameViewProps {
   record: { bestKills: number; bestKD: number };
   onQuit: () => void;
   onAgain: () => void;
-  onMatchEnd: (kills: number, deaths: number) => void;
+  /** Returns the credits the match paid (saved by the App, shown on the results screen). */
+  onMatchEnd: (summary: MatchSummary) => number;
+  /** Campaign level id (round 05); undefined = Quick Match. */
+  campaignLevel?: string;
+  /** Garage multipliers for the player's tank. */
+  playerBoost?: TankBoost;
+  /** Campaign: a next level exists and can be started from the results screen. */
+  hasNext?: boolean;
+  onNext?: () => void;
 }
 
-export function GameView({ settings, playerClass, seed, record, onQuit, onAgain, onMatchEnd }: GameViewProps) {
+export interface MatchSummary {
+  kills: number;
+  deaths: number;
+  /** Quick Match: the player's team scored more kills. Campaign: the HQ was destroyed. */
+  teamWon: boolean;
+  mission: MissionResult | null;
+}
+
+export function GameView({ settings, playerClass, seed, record, onQuit, onAgain, onMatchEnd, campaignLevel, playerBoost, hasNext = false, onNext }: GameViewProps) {
   const host = useRef<HTMLDivElement>(null);
   const controlsHost = useRef<HTMLDivElement>(null);
   const minimapHost = useRef<HTMLDivElement>(null);
@@ -77,6 +98,8 @@ export function GameView({ settings, playerClass, seed, record, onQuit, onAgain,
   const [fps, setFps] = useState(0);
   const [hud, setHud] = useState<HudSnapshot | null>(null);
   const [results, setResults] = useState<ScoreRow[] | null>(null);
+  const [mission, setMission] = useState<MissionResult | null>(null);
+  const [earned, setEarned] = useState(0);
   const endRef = useRef(onMatchEnd);
   useEffect(() => {
     endRef.current = onMatchEnd;
@@ -96,6 +119,8 @@ export function GameView({ settings, playerClass, seed, record, onQuit, onAgain,
       volume: { master: settings.sound, sfx: 1, music: settings.music },
       playerClass,
       seed,
+      campaignLevel,
+      playerBoost,
       ...dbg,
     });
     sceneRef.current = scene;
@@ -107,9 +132,14 @@ export function GameView({ settings, playerClass, seed, record, onQuit, onAgain,
     });
     scene.touch = touch;
     scene.onMatchEnd = (rows) => {
-      setResults(rows);
       const me = rows.find((r) => r.id === scene.localId);
-      if (me) endRef.current(me.kills, me.deaths);
+      const m = scene.missionResult();
+      const team = (k: number): number => rows.filter((r) => r.team === k).reduce((a, r) => a + r.kills, 0);
+      const myTeam = me?.team ?? 0;
+      const teamWon = m ? m.won : team(myTeam) > team(1 - myTeam);
+      setEarned(endRef.current({ kills: me?.kills ?? 0, deaths: me?.deaths ?? 0, teamWon, mission: m }));
+      setMission(m);
+      setResults(rows);
     };
     void scene.init(host.current!).then(() => {
       if (cancelled) return;
@@ -144,7 +174,8 @@ export function GameView({ settings, playerClass, seed, record, onQuit, onAgain,
       sceneRef.current = null;
       delete window.__tanky;
     };
-  }, [settings.quality, settings.fpsCap, settings.reduceShake, settings.aimAssist, settings.edgeHighlight, settings.cooldownMul, settings.difficulty, settings.mapTheme, settings.sound, settings.music, settings.leftHanded, settings.joystickSensitivity, playerClass, seed]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- playerBoost is read once per match (seed changes per match)
+  }, [settings.quality, settings.fpsCap, settings.reduceShake, settings.aimAssist, settings.edgeHighlight, settings.cooldownMul, settings.difficulty, settings.mapTheme, settings.sound, settings.music, settings.leftHanded, settings.joystickSensitivity, playerClass, seed, campaignLevel]);
 
   const togglePause = (p: boolean): void => {
     sceneRef.current?.setPaused(p);
@@ -195,6 +226,20 @@ export function GameView({ settings, playerClass, seed, record, onQuit, onAgain,
             </div>
           </div>
         )}
+        {hud?.mode === 'campaign' && (
+          <div className="objective-chip" data-testid="objective">
+            <span>{t('campaign.objective')}</span>
+            <div className="hq-bar">
+              <i style={{ width: `${hud.hqMax > 0 ? (hud.hqHp / hud.hqMax) * 100 : 0}%` }} />
+            </div>
+            <small>{t('campaign.enemiesLeft', { n: hud.enemiesLeft })}</small>
+          </div>
+        )}
+        {hud && hud.hqAngle !== null && hud.phase === 'playing' && hud.hqDist > 6 && (
+          <div className="hq-arrow" data-testid="hq-arrow" style={{ transform: `translate(-50%, -50%) rotate(${hud.hqAngle}rad) translateX(min(30vw, 38vh))` }}>
+            <span style={{ transform: `rotate(${-hud.hqAngle}rad)` }}>{hud.hqDist}</span>
+          </div>
+        )}
         <div ref={minimapHost} className={'minimap-host' + (settings.leftHanded ? ' right' : '')} />
         {hud && hud.phase !== 'ended' && !hud.endless && (
           <div className={'match-timer' + (finalWarn ? ' warn' : '')} data-testid="timer">
@@ -231,7 +276,8 @@ export function GameView({ settings, playerClass, seed, record, onQuit, onAgain,
           </div>
         </div>
       )}
-      {results && <ResultsScreen rows={results} localId={0} record={record} onAgain={onAgain} onMenu={onQuit} />}
+      {results && mission && <MissionResults result={mission} credits={earned} hasNext={hasNext} onNext={() => onNext?.()} onRetry={onAgain} onMenu={onQuit} />}
+      {results && !mission && <ResultsScreen rows={results} localId={0} record={record} credits={earned} onAgain={onAgain} onMenu={onQuit} />}
     </div>
   );
 }

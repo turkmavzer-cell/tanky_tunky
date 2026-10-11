@@ -4,11 +4,16 @@ import abilitiesJson from '../data/abilities.json';
 import visionJson from '../data/vision.json';
 import matchJson from '../data/match.json';
 
-export type TankClassId = 'scout' | 'heavy' | 'standard' | 'artillery' | 'trapper';
-/** Every class with data (tanks.json), including disabled ones. */
-export const ALL_TANK_CLASSES: readonly TankClassId[] = ['scout', 'heavy', 'standard', 'artillery', 'trapper'];
+/** Player-style tank classes (class select, bots, balance). */
+export type CombatClassId = 'scout' | 'heavy' | 'standard' | 'artillery' | 'trapper';
+/** Stationary campaign enemies (round 05, stream D): gun tower and headquarters building. */
+export type PveClassId = 'tower' | 'hq';
+export type TankClassId = CombatClassId | PveClassId;
+/** Every tank class with data (tanks.json), including disabled ones; PvE structures are not included. */
+export const ALL_TANK_CLASSES: readonly CombatClassId[] = ['scout', 'heavy', 'standard', 'artillery', 'trapper'];
+export const PVE_CLASSES: readonly PveClassId[] = ['tower', 'hq'];
 /** Playable classes: class select, bot rosters, balance runs (tanks.json `enabled: false` hides a class). */
-export const TANK_CLASSES: readonly TankClassId[] = ALL_TANK_CLASSES.filter(
+export const TANK_CLASSES: readonly CombatClassId[] = ALL_TANK_CLASSES.filter(
   (c) => (tanksJson.classes as Record<string, { enabled?: boolean }>)[c].enabled !== false,
 );
 export type ShellKind = 'standard' | 'heavy' | 'artillery';
@@ -41,6 +46,15 @@ export interface TankClassDef {
   ult?: AbilityId;
   /** Spray fire (hold = rapid stream, no charging). */
   spray?: SprayDef;
+  /** Campaign structure: never moves, never respawns, no regeneration, no crate pickups. */
+  pve?: boolean;
+  /** Has no gun (headquarters). */
+  noFire?: boolean;
+}
+
+/** True for stationary campaign structures (tower, HQ). */
+export function isPve(cls: TankClassId): boolean {
+  return TANKS[cls].pve === true;
 }
 
 /** Machine-gun style fire (owner 2026-10-11, K5/K7: Scout only). */

@@ -31,20 +31,23 @@ export function MainMenu({ onSolo, onMulti, onSettings }: { onSolo: () => void; 
   );
 }
 
-/** Tek Oyunculu: Hızlı Maç works today; Kampanya, İlerleme and Garaj are placeholders until they are built (CLAUDE.md §7 D/E). */
-export function SoloMenu({ onQuick, onBack }: { onQuick: () => void; onBack: () => void }) {
+/** Tek Oyunculu: Hızlı Maç, Kampanya (round 05, D) and Garaj (round 05, E). */
+export function SoloMenu({ credits, onQuick, onCampaign, onGarage, onBack }: { credits: number; onQuick: () => void; onCampaign: () => void; onGarage: () => void; onBack: () => void }) {
   return (
     <div className="screen menu">
       <h2 className="menu-title">{t('menu.solo')}</h2>
+      <div className="credits" data-testid="credits">
+        {t('menu.credits', { n: credits })}
+      </div>
       <div className="menu-buttons">
         <button className="btn btn-primary" data-testid="play" onClick={onQuick}>
           {t('menu.quickMatch')}
         </button>
-        <button className="btn soon" data-testid="campaign" disabled>
-          {t('menu.campaign')} <small>{t('card.soon')}</small>
+        <button className="btn" data-testid="campaign" onClick={onCampaign}>
+          {t('menu.campaign')}
         </button>
-        <button className="btn soon" data-testid="garage" disabled>
-          {t('menu.garage')} <small>{t('card.soon')}</small>
+        <button className="btn" data-testid="garage" onClick={onGarage}>
+          {t('menu.garage')}
         </button>
         <button className="btn" data-testid="back" onClick={onBack}>
           {t('menu.back')}
