@@ -92,6 +92,10 @@ export interface TankBoost {
   hp: number;
   speed: number;
   damage: number;
+  /** Round 06 perks: fire-rate multiplier (Scout), charge-time multiplier (Standard, < 1 = faster), blast radius (Artillery). */
+  fireRate: number;
+  chargeTime: number;
+  splash: number;
 }
 
 /** Upgrade dropped by a destroyed crate. */

@@ -63,6 +63,13 @@ Measurable items (frame time, input latency proxies, APK size) are automated —
 - [ ] No visible stutter while driving across the map (note FPS counter: target 60, min 45).
 - [ ] Device does not get uncomfortably hot after 10 min.
 
+## Round 06 (telefonda dene)
+- [ ] Menüde "Görevler" yazıyor.
+- [ ] Çevik: ATEŞ'e basılı tut + Aşırı Yük → hâlâ kasıyor mu? Alttaki FPS sayısını ateş etmeden ve ederken not et.
+- [ ] Taramalı ateşte hasar sayıları tek sayıda toplanıp yükseliyor; titreşim sürekli ama boğmuyor.
+- [ ] Görev kazanınca "+1 güçlendirme parçası" ve tank seçimi çıkıyor; seçtiğin tank maçta farklı hissettiriyor mu?
+- [ ] Garaj: "Güçlendirme" satırı, parça varsa "1 parça" butonu çalışıyor.
+
 ## Round 05 (telefonda dene)
 - [ ] Tek Oyunculu → Kampanya: Bölüm 1 açık, 2–3 kilitli; Bölüm 1'i geçince 2 açılıyor.
 - [ ] Görevde kırmızı ok karargâhı gösteriyor, mesafe azalıyor; üstte "Karargâhı yok et" + HQ can çubuğu + kalan düşman.

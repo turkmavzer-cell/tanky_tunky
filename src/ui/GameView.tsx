@@ -9,6 +9,7 @@ import type { ScoreRow } from '../game/matchSetup';
 import { MissionResults, ResultsScreen } from './ResultsScreen';
 import type { MissionResult } from '../game/campaign';
 import type { TankBoost } from '../sim/state';
+import type { SaveData } from '../core/save';
 import { MATCH } from '../sim/config';
 
 declare global {
@@ -33,6 +34,7 @@ type DebugParams = Partial<{
   mapTheme: 'desert' | 'city' | 'forest';
   debugView: { x: number; y: number; zoom: number };
   campaignLevel: string;
+  roster: TankClassId;
 }>;
 
 /** Dev/test URL overrides: ?silent&map=96|debug_heights&seed=5&renderScale=0.25&cls=heavy&view=32,32&zoom=0.4&bots=idle&endless&nofog&dur=10&diff=hard */
@@ -56,6 +58,8 @@ function debugParams(): DebugParams {
   const diff = q.get('diff');
   if (diff === 'easy' || diff === 'normal' || diff === 'hard' || diff === 'extreme') out.aiLevel = diff;
   if (q.get('edges') === 'strong') out.edgeHighlight = 'strong';
+  const roster = q.get('roster') as TankClassId | null;
+  if (roster && ALL_TANK_CLASSES.includes(roster as CombatClassId)) out.roster = roster;
   const camp = q.get('campaign');
   if (camp) out.campaignLevel = camp;
   const view = q.get('view')?.split(',').map(Number);
@@ -70,12 +74,15 @@ export interface GameViewProps {
   record: { bestKills: number; bestKD: number };
   onQuit: () => void;
   onAgain: () => void;
-  /** Returns the credits the match paid (saved by the App, shown on the results screen). */
-  onMatchEnd: (summary: MatchSummary) => number;
+  /** Returns the credits (and upgrade parts) the match paid (saved by the App, shown on the results screen). */
+  onMatchEnd: (summary: MatchSummary) => { credits: number; parts: number };
+  /** Current save + setter: the mission results screen spends upgrade parts on a tank (round 06). */
+  save: SaveData;
+  onSave: (s: SaveData) => void;
   /** Campaign level id (round 05); undefined = Quick Match. */
   campaignLevel?: string;
   /** Garage multipliers for the player's tank. */
-  playerBoost?: TankBoost;
+  playerBoost?: Partial<TankBoost>;
   /** Campaign: a next level exists and can be started from the results screen. */
   hasNext?: boolean;
   onNext?: () => void;
@@ -89,7 +96,7 @@ export interface MatchSummary {
   mission: MissionResult | null;
 }
 
-export function GameView({ settings, playerClass, seed, record, onQuit, onAgain, onMatchEnd, campaignLevel, playerBoost, hasNext = false, onNext }: GameViewProps) {
+export function GameView({ settings, playerClass, seed, record, onQuit, onAgain, onMatchEnd, campaignLevel, playerBoost, hasNext = false, onNext, save, onSave }: GameViewProps) {
   const host = useRef<HTMLDivElement>(null);
   const controlsHost = useRef<HTMLDivElement>(null);
   const minimapHost = useRef<HTMLDivElement>(null);
@@ -100,6 +107,7 @@ export function GameView({ settings, playerClass, seed, record, onQuit, onAgain,
   const [results, setResults] = useState<ScoreRow[] | null>(null);
   const [mission, setMission] = useState<MissionResult | null>(null);
   const [earned, setEarned] = useState(0);
+  const [earnedParts, setEarnedParts] = useState(0);
   const endRef = useRef(onMatchEnd);
   useEffect(() => {
     endRef.current = onMatchEnd;
@@ -137,7 +145,9 @@ export function GameView({ settings, playerClass, seed, record, onQuit, onAgain,
       const team = (k: number): number => rows.filter((r) => r.team === k).reduce((a, r) => a + r.kills, 0);
       const myTeam = me?.team ?? 0;
       const teamWon = m ? m.won : team(myTeam) > team(1 - myTeam);
-      setEarned(endRef.current({ kills: me?.kills ?? 0, deaths: me?.deaths ?? 0, teamWon, mission: m }));
+      const pay = endRef.current({ kills: me?.kills ?? 0, deaths: me?.deaths ?? 0, teamWon, mission: m });
+      setEarned(pay.credits);
+      setEarnedParts(pay.parts);
       setMission(m);
       setResults(rows);
     };
@@ -276,7 +286,7 @@ export function GameView({ settings, playerClass, seed, record, onQuit, onAgain,
           </div>
         </div>
       )}
-      {results && mission && <MissionResults result={mission} credits={earned} hasNext={hasNext} onNext={() => onNext?.()} onRetry={onAgain} onMenu={onQuit} />}
+      {results && mission && <MissionResults result={mission} credits={earned} parts={earnedParts} save={save} onSave={onSave} hasNext={hasNext} onNext={() => onNext?.()} onRetry={onAgain} onMenu={onQuit} />}
       {results && !mission && <ResultsScreen rows={results} localId={0} record={record} credits={earned} onAgain={onAgain} onMenu={onQuit} />}
     </div>
   );

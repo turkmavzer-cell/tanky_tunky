@@ -44,7 +44,7 @@ describe('progression (round 05, E)', () => {
     const b = boostFor(s, 'heavy');
     expect(b.hp).toBeCloseTo(1 + 3 * PROGRESSION.garage.branches.armor.perLevel);
     expect(b.speed).toBe(1);
-    expect(boostFor(s, 'scout')).toEqual({ hp: 1, speed: 1, damage: 1 });
+    expect(boostFor(s, 'scout')).toEqual({ hp: 1, speed: 1, damage: 1, fireRate: 1, chargeTime: 1, splash: 1 });
   });
 
   it('the boost reaches the player tank only', () => {
@@ -58,5 +58,53 @@ describe('progression (round 05, E)', () => {
   it('quick match credits', () => {
     expect(quickMatchCredits(4, true)).toBe(4 * PROGRESSION.quickMatch.perKill + PROGRESSION.quickMatch.win);
     expect(quickMatchCredits(0, false)).toBe(0);
+  });
+});
+
+describe('upgrade parts + perks (round 06)', () => {
+  it('a win pays one part, first 3-star win one more; losses none', async () => {
+    const { missionParts } = await import('../src/game/progression');
+    expect(missionParts(0, win(1))).toBe(PROGRESSION.parts.perWin);
+    expect(missionParts(2, win(3))).toBe(PROGRESSION.parts.perWin + PROGRESSION.parts.threeStarBonus);
+    expect(missionParts(3, win(3))).toBe(PROGRESSION.parts.perWin);
+    expect(missionParts(0, { won: false, stars: 0, time: 0, deaths: 0, kills: 0 })).toBe(0);
+    const r = applyMission(defaultSave(), LEVELS[0], win(3));
+    expect(r.parts).toBe(2);
+    expect(r.save.parts).toBe(2);
+  });
+
+  it('a part gives the class-specific perk, up to the max level', async () => {
+    const { spendPart, perkLevel } = await import('../src/game/progression');
+    let s = { ...defaultSave(), parts: 20 };
+    for (let i = 0; i < PROGRESSION.perks.maxLevel; i++) s = spendPart(s, 'heavy')!;
+    expect(perkLevel(s, 'heavy')).toBe(PROGRESSION.perks.maxLevel);
+    expect(spendPart(s, 'heavy')).toBeNull();
+    expect(boostFor(s, 'heavy').hp).toBeCloseTo(1 + PROGRESSION.perks.maxLevel * PROGRESSION.perks.classes.heavy!.perLevel);
+    s = spendPart(s, 'scout')!;
+    expect(boostFor(s, 'scout').fireRate).toBeCloseTo(1 + PROGRESSION.perks.classes.scout!.perLevel);
+    s = spendPart(s, 'standard')!;
+    expect(boostFor(s, 'standard').chargeTime).toBeLessThan(1);
+    s = spendPart(s, 'artillery')!;
+    expect(boostFor(s, 'artillery').splash).toBeGreaterThan(1);
+    expect(spendPart({ ...defaultSave(), parts: 0 }, 'scout')).toBeNull();
+  });
+
+  it('perks reach the sim: Scout sprays faster, Standard charges faster, Artillery blasts wider', async () => {
+    const { step } = await import('../src/sim/sim');
+    const { BTN_FIRE, EMPTY_INPUT } = await import('../src/sim/input');
+    const { chargeTimeOf } = await import('../src/sim/tank');
+    const map = generateThemed('desert', 3, 40);
+    const shots = (fireRate: number): number => {
+      const m = createMatch({ seed: 3, map: generateThemed('desert', 3, 40), teams: [['scout'], ['heavy']], humanPlayer: true, playerBoost: { fireRate }, rules: { endless: true } });
+      let n = 0;
+      for (let k = 0; k < 120; k++) {
+        step(m.state, [{ ...EMPTY_INPUT, buttons: BTN_FIRE }, EMPTY_INPUT]);
+        n += m.state.events.filter((e) => e.type === 'fire').length;
+      }
+      return n;
+    };
+    expect(shots(1.3)).toBeGreaterThan(shots(1));
+    const st = createMatch({ seed: 3, map, teams: [['standard'], ['heavy']], humanPlayer: true, playerBoost: { chargeTime: 0.7 } });
+    expect(chargeTimeOf(st.state.tanks[0])).toBeCloseTo(TANKS.standard.chargeTime * 0.7);
   });
 });

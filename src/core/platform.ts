@@ -16,8 +16,17 @@ export function setHapticsEnabled(v: boolean): void {
 
 export type HapticLevel = 'light' | 'medium' | 'heavy';
 
-export function haptic(level: HapticLevel): void {
+let lastHaptic = -1e9;
+
+/**
+ * Vibrates. `minGapMs` > 0 skips the call when the previous vibration was less than that long ago — used by rapid
+ * events (spray fire) so the native bridge is not called 10–30 times per second.
+ */
+export function haptic(level: HapticLevel, minGapMs = 0): void {
   if (!hapticsEnabled) return;
+  const now = performance.now();
+  if (minGapMs > 0 && now - lastHaptic < minGapMs) return;
+  lastHaptic = now;
   if (isNative()) {
     const style = level === 'light' ? ImpactStyle.Light : level === 'medium' ? ImpactStyle.Medium : ImpactStyle.Heavy;
     void Haptics.impact({ style }).catch(() => undefined);

@@ -15,7 +15,7 @@ import { markCombat, updateRegen } from './upgrades';
 
 /** Effective charge time of a tank right now (Swift halves it). */
 export function chargeTimeOf(t: Tank): number {
-  return TANKS[t.cls].chargeTime * abilityChargeTimeMul(t);
+  return TANKS[t.cls].chargeTime * abilityChargeTimeMul(t) * t.boost.chargeTime;
 }
 
 /** Current charge level 0..1 (0 for a tap). */
@@ -58,14 +58,14 @@ export function updateTank(s: SimState, t: Tank, inp: PlayerInput | undefined, r
     t.charging = false;
     t.chargeT = t.fullT = 0;
     t.needRelease = true;
-    t.cooldown = def.fireCooldown / abilityFireRateMul(t);
+    t.cooldown = def.fireCooldown / (abilityFireRateMul(t) * t.boost.fireRate);
     endAbility(s, t, instant.slot, rng);
   } else if (def.spray) {
     // machine-gun fire: hold = stream, no charging (Scout)
     t.charging = false;
     if (held && canFire && !t.needRelease && t.overheat <= 0 && t.cooldown <= 0) {
       fire(s, t, 0, false, rng, 0, def.spray);
-      t.cooldown = 1 / (def.spray.rate * abilityFireRateMul(t));
+      t.cooldown = 1 / (def.spray.rate * abilityFireRateMul(t) * t.boost.fireRate);
     }
   } else if (t.overheat > 0 || !canFire) {
     t.charging = false;
@@ -95,7 +95,7 @@ export function updateTank(s: SimState, t: Tank, inp: PlayerInput | undefined, r
     fire(s, t, c, perfect, rng);
     t.charging = false;
     t.chargeT = t.fullT = 0;
-    t.cooldown = def.fireCooldown / abilityFireRateMul(t);
+    t.cooldown = def.fireCooldown / (abilityFireRateMul(t) * t.boost.fireRate);
   }
   t.prevButtons = buttons;
 
@@ -216,7 +216,7 @@ function fire(s: SimState, t: Tank, c: number, perfect: boolean, rng: Rng, reach
     vy: sa * speed,
     dist: range,
     damage: spray ? spray.damage : def.damage * evalCurve(sc.damage, c) * (perfect ? COMBAT.charge.perfectBonus : 1),
-    radius: def.splash * evalCurve(sc.radius, c),
+    radius: def.splash * evalCurve(sc.radius, c) * t.boost.splash,
     bounces: def.bounces,
     level: map.elev[Math.floor(t.y) * map.width + Math.floor(t.x)],
     charge: c,
