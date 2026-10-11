@@ -103,6 +103,28 @@ Checked against the round branches:
 - `docs/changelog` merged: `docs/CHANGELOG.md` + `npm run log` + changelog-check workflow (D-043).
 - Verification: docs only; `npm run lint` / `npm run typecheck` run after the merge.
 
+## Round 04 (2026-10-11) — Artillery +25 %, aim fix, two abilities per tank, Scout spray, new menu
+
+Branch `fix/round-04-balance-aim-skills` (from the merged default branch). Owner "uygula": B1, A, C, B; D–G not started (see below).
+
+| Item | State | Evidence |
+|---|---|---|
+| B1 Artillery +25 % blast damage | ✅ | `combat.json shell.artilleryDamageMul`; test in `tests/combat.test.ts` |
+| A auto-aim only on screen | ✅ | `SimState.view` + `targeting.onScreen`; 2 unit tests + e2e 03 (enemy 22 tiles away is ignored, enemy 3 tiles away locked) |
+| C skill + ultimate per tank, Scout spray, Scout speed 5.0 | ✅ | `BTN_ULT`, `Tank.ult`, `Tank.stun`, abilities overdrive/repair/emp/readyshot; 6 unit tests, e2e 01–04, screenshots `docs/screens/round-04/` |
+| B menu: Tek Oyunculu (Hızlı Maç, Kampanya/Garaj "Yakında") / Çok Oyunculu ("Yakında") / Ayarlar | ✅ skeleton | e2e 05, `08-menu-solo.png` |
+| D campaign, E progression, F multiplayer, G art pipeline | ⏸ not started | need owner decisions K1, K2, K4 (+ images for G) |
+
+Gates: lint ✅ typecheck ✅ unit 149 ✅ E2E 29 ✅ (all but the perf spec). **Perf gate ❌ in this cloud container: p95 66.7 ms, 26 fps — but the
+unchanged default branch measures the same here (p95 66.7 ms, JS work mean 12.8 ms vs 12.5 ms with round 04)**, so it is this
+machine being slower than in round 03 (16.8 ms), not round 04. CI result decides; not verified on GitHub yet.
+
+Balance (120 matches, 3v3, 40×40, hard bots, desert; not tuned): Scout 62.0 %, Heavy 67.8 %, Standard 49.0 %, Artillery 21.9 %
+(B1 barely moved Artillery: round 03 ≈ 22 %). Open: landing correction for Artillery (shells hit the blast edge), Heavy B2.
+
+To try on the phone: second (ULT) button above-left of YETENEK; Scout hold-fire spray feel + Aşırı Yük; Ağır Gümbürtü radius 4 and Onarım;
+Dengeli EMP stun; Topçu Hazır Atış then Yaylım Ateşi (45 s); turret ignores enemies off screen; new menu.
+
 ## Open questions for the owner
 
 See `CLAUDE.md` §1 "Pending owner decisions" for options and proposals:

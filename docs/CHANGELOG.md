@@ -57,6 +57,22 @@ Tam liste ve öneriler: `CLAUDE.md` §1 "Pending owner decisions" (B1, B2, A, K1
 ## 4. Günlük (en yeni en üstte)
 
 <!-- LOG:START -->
+### 2026-10-11 — [degisiklik] CLAUDE.md güncellendi
+Round 04 durumu: PR #4 açık, CI yeşil (perf kapısı dahil), APK #23; yol haritasında yetenek sistemi (C) tamam; D/E/F/G için sahibinin cevabını bekleyen kararlar listelendi. Kod değişmedi.
+### 2026-10-11 — [konusma] Round 04 durumu ve performans uyarısı
+A, B1, C, B yapıldı (birim 149, E2E 29 geçti, ekran görüntüleri docs/screens/round-04). Perf kapısı bu bulut makinesinde eski sürümde de p95 66,7 ms (round 03'te 16,8 idi): makine yavaşladı, round 04'ten kaynaklanmıyor; CI'da doğrulanmadı. D-G (kampanya, ilerleme, çok oyunculu, görsel hattı) başlamadı.
+### 2026-10-11 — [yenilik] B: yeni ana menü iskeleti
+Açılış menüsü: Tek Oyunculu (Hızlı Maç çalışır; Kampanya ve Garaj 'Yakında') / Çok Oyunculu ('Yakında' notu, oda kur/katıl pasif) / Ayarlar. Hızlı Maç'tan geri dönüş artık Tek Oyunculu menüsüne. e2e testleri yeni akışa uyarlandı (solo → play). Kampanya, ilerleme ve çok oyunculu henüz yapılmadı: K1 (INTERNET izni/online-Wi-Fi), K2 (harita boyutu, bölüm sayısı), K4 (düşman yerleşimi) kararları gerekiyor.
+### 2026-10-11 — [acik-soru] Denge ölçümü (round 04, 120 maç, zor bot, çöl 40x40)
+Çevik %62,0 · Ağır %67,8 · Dengeli %49,0 · Topçu %21,9 (B1 +%25'ten sonra de neredeyse değişmedi). Sayılar bu turda elle ayarlanmadı (kural 4). Öneri: Topçu mermileri patlamanın kenarına düşüyor (merkez hasarı ~%25'e iniyor) — iniş düzeltmesi; Ağır B2; Çevik taramalı ateş sonrası yine yüksek. Sahibin kararı bekleniyor.
+### 2026-10-11 — [yenilik] C: her tanka yetenek + ulti, Çevik taramalı ateş
+İkinci yetenek yuvası (Tank.ult, BTN_ULT, ikinci buton + HUD çipi, klavye Q). Yeni yetenekler: Aşırı Yük (Çevik ulti), Onarım (Ağır ulti), EMP (Dengeli ulti, sersemletme Tank.stun), Hazır Atış (Topçu yetenek), Yaylım Ateşi artık Topçu ultisi (45 sn). Gümbürtü: yarıçap 4, sabit 1000 hasar, bekleme 10 sn; Saklan bekleme 5 sn. Çevik: hız 5,0, basılı tut = saniyede 10 mermi (80 hasar, ±2° sapma), şarj yok. Botlar iki yuvayı da kullanır. Sayılar TANKS.md ÖNERİ tablosundan (sahip 'başla' dedi) — doğrulanmadı: telefonda his, denge ölçümü ayrı.
+### 2026-10-11 — [duzeltme] A: Otomatik nişan sadece ekrandaki düşmana
+Tam görünürlükten (D-037) beri taret ekran dışındaki en yakın düşmana kilitleniyordu. SimState.view (kamera dikdörtgeni, iso ekran px) GameScene.updateView() ile her tick yenilenir; targeting.onScreen() yalnız yerel oyuncuyu sınırlar, botlar sınırsız. Kilitlenen hedef ekrandan çıkarsa bırakılır. Test: tests/targeting.test.ts (2 yeni). Gerçek cihazda doğrulanmadı.
+### 2026-10-11 — [degisiklik] B1: Topçu inişte +%25 hasar
+combat.json shell.artilleryDamageMul=1.25; combat.ts shellExplosion artillery mermisinin hasarını çarpar (Yaylım Ateşi dahil, arazi hasarı değişmez). Test: tests/combat.test.ts (merkezde ≥ taban hasar, ≤ ×1,25). Birim testler 143 geçti; denge etkisi henüz ölçülmedi (tools/balance.ts turun sonunda koşulacak).
+### 2026-10-11 — [konusma] Sahip: B1 ve tüm kalan güncellemelere başla
+B1: Topçunun düşen mermileri düştüğü yerde patlama hasarının %25'i kadar daha fazla hasar versin. Ardından 'geri kalan tüm güncellemelere başla' dendi (A, C, B, D–G sırayla; açık kararlar için makul varsayım + DECISIONS/PROGRESS notu). Çalışma branch'i: fix/round-04-balance-aim-skills.
 ### 2026-10-11 — [karar] PR #1-#3 birleştirildi
 Sahip 'birleştir' dedi (PR #1 → #2 → #3, base'ler varsayılan branch'e çevrilerek). Varsayılan branch artık round 03 oyununu içeriyor (merge f94cbf8). CI (checks, debug-apk, changelog) c2fde90 için yeşildi. Sahip bundan sonra telefondan/bulut oturumundan devam ediyor; masaüstü oturumu çalışmadan önce pull yapar.
 ### 2026-10-11 — [degisiklik] Belgeler güncellendi: CLAUDE.md, TANKS.md, PROGRESS.md, DECISIONS.md, CHANGELOG bölüm 2–3

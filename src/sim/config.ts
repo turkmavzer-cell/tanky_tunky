@@ -12,8 +12,8 @@ export const TANK_CLASSES: readonly TankClassId[] = ALL_TANK_CLASSES.filter(
   (c) => (tanksJson.classes as Record<string, { enabled?: boolean }>)[c].enabled !== false,
 );
 export type ShellKind = 'standard' | 'heavy' | 'artillery';
-export type AbilityId = 'hide' | 'rumble' | 'swift' | 'barrage' | 'mine';
-export const ABILITY_IDS: readonly AbilityId[] = ['hide', 'rumble', 'swift', 'barrage', 'mine'];
+export type AbilityId = 'hide' | 'rumble' | 'swift' | 'barrage' | 'mine' | 'overdrive' | 'repair' | 'emp' | 'readyshot';
+export const ABILITY_IDS: readonly AbilityId[] = ['hide', 'rumble', 'swift', 'barrage', 'mine', 'overdrive', 'repair', 'emp', 'readyshot'];
 
 export interface TankClassDef {
   maxSpeed: number;
@@ -35,7 +35,22 @@ export interface TankClassDef {
   bounces: number;
   minRange: number;
   arcHeight: number;
+  /** Skill (fast recharge, button 1). */
   ability: AbilityId;
+  /** Ultimate (long recharge, button 2); absent = none. */
+  ult?: AbilityId;
+  /** Spray fire (hold = rapid stream, no charging). */
+  spray?: SprayDef;
+}
+
+/** Machine-gun style fire (owner 2026-10-11, K5/K7: Scout only). */
+export interface SprayDef {
+  /** Shots per second. */
+  rate: number;
+  /** Damage per bullet (replaces `damage`). */
+  damage: number;
+  /** Random sideways error, +/- radians (seeded Rng). */
+  spread: number;
 }
 
 export const TANKS = tanksJson.classes as Readonly<Record<TankClassId, TankClassDef>>;
@@ -44,10 +59,10 @@ export type Curve = readonly (readonly number[])[];
 export interface CombatDef {
   charge: { tapThreshold: number; perfectWindow: number; perfectBonus: number; overheatAfter: number; overheatLock: number };
   scaling: { damage: Curve; speed: Curve; range: Curve; radius: Curve; knockback: Curve };
-  shell: { hitRadius: number; knockback: number; splashFalloff: number; artillerySplash: number; uphillMissChance: number; selfDamage: boolean; terrainDamageMul: number };
+  shell: { hitRadius: number; knockback: number; splashFalloff: number; artillerySplash: number; artilleryDamageMul: number; uphillMissChance: number; selfDamage: boolean; terrainDamageMul: number };
   tankCollision: { push: number };
   respawnTime: number;
-  targeting: { switchRatio: number; leadIterations: number };
+  targeting: { switchRatio: number; leadIterations: number; screenMarginPx: number };
   upgrades: { perPickup: number; max: number; pickupRadius: number; crateRespawn: number };
   regen: { outOfCombat: number; interval: number; amount: number };
 }

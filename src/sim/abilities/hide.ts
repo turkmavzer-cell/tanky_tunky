@@ -5,6 +5,6 @@ export const hide: AbilityModule = {
   activate: () => true,
   onFire: (c) => {
     // revealing yourself: end now (cooldown starts) — handled by the dispatcher via endAbility
-    c.t.ability.active = 0;
+    c.a.active = 0;
   },
 };

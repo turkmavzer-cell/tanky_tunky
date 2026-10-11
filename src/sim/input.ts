@@ -4,6 +4,8 @@
  */
 export const BTN_FIRE = 1;
 export const BTN_ABILITY = 2;
+/** Ultimate (second ability button). */
+export const BTN_ULT = 4;
 
 /** Angle quantization: 4096 steps per turn. */
 export const AIM_STEPS = 4096;

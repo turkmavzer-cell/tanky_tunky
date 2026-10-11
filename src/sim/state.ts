@@ -66,6 +66,10 @@ export interface Tank {
   target: number;
   // --- ability (round-01 job 5)
   ability: AbilityState;
+  /** Ultimate slot (second button) or null for classes without one. */
+  ult: AbilityState | null;
+  /** Seconds left of an EMP stun (cannot move or fire). */
+  stun: number;
   /** Seconds left of the "hit while invisible" shimmer cue. */
   shimmer: number;
   /** Seconds until the next "bumped into an impassable edge" event may fire. */
@@ -188,7 +192,7 @@ export type SimEvent =
   | { type: 'chargeFull'; tank: number }
   | { type: 'overheat'; tank: number }
   | { type: 'bounce'; x: number; y: number }
-  | { type: 'explode'; x: number; y: number; radius: number; charge: number; kind: ShellKind | 'mine' | 'rumble'; owner: number }
+  | { type: 'explode'; x: number; y: number; radius: number; charge: number; kind: ShellKind | 'mine' | 'rumble' | 'emp'; owner: number }
   | { type: 'hit'; target: number; by: number; damage: number; x: number; y: number }
   | { type: 'graze'; target: number; x: number; y: number }
   | { type: 'destroyed'; tank: number; by: number; x: number; y: number; cause: DamageCause }
@@ -202,6 +206,19 @@ export type SimEvent =
   | { type: 'matchEnd' };
 
 /** Complete, plain-data simulation state. Cloneable and hashable; contains no functions. */
+/**
+ * What the local player's camera shows, in iso screen pixels at zoom 1 (x = (wx - wy) * 64, y = (wx + wy) * 32).
+ * Render-side input: the scene refreshes it every frame. Only the tank `tank` is limited by it (auto-aim A, D-044);
+ * bots and headless runs have `view = null`.
+ */
+export interface ScreenView {
+  tank: number;
+  left: number;
+  right: number;
+  top: number;
+  bottom: number;
+}
+
 export interface SimState {
   tick: number;
   seed: number;
@@ -218,6 +235,8 @@ export interface SimState {
   vision: TeamVision[];
   match: MatchState;
   rules: MatchRules;
+  /** Local camera rectangle for auto-aim (null = no screen limit). */
+  view: ScreenView | null;
   /** Events produced during the last step (consumed by render/audio/haptics; not part of game logic). */
   events: SimEvent[];
 }

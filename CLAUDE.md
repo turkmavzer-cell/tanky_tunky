@@ -37,32 +37,32 @@ design is gone with the Trapper, see D-036/D-037 and open decision K3.)
 
 ## 1. Where we are now (update every round)
 
-- **Last finished round:** Round 03 (2026-10-09) — see `docs/PROGRESS.md`. 2026-10-11: cloud-session hand-off note
-  reconciled, change log merged (D-043). No game code changed since round 03.
+- **Last finished round:** Round 04 (2026-10-11, branch `fix/round-04-balance-aim-skills`, **PR #4 open, CI green incl. perf gate, not merged** — waiting for the owner's "birleştir") — B1 Artillery +25 %, A aim on screen only,
+  C two abilities per tank + Scout spray, B menu skeleton. See `docs/PROGRESS.md`. Round 03 was merged into the default branch the same day.
 - **Branches / PRs:** PR #1–#3 were merged into the default branch `claude/tanky-tunky-setup-dw06hp` on 2026-10-11
   (owner: "birleştir"; merge head `f94cbf8`). The default branch now holds round 03 + the change log. **Start new work
   from the default branch**: `git checkout -b fix/round-04-<topic> origin/claude/tanky-tunky-setup-dw06hp`.
   From 2026-10-11 the owner continues in the cloud/phone session; the desktop session pulls before working.
-- **Latest debug APK:** Android APK run **#16** (round 03 + docs; same game as #15). Signed with the committed debug
+- **Latest debug APK:** Android APK run **#23** (round 04: B1, A, C, B; green). Previous: run #16 (round 03). Signed with the committed debug
   key (`keystore/debug.sha256`), CI fails if the signature differs (D-035). The owner must uninstall **once** after
   D-035, then every newer APK installs over the old one — **not yet confirmed on the phone**.
 
 ### Pending owner decisions (nothing below is implemented)
 | # | Topic | Options / proposal | Source |
 |---|---|---|---|
-| B1 | Artillery weak (≈22 %) | it deals ~131 dmg/shot vs 780 listed (shells land at the blast edge) → full damage in the inner half of the blast, or landing correction | BALANCE_REPORT r02–03 |
+| B1 | ✅ +25 % done (D-044), still ≈22 % → needs landing correction · Artillery weak (≈22 %) | it deals ~131 dmg/shot vs 780 listed (shells land at the blast edge) → full damage in the inner half of the blast, or landing correction | BALANCE_REPORT r02–03 |
 | B2 | Heavy strong (≈63–67 %) | lower its hp (5500 = owner's anchor) or weaken Rumble | BALANCE_REPORT |
-| A | **Auto-aim locks off-screen enemies** (owner: "only aim at enemies visible on screen") | since full visibility (D-037) `selectTarget` picks the nearest enemy anywhere: limit to the camera view (+ small margin, grows when zoomed out) and/or gun range | cloud note #2, confirmed in current code |
+| A | ✅ DONE (D-045) **Auto-aim locks off-screen enemies** (owner: "only aim at enemies visible on screen") | since full visibility (D-037) `selectTarget` picks the nearest enemy anywhere: limit to the camera view (+ small margin, grows when zoomed out) and/or gun range | cloud note #2, confirmed in current code |
 | K1 | Multiplayer | online relay vs same Wi-Fi vs postpone; needs the INTERNET permission (currently removed in the manifest) | cloud note |
 | K2 | Campaign map size / level count | 96 → 128 tiles? first 3 or all 12 levels? | cloud note |
 | K3 | Map awareness after Trapper | everyone sees everything now; minimap for all? edge-of-screen objective arrow in campaign? 6-trap design dropped? | cloud note + D-036/37 |
 | K4 | Enemy placement in campaign | hybrid: `levels.json` outposts with threat budget + zone, solver fills them | cloud note |
-| K5 | Spray (machine-gun) fire | Scout only or every tank? | cloud note |
+| K5 | Spray (machine-gun) fire | assumed Scout only (D-047) — tell me if all tanks | cloud note |
 | K6 | ~~current Hide/Rumble values~~ | **answered**: they exist (§1 table, `docs/TANKS.md`) | report 2026-10-11 |
-| K7 | Scout update | faster (4.2 → ~5.0), spray fire ~10 shots/s with low damage per bullet (**needs rescaling to the ×25 numbers**: tap damage is 260 now), skill = Hide (now 5 s / cd 4 s, ends on fire), ult = fire rate ×3 for 5 s / cd 30 s | cloud note §5.1 |
-| K8 | Two abilities per tank (skill 5–10 s cd + ult 30–60 s cd) | Heavy: Rumble bigger, equal damage centre→edge (now falls to 35 %), more damage; ult = instant full heal, cd 45 or 60 s. Standard: skill (Swift exists now) or shield; ult EMP stun r4 2.5 s cd 40 s. Artillery: skill "ready shot" (no charge, full range) cd 8 s; ult bombardment (Barrage already = 6 shells in 1 s, cd 10 s) | cloud note §5.1 |
-| K9 | Work order | aim fix + menu skeleton first, or tank update first; then campaign/PvE, progression, multiplayer | cloud note |
-| K10 | Git flow | merge PRs #1–#3 (Claude can do it on "birleştir") | report |
+| K7 | ✅ DONE (D-046/047) Scout update | faster (4.2 → ~5.0), spray fire ~10 shots/s with low damage per bullet (**needs rescaling to the ×25 numbers**: tap damage is 260 now), skill = Hide (now 5 s / cd 4 s, ends on fire), ult = fire rate ×3 for 5 s / cd 30 s | cloud note §5.1 |
+| K8 | ✅ DONE (D-046, numbers = proposal) Two abilities per tank (skill 5–10 s cd + ult 30–60 s cd) | Heavy: Rumble bigger, equal damage centre→edge (now falls to 35 %), more damage; ult = instant full heal, cd 45 or 60 s. Standard: skill (Swift exists now) or shield; ult EMP stun r4 2.5 s cd 40 s. Artillery: skill "ready shot" (no charge, full range) cd 8 s; ult bombardment (Barrage already = 6 shells in 1 s, cd 10 s) | cloud note §5.1 |
+| K9 | ✅ A, C, B done first; D–G wait for K1/K2/K4 · Work order | aim fix + menu skeleton first, or tank update first; then campaign/PvE, progression, multiplayer | cloud note |
+| K10 | ✅ DONE: PRs #1–#3 merged 2026-10-11 | | report |
 | K11 | Trapper in code | keep disabled (now) or delete from code/data entirely | cloud note |
 | T | Ability trees | cards show "Yakında"; owner designs them | round 02 |
 | G | Tank art | owner has 4 Nano Banana images (Çevik, Dengeli, Ağır, Topçu; **not in the repo**). Plan: hull and turret as separate images → image→3D (.glb) → render 16–32 angles → atlas + team colour; procedural art stays as fallback. Fixes noted: Heavy emblem must be a square, Artillery barrel faces the wrong way | this chat + cloud note §5.5 |
@@ -72,16 +72,16 @@ design is gone with the Trapper, see D-036/D-037 and open decision K3.)
 |---|---|---|
 | Classes | Scout (Çevik), Heavy (Ağır), Standard (Dengeli), Artillery (Topçu); Trapper disabled (`enabled: false`, data kept) | `src/data/tanks.json`, `docs/TANKS.md` |
 | Scale | hp/damage ×25 of the original (Heavy hp 5500) | D-027 |
-| Abilities (1 per tank) | Hide 5 s / cd 4 s · Rumble instant r 2.4, 850 → 298 dmg, cd 12 s · Swift 4 s / cd 8 s · Barrage 6 shells in 1 s, 450 each, cd 10 s · Mine (Trapper only) | `src/data/abilities.json`, `src/sim/abilities/` |
+| Abilities (skill + ult) | Çevik: Saklan 5 s/cd 5 · Aşırı Yük (fire rate ×3, 5 s/cd 30) · Ağır: Gümbürtü r 4, flat 1000, cd 10 · Onarım (full heal, cd 45) · Dengeli: Swift 4 s/cd 8 · EMP (r 4, stun 2.5 s, cd 40) · Topçu: Hazır Atış (cd 8) · Yaylım Ateşi (6 shells, cd 45) · Mine (Trapper only). Keys E / Q, `BTN_ABILITY`/`BTN_ULT` | `src/data/abilities.json`, `src/sim/abilities/` |
 | Match | 3v3 Quick Match, 5 minutes, 3-2-1 countdown, respawn 2 s + 2 s protection away from death/enemy sight, K/D + results screen | `src/data/match.json`, `src/sim/match.ts` |
 | Maps | Desert ruins (default), Modern city, Forest/river (original) — chosen on the tank-select screen | `src/world/themes.ts`, `generator.ts` |
 | Visibility | No darkening, everything visible; enemy in forest only within 3 tiles (40 % opacity); Hide = invisible | `src/data/vision.json`, D-037 |
 | Crate upgrades | +5 % hp and damage per pickup, max +60 %, lost on death, crates rebuild after 45 s | `combat.json → upgrades`, `src/sim/upgrades.ts` |
 | Regeneration | 5 s out of combat → +5 % max hp every 5 s | `combat.json → regen` |
 | Bots | FSM AI (patrol/suspicion/chase/attack/retreat); Kolay/Normal/Zor/Ekstrem (first shot 5/3/1/0 s after an enemy is in range), allies use the same level | `src/data/ai.json`, `src/systems/ai/bot.ts` |
-| Auto-aim | nearest visible enemy (anywhere — see A), 10 % hysteresis; touch manual aim needs a 60 px drag and ends on release | `targeting.ts`, `touchControls.ts` |
+| Auto-aim | nearest visible enemy **inside the camera view** (D-045), 10 % hysteresis; touch manual aim needs a 60 px drag | `targeting.ts`, `touchControls.ts` |
 | Heights | cliffs/ramps from one `isPassable` rule, bump flash + haptic, "Engel vurgusu" setting | `passability.ts`, D-020/021 |
-| UI | main menu (Hızlı Maç, Ayarlar), swipeable tank cards, map + difficulty selectors, ability countdown ring, upgrade chip | `src/ui/` |
+| UI | main menu Tek Oyunculu (Hızlı Maç; Kampanya/Garaj "Yakında") / Çok Oyunculu ("Yakında") / Ayarlar, swipeable tank cards (skill + ult), map + difficulty selectors, two ability buttons with countdown rings, upgrade chip | `src/ui/` |
 | Save | schema v4 (settings incl. difficulty + mapTheme, records) | `src/core/save.ts` |
 | Android | no INTERNET permission, explicit debug signing, isometric tank icon | `android/`, D-033, D-035 |
 
@@ -175,17 +175,19 @@ android/     Capacitor project (committed), keystore/ debug key (committed) + de
 
 ## 7. Next steps (update every round)
 
-1. Owner: uninstall once, install APK #16, test (`docs/PLAYTEST_CHECKLIST.md`), report whether the update error is gone.
-2. Owner answers the pending decisions in §1 (K9 = order). Planned work streams, none started:
-   - **(A)** auto-aim only on enemies visible on screen (bug, small),
-   - **(B)** main menu skeleton: Tek Oyunculu (Kampanya / Hızlı Maç) · Çok Oyunculu · Garaj · Ayarlar,
-   - **(C)** tank update: two abilities per tank (skill + ult), Scout spray fire (K5, K7, K8),
-   - **(D)** single-player campaign: bigger asymmetric maps, outposts with towers/soldiers, HQ objective (K2, K4),
-   - **(E)** progression: levels/stars/credits/garage upgrades, save schema v5,
-   - **(F)** multiplayer: lockstep over a relay or local Wi-Fi (K1; needs INTERNET permission),
-   - **(G)** tank art pipeline from the owner's images / 3D models.
-3. Balance: B1 Artillery, B2 Heavy.
-4. Owner merges PRs #1 → #2 → #3 (or says "birleştir").
+0. Owner: say "birleştir" to merge PR #4 into the default branch (branch `claude/tanky-tunky-setup-dw06hp`).
+1. Owner: install the round-04 APK (Actions → "Android APK" → artifact; first uninstall once if the update error appears), test with
+   `docs/PLAYTEST_CHECKLIST.md`, report feel of spray / ultimates / menu and whether the update error is gone.
+2. Open owner decisions (§1): K1 multiplayer, K2 campaign size/levels, K3 map awareness, K4 enemy placement, K11 Trapper in code, T ability trees, G images.
+3. Planned work streams not started: **(D)** single-player campaign (bigger asymmetric maps, towers/soldiers/outposts, HQ, `enemies.json`, `levels.json`);
+   **(E)** progression (levels/stars/credits/garage, save schema v5); **(F)** multiplayer (lockstep over relay or Wi-Fi; needs INTERNET permission);
+   **(G)** tank art pipeline from the owner's images / 3D models.
+4. Balance: B1 follow-up (Artillery ≈22 % even with +25 %: landing correction), B2 Heavy (≈68 %), Scout ≈62 % after spray.
+5. Perf: the cloud container measured p95 66.7 ms for default branch AND round 04 (machine slower than in round 03); confirm in CI / on a phone.
+
+**Blocked on the owner (nothing below can be built honestly without an answer):** K1 (INTERNET permission + relay vs Wi-Fi) blocks F;
+K2/K4 (map size, level count, enemy placement) block D; the 4 tank images block G; B1 landing correction / B2 Heavy are balance numbers (rule 4).
+E (progression) depends on D (stars/credits need levels to earn them).
 
 ## 8. Roadmap
 
@@ -193,11 +195,11 @@ android/     Capacitor project (committed), keystore/ debug key (committed) + de
 |---|---|
 | 0 Engine, 1 Skeleton, 2 World, 3 Tanks & controls | ✅ done (default branch) |
 | 4 Vision | ✅ built in round 01 (LOS, forest, Hide); replaced by full visibility in round 03 (D-037), LOS kept for spawns |
-| 5 Classes & Trapper map | ✅ 4 distinct classes + 1 ability each (round 01–02); Trapper/minimap dropped (D-036); **next: skill + ult per tank (C)** |
+| 5 Classes & Trapper map | ✅ 4 distinct classes + 1 ability each (round 01–02); Trapper/minimap dropped (D-036); skill + ult per tank done in round 04 |
 | 6 Traps | ⏸ dropped with the Trapper (only Mine exists, disabled with it); redefine or remove after K3/K11 |
 | 7 AI | ✅ FSM + A* + difficulty levels (round 01–03) |
 | 8 Headless sim & balance | ✅ tool + reports; auto-tune not done — balance is decided by the owner |
-| Skill system (C) | planned: two abilities per tank, ult button, ability trees later |
+| Skill system (C) | ✅ two abilities per tank + ult button (round 04, D-046); ability trees (T) later |
 | PvE / campaign (D) | planned: towers, soldiers, outposts, HQ, `enemies.json` / `levels.json` |
 | 9 Modes & progression (E) | partly: Quick Match only; campaign, survival, daily challenge, garage/credits planned |
 | Multiplayer (F) | planned, decision K1 |

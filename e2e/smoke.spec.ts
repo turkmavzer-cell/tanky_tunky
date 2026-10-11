@@ -10,8 +10,9 @@ test('menu → match → move with keyboard → pause/resume', async ({ page }) 
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));
   await page.goto('/');
-  await expect(page.getByTestId('play')).toBeVisible();
+  await expect(page.getByTestId('solo')).toBeVisible();
   await page.screenshot({ path: 'e2e/out/01-menu.png' });
+  await page.getByTestId('solo').click();
   await page.getByTestId('play').click();
   await page.getByTestId('start').click();
   // 3-2-1 countdown is shown (scene init can take several seconds on GPU-less CI runners), then play starts
@@ -41,6 +42,6 @@ test('menu → match → move with keyboard → pause/resume', async ({ page }) 
   await page.waitForFunction((t) => (window as TankyWindow).__tanky!.scene.state.tick > t + 10, t2);
   await page.getByTestId('pause').click();
   await page.getByTestId('quit').click();
-  await expect(page.getByTestId('play')).toBeVisible();
+  await expect(page.getByTestId('solo')).toBeVisible();
   expect(errors).toEqual([]);
 });

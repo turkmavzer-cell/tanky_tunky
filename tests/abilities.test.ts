@@ -1,13 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { arena, run, idle, wall, secs } from './helpers';
 import { ABILITIES, TANKS } from '../src/sim/config';
-import { AIM_AUTO, BTN_ABILITY, BTN_FIRE, quantizeAim } from '../src/sim/input';
+import { AIM_AUTO, BTN_ABILITY, BTN_FIRE, BTN_ULT, quantizeAim } from '../src/sim/input';
 import { canSeeTank, updateVision } from '../src/sim/visibility';
 import { abilityParam } from '../src/sim/abilities/params';
 import type { SimEvent } from '../src/sim/state';
 import { Ground } from '../src/world/terrain';
 
 const press = { ...idle, buttons: BTN_ABILITY };
+const pressUlt = { ...idle, buttons: BTN_ULT };
 const num = (v: unknown): number => Number(v);
 
 describe('ability framework', () => {
@@ -75,7 +76,7 @@ describe('Scout — Hide', () => {
 });
 
 describe('Heavy — Rumble', () => {
-  it('damages and knocks back nearby enemies with falloff, not through walls', () => {
+  it('damages and knocks back nearby enemies with the same damage centre to edge, not through walls', () => {
     const s = arena([
       { team: 0, cls: 'heavy', x: 10.5, y: 10.5 },
       { team: 1, cls: 'standard', x: 11.6, y: 10.5 }, // close
@@ -86,7 +87,7 @@ describe('Heavy — Rumble', () => {
     s.map.hp[10 * 30 + 9] = 120;
     run(s, 1, [press, idle, idle, idle]);
     const dmg = (i: number) => TANKS.standard.hp - s.tanks[i].hp;
-    expect(dmg(1)).toBeGreaterThan(dmg(2));
+    expect(dmg(1)).toBeCloseTo(dmg(2), 3); // flat damage across the whole radius (owner 2026-10-11)
     expect(dmg(2)).toBeGreaterThan(0);
     expect(dmg(3)).toBe(0);
     expect(s.tanks[1].kx).toBeGreaterThan(1);
@@ -130,7 +131,7 @@ describe('Artillery — Barrage', () => {
       { team: 1, cls: 'heavy', x: 10.5, y: 10.5 },
     ]);
     run(s, 5, [{ ...idle, aim: AIM_AUTO }, idle]);
-    const ev: SimEvent[] = run(s, 1, [{ ...idle, aim: AIM_AUTO, buttons: BTN_ABILITY }, idle]);
+    const ev: SimEvent[] = run(s, 1, [{ ...idle, aim: AIM_AUTO, buttons: BTN_ULT }, idle]);
     const fireTicks: number[] = []; // callback sees the previous step's events → tick k = shot of step k-1
     let tick = 0;
     let speedDuring = 0;
@@ -158,7 +159,7 @@ describe('Artillery — Barrage', () => {
         { team: 0, cls: 'artillery', x: 5.5, y: 10.5 },
         { team: 1, cls: 'heavy', x: 10.5, y: 10.5 },
       ]);
-      run(s, 1, [{ ...idle, aim: AIM_AUTO, buttons: BTN_ABILITY }, idle]);
+      run(s, 1, [{ ...idle, aim: AIM_AUTO, buttons: BTN_ULT }, idle]);
       const pts: string[] = [];
       run(s, secs(5), (st) => {
         for (const sh of st.shells) if (!pts.includes(`${sh.id}`)) pts.push(`${sh.id}`, `${sh.tx.toFixed(6)},${sh.ty.toFixed(6)}`);
@@ -210,5 +211,95 @@ describe('Trapper — Mine', () => {
     expect(s.tanks[2].alive).toBe(false);
     expect(s.tanks[0].kills).toBe(1);
     expect(s.match.kills.at(-1)).toMatchObject({ killer: 0, victim: 2, cause: 'mine' });
+  });
+});
+
+describe('ultimate slot and the new abilities (round 04)', () => {
+  it('every class has a skill, three of four have the expected ultimate; skills use BTN_ABILITY, ultimates BTN_ULT', () => {
+    expect(TANKS.scout.ult).toBe('overdrive');
+    expect(TANKS.heavy.ult).toBe('repair');
+    expect(TANKS.standard.ult).toBe('emp');
+    expect(TANKS.artillery.ult).toBe('barrage');
+    expect(TANKS.artillery.ability).toBe('readyshot');
+    const s = arena([{ team: 0, cls: 'standard', x: 10.5, y: 10.5 }]);
+    run(s, 1, [press]);
+    expect(s.tanks[0].ability.active).toBeGreaterThan(0);
+    expect(s.tanks[0].ult?.active).toBe(0);
+    run(s, 1, [pressUlt]);
+    expect(s.tanks[0].ult?.cooldown).toBeCloseTo(num(ABILITIES.emp.cooldown), 1);
+  });
+
+  it('Scout Aşırı Yük triples the spray rate for its duration, then the cooldown runs', () => {
+    const s = arena([{ team: 0, cls: 'scout', x: 10.5, y: 10.5 }]);
+    const rate = TANKS.scout.spray!.rate;
+    const shots = (n: number, input: typeof idle): number => run(s, n, [input]).filter((e) => e.type === 'fire').length;
+    const hold = { ...idle, buttons: BTN_FIRE };
+    const normal = shots(secs(1), hold);
+    expect(normal).toBeGreaterThanOrEqual(rate - 1);
+    expect(normal).toBeLessThanOrEqual(rate + 1);
+    run(s, 1, [pressUlt]);
+    const boosted = shots(secs(1), hold);
+    expect(boosted).toBeGreaterThanOrEqual(rate * 3 - 3);
+    expect(boosted).toBeLessThanOrEqual(rate * 3 + 3);
+    run(s, secs(num(ABILITIES.overdrive.duration)), [idle]);
+    expect(s.tanks[0].ult?.active).toBe(0);
+    expect(s.tanks[0].ult?.cooldown).toBeGreaterThan(num(ABILITIES.overdrive.cooldown) - 6);
+  });
+
+  it('Heavy Onarım fully heals at once; refused (no cooldown) at full health', () => {
+    const s = arena([{ team: 0, cls: 'heavy', x: 10.5, y: 10.5 }]);
+    run(s, 1, [pressUlt]);
+    expect(s.tanks[0].ult?.cooldown).toBe(0); // refused: already full
+    run(s, 1, [idle]); // release: the ultimate needs a fresh press
+    s.tanks[0].hp = 1000;
+    run(s, 1, [pressUlt]);
+    expect(s.tanks[0].hp).toBeCloseTo(TANKS.heavy.hp, 3);
+    expect(s.tanks[0].ult?.cooldown).toBeCloseTo(num(ABILITIES.repair.cooldown), 1);
+  });
+
+  it('Standard EMP stuns enemies in its radius (no move, no fire) for the stun time, not far ones', () => {
+    const s = arena([
+      { team: 0, cls: 'standard', x: 10.5, y: 10.5 },
+      { team: 1, cls: 'standard', x: 12.5, y: 10.5 }, // inside
+      { team: 1, cls: 'standard', x: 20.5, y: 10.5 }, // outside
+    ]);
+    s.tanks[0].protect = s.tanks[1].protect = s.tanks[2].protect = 0;
+    run(s, 1, [pressUlt, idle, idle]);
+    expect(s.tanks[1].stun).toBeGreaterThan(num(ABILITIES.emp.stun) - 0.1);
+    expect(s.tanks[2].stun).toBe(0);
+    const x0 = s.tanks[1].x;
+    const ev = run(s, secs(1), [idle, { ...idle, moveX: 127, buttons: BTN_FIRE }, idle]);
+    expect(Math.abs(s.tanks[1].x - x0)).toBeLessThan(0.05);
+    expect(ev.filter((e) => e.type === 'fire')).toHaveLength(0);
+    run(s, secs(num(ABILITIES.emp.stun)), [idle, idle, idle]);
+    expect(s.tanks[1].stun).toBe(0);
+    run(s, 30, [idle, { ...idle, moveX: 127 }, idle]);
+    expect(s.tanks[1].x).toBeGreaterThan(x0 + 0.2);
+  });
+
+  it('Artillery Hazır Atış fires at once at full reach, then ends and starts its cooldown', () => {
+    const s = arena([{ team: 0, cls: 'artillery', x: 5.5, y: 10.5 }]);
+    run(s, 5, [{ ...idle, aim: quantizeAim(0) }]);
+    run(s, 1, [{ ...press, aim: quantizeAim(0) }]);
+    expect(s.tanks[0].ability.active).toBeGreaterThan(0);
+    const ev = run(s, 1, [{ ...idle, aim: quantizeAim(0), buttons: BTN_FIRE }]);
+    const fired = ev.find((e) => e.type === 'fire');
+    expect(fired).toBeDefined();
+    const sh = s.shells[0];
+    expect(sh.tx - 5.5).toBeGreaterThan(TANKS.artillery.range - 0.5); // full reach, no charge-up
+    expect(s.tanks[0].ability.active).toBe(0);
+    expect(s.tanks[0].ability.cooldown).toBeGreaterThan(0);
+  });
+
+  it('Scout spray: no charging, small bullets, ~rate per second, bounded sideways error', () => {
+    const s = arena([{ team: 0, cls: 'scout', x: 5.5, y: 10.5 }]);
+    const ev = run(s, secs(1), [{ ...idle, aim: quantizeAim(0), buttons: BTN_FIRE }]);
+    const fires = ev.filter((e) => e.type === 'fire');
+    expect(fires.length).toBeGreaterThanOrEqual(TANKS.scout.spray!.rate - 1);
+    expect(s.tanks[0].charging).toBe(false);
+    for (const sh of s.shells) {
+      expect(sh.damage).toBe(TANKS.scout.spray!.damage);
+      expect(Math.abs(Math.atan2(sh.vy, sh.vx))).toBeLessThanOrEqual(TANKS.scout.spray!.spread + 0.02);
+    }
   });
 });

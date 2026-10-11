@@ -13,7 +13,7 @@ import type { SimState } from '../state';
 import { isTileOpen } from '../../world/passability';
 
 export const mine: AbilityModule = {
-  effectDuration: (t) => abilityParam(t, 'placeTime'),
+  effectDuration: (a) => abilityParam(a, 'placeTime'),
   activate: () => true,
   end: ({ s, t }) => {
     if (!t.alive) return;

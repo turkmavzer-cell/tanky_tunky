@@ -52,6 +52,7 @@ test('ability button: active → cooling → ready (Swift)', async ({ page }) =>
 
 test('tank select: swipeable cards with stats + ability, difficulty selector (remembered)', async ({ page }) => {
   await page.goto('/?silent');
+  await page.getByTestId('solo').click();
   await page.getByTestId('play').click();
   const strip = page.getByTestId('tank-strip');
   await expect(page.locator('.tank-card.on')).toHaveAttribute('data-cls', 'standard');
@@ -83,6 +84,7 @@ test('tank select: swipeable cards with stats + ability, difficulty selector (re
   await page.waitForFunction(() => (window as unknown as { __tanky?: { scene: { state: unknown } } }).__tanky?.scene.state !== undefined, null, { timeout: 60_000 });
   await page.getByTestId('pause').click();
   await page.getByTestId('quit').click();
+  await page.getByTestId('solo').click();
   await page.getByTestId('play').click();
   await expect(page.getByTestId('diff-extreme')).toHaveAttribute('aria-checked', 'true');
 });

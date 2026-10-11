@@ -122,3 +122,48 @@ describe('auto targeting (round-01 job 1)', () => {
     expect(mk('scout')).toBeGreaterThan(mk('heavy'));
   });
 });
+
+describe('auto-aim only on screen (A, D-044)', () => {
+  const rect = (cx: number, cy: number, hw: number, hh: number, tank = 0) => ({ tank, left: cx - hw, right: cx + hw, top: cy - hh, bottom: cy + hh });
+  const scr = (x: number, y: number) => ({ x: (x - y) * 64, y: (x + y) * 32 });
+
+  it('ignores an enemy outside the camera rectangle, locks one inside', () => {
+    const s = arena([
+      { team: 0, cls: 'standard', x: 10.5, y: 10.5 },
+      { team: 1, cls: 'standard', x: 10.5, y: 15.5 }, // far down-left on screen
+      { team: 1, cls: 'standard', x: 14.5, y: 10.5 }, // farther (4 vs 5)? closer: 4
+    ]);
+    const me = scr(10.5, 10.5);
+    // small box around the player: neither enemy fits
+    s.view = rect(me.x, me.y, 100, 60);
+    updateTarget(s, s.tanks[0]);
+    expect(s.tanks[0].target).toBe(-1);
+    // wide box: both fit, the nearer one wins
+    s.view = rect(me.x, me.y, 600, 400);
+    updateTarget(s, s.tanks[0]);
+    expect(s.tanks[0].target).toBe(2);
+    // box that contains only the farther one
+    const far = scr(10.5, 15.5);
+    s.view = rect(far.x, far.y, 80, 50);
+    s.tanks[0].target = -1;
+    updateTarget(s, s.tanks[0]);
+    expect(s.tanks[0].target).toBe(1);
+  });
+
+  it('drops a lock when the target leaves the screen; bots are never limited', () => {
+    const s = arena([
+      { team: 0, cls: 'standard', x: 10.5, y: 10.5 },
+      { team: 0, cls: 'standard', x: 10.5, y: 10.5 },
+      { team: 1, cls: 'standard', x: 14.5, y: 10.5 },
+    ]);
+    const me = scr(10.5, 10.5);
+    s.view = rect(me.x, me.y, 600, 400);
+    updateTarget(s, s.tanks[0]);
+    expect(s.tanks[0].target).toBe(2);
+    s.view = rect(me.x - 2000, me.y, 100, 100); // camera moved away
+    updateTarget(s, s.tanks[0]);
+    expect(s.tanks[0].target).toBe(-1);
+    updateTarget(s, s.tanks[1]); // second tank has no limit
+    expect(s.tanks[1].target).toBe(2);
+  });
+});

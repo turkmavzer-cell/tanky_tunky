@@ -128,6 +128,24 @@ describe('shells, damage and terrain', () => {
     expect(ex && ex.type === 'explode' && ex.x).toBeGreaterThan(5 + TANKS.artillery.range);
   });
 
+  it('artillery blast deals artilleryDamageMul x the base damage at its centre (B1)', () => {
+    const s = arena([
+      { team: 0, cls: 'artillery', x: 5, y: 5.5 },
+      { team: 1, cls: 'heavy', x: 5 + TANKS.artillery.minRange, y: 5.5 },
+    ]);
+    s.tanks[1].hp = 1e9;
+    run(s, 60, [{ ...idle, aim: aimX }, idle]);
+    const ev = run(s, 2, [{ ...idle, aim: aimX, buttons: BTN_FIRE }, idle]).concat(run(s, 120, [{ ...idle, aim: aimX }, idle]));
+    const hit = ev.find((e) => e.type === 'hit' && e.target === 1);
+    expect(hit).toBeDefined();
+    const armor = TANKS.heavy.armor;
+    const base = TANKS.artillery.damage * (1 - armor);
+    const dmg = hit && hit.type === 'hit' ? hit.damage : 0;
+    expect(COMBAT.shell.artilleryDamageMul).toBe(1.25);
+    expect(dmg).toBeGreaterThan(base * 0.9);
+    expect(dmg).toBeLessThanOrEqual(base * COMBAT.shell.artilleryDamageMul + 1e-6);
+  });
+
   it('crates are destructible and stop blocking once destroyed', () => {
     const s = arena([{ team: 0, cls: 'heavy', x: 5, y: 5.5 }]);
     setFeature(s.map, 8, 5, Feature.Crate);

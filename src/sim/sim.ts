@@ -2,7 +2,7 @@
  * Simulation entry point. `step()` advances exactly one fixed tick (SIM_DT) and is deterministic:
  * the same state + inputs always produce the same next state (replays, lockstep, headless tests).
  */
-import { COMBAT, MATCH, SIM_DT, TANKS, VISION, type TankClassId } from './config';
+import { COMBAT, MATCH, SIM_DT, TANKS, VISION, type AbilityId, type TankClassId } from './config';
 import { updatePickups } from './upgrades';
 import type { PlayerInput } from './input';
 import { Rng } from './rng';
@@ -63,6 +63,8 @@ export function createState(opts: SimOptions): SimState {
     prevButtons: 0,
     target: -1,
     ability: newAbilityState(TANKS[p.cls].ability),
+    ult: TANKS[p.cls].ult ? newAbilityState(TANKS[p.cls].ult as AbilityId) : null,
+    stun: 0,
     shimmer: 0,
     bumpCd: 0,
     lastHitBy: -1,
@@ -86,6 +88,7 @@ export function createState(opts: SimOptions): SimState {
     vision: createVision(opts.map),
     match: { phase: rules.endless ? 'playing' : 'countdown', t: 0, timeLeft: rules.duration, kills: [] },
     rules,
+    view: null,
     events: [],
   };
   updateVision(s);

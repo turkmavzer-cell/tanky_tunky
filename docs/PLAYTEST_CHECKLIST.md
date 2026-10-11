@@ -62,3 +62,13 @@ Measurable items (frame time, input latency proxies, APK size) are automated —
 ## Performance
 - [ ] No visible stutter while driving across the map (note FPS counter: target 60, min 45).
 - [ ] Device does not get uncomfortably hot after 10 min.
+
+## Round 04 (telefonda dene)
+- [ ] ULTİ butonu YETENEK'in sol üstünde; dolunca turuncu parlıyor, sayaç akıyor.
+- [ ] Çevik: ATEŞ'e basılı tut = seri atış (~10/sn); his iyi mi, çok mu hızlı/zayıf? Aşırı Yük (Q) ile 3 katı.
+- [ ] Ağır: Gümbürtü artık geniş (4 kare) ve merkezden uca aynı hasar; Onarım canı doldurur (can doluyken basma).
+- [ ] Dengeli: EMP düşmanı 2,5 sn kıpırdatmıyor mu?
+- [ ] Topçu: Hazır Atış (anında, tam menzil), Yaylım Ateşi artık 45 sn ultisi.
+- [ ] Taret ekran dışındaki düşmana dönmüyor; ekrana girince kilitleniyor.
+- [ ] Menü: Tek Oyunculu → Hızlı Maç çalışıyor; Çok Oyunculu "yakında" notu.
+- [ ] Mermi yağmuru (Çevik ×3) telefonda takılma yapıyor mu? (FPS düşerse bildir.)

@@ -57,7 +57,7 @@ export interface ExplosionSpec {
   /** Tank directly hit (full damage) or -1. */
   direct: number;
   charge: number;
-  kind: ShellKind | 'mine' | 'rumble';
+  kind: ShellKind | 'mine' | 'rumble' | 'emp';
   cause: DamageCause;
   terrainDamage: number;
 }
@@ -109,7 +109,7 @@ function shellExplosion(state: SimState, s: Shell, x: number, y: number, direct:
     x,
     y,
     radius: s.radius,
-    damage: s.damage,
+    damage: s.kind === 'artillery' ? s.damage * COMBAT.shell.artilleryDamageMul : s.damage,
     splash: s.kind === 'artillery' ? COMBAT.shell.artillerySplash : COMBAT.shell.splashFalloff,
     knockback: COMBAT.shell.knockback * evalCurve(COMBAT.scaling.knockback, s.charge),
     owner: s.owner,

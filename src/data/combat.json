@@ -75,6 +75,8 @@
     "selfDamage": false,
     "terrainDamageMul": 0.04,
     "artillerySplash": 1.0,
+    "artilleryDamageMul": 1.25,
+    "$artilleryDamageMul": "Owner 2026-10-11 (B1): arcing shells deal +25 % damage where they land (applies to Artillery shots and Barrage). Terrain damage is unchanged.",
     "$artillerySplash": "Arcing shells never score a 'direct' hit; their blast deals artillerySplash x damage at the centre, falling to 0 at the edge.",
     "$terrainDamageMul": "Shell damage x this hits destructible terrain. 0.04 = 1/25 keeps wall/crate durability unchanged after the x25 hp/damage scale (D-027)."
   },
@@ -85,6 +87,8 @@
   "targeting": {
     "$comment": "Auto turret targeting. switchRatio: a new candidate must be closer than switchRatio x current target distance to take over (0.9 = 10 % closer). A locked target outside the gun's range is dropped at once for a visible enemy inside the range (round-02).",
     "switchRatio": 0.9,
+    "screenMarginPx": 40,
+    "$screenMarginPx": "Owner 2026-10-11 (A): the local player's auto-aim only locks enemies inside the camera rectangle (+ this margin in screen px).",
     "leadIterations": 2
   },
   "upgrades": {

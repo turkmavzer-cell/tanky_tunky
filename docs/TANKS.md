@@ -29,7 +29,7 @@ hasar 1x → 3x (tam şarj), "mükemmel şarj" +%15, mermi hızı 1x → 1,6x, m
 | Çevik | 260 | 780 | 897 | 0,28 sn | 0,8 sn | %20 | 11 | 7 | 0,25 | — |
 | Ağır | 760 | 2.280 | 2.622 | 1,68 sn | 2,2 sn | %50 | 8 | 7,5 | 0,55 | Duvardan 1 kez seker |
 | Dengeli | 360 | 1.080 | 1.242 | 0,7 sn | 1,4 sn | %35 | 10 | 7 | 0,35 | — |
-| Topçu | 780 | 2.340 | 2.691 | 1,5 sn | 1,8 sn | %45 | 7 | 10 | 1,1 | Kavisli; şarj atış mesafesini belirler; min. menzil 2 |
+| Topçu | 780 (inişte ×1,25 = 975) | 2.340 | 2.691 | 1,5 sn | 1,8 sn | %45 | 7 | 10 | 1,1 | Kavisli; şarj atış mesafesini belirler; min. menzil 2 |
 | Tuzakçı | 300 | 900 | 1.035 | 1 sn | 1,5 sn | %35 | 9 | 6,5 | 0,3 | — |
 
 ## Hareket özellikleri
@@ -42,22 +42,31 @@ hasar 1x → 3x (tam şarj), "mükemmel şarj" +%15, mermi hızı 1x → 1,6x, m
 | Topçu | 1,9 | 5 | 2,6 | 3,0 | 0,44 |
 | Tuzakçı | 2,2 | 7 | 3,2 | 3,8 | 0,42 |
 
-## Yetenekler (YETENEK butonu)
+## Yetenekler (YETENEK ve ULTİ butonları) — round 04
 
-Değerler `src/data/abilities.json`. Bekleme süresi etki bittikten sonra başlar.
+Her tankın iki yeteneği var: **yetenek** (hızlı dolar, 5–10 sn) ve **ulti** (yavaş dolar, 30–45 sn). Değerler `src/data/abilities.json`,
+hangi tankın hangisini kullandığı `tanks.json` (`ability`, `ult`). Bekleme süresi etki bittikten sonra başlar. Ölünce ikisi de sıfırlanır.
+Klavye: E = yetenek, Q = ulti.
 
-| Sınıf | Yetenek | Ne yapar | Süre | Bekleme | Hasar |
-|---|---|---|---|---|---|
-| Çevik | Saklan | Görünmezlik; ateş edince biter, vurulunca 0,5 sn parıldar | 5 sn | 4 sn | — |
-| Ağır | Gümbürtü | Anlık şok dalgası, 2,4 kare; geri iter, duvar arkasına geçmez | anlık | 12 sn | 850 merkez → 298 kenar |
-| Dengeli | Swift | 2x hız ve atış hızı, şarj süresi yarıya | 4 sn | 8 sn | — |
-| Topçu | Yaylım Ateşi | **6 mermi, 1 sn içinde** (0,18 sn arayla) hedef bölgeye; iniş yerleri herkese uyarılır | 1 sn | 10 sn | 450 / mermi (en çok 2700) |
-| Tuzakçı *(kapalı)* | Mayın | Arkaya mayın; en çok 3 aktif | anlık | 2 sn | 1500 (basana), çevreye en çok %60 |
+| Sınıf | Yetenek (düğme 1) | Süre / bekleme | Ulti (düğme 2) | Süre / bekleme |
+|---|---|---|---|---|
+| Çevik | **Saklan**: görünmez; ateş edince biter, vurulunca 0,5 sn parıldar | 5 sn / 5 sn | **Aşırı Yük**: atış hızı ×3 | 5 sn / 30 sn |
+| Ağır | **Gümbürtü**: anlık şok dalgası, yarıçap 4 kare, **merkezden uca aynı 1000 hasar**, geri iter, duvar arkasına geçmez | anlık / 10 sn | **Onarım**: canı bir anda tamamen doldurur (can doluysa kullanılmaz) | anlık / 45 sn |
+| Dengeli | **Swift**: 2x hız ve atış hızı, şarj yarıya | 4 sn / 8 sn | **EMP**: 4 kare içindeki düşmanları 2,5 sn sersemletir (hareket/ateş yok) | anlık / 40 sn |
+| Topçu | **Hazır Atış**: sonraki atış şarjsız, anında, tam menzil (güç %50) | en çok 6 sn / 8 sn | **Yaylım Ateşi**: 6 mermi, 1 sn içinde, 450'şer, iniş yerleri uyarılır | 1 sn / 45 sn |
+| Tuzakçı *(kapalı)* | Mayın: arkaya, en çok 3 aktif | anlık / 2 sn | — | — |
 
-> Tuzakçı satırları sadece bilgi içindir: sınıf oyunda kapalı (`enabled: false`), verisi geri getirmek için duruyor.
-> Koddan tamamen silinip silinmeyeceği sahibinin kararı (K11).
+> Tuzakçı satırları sadece bilgi içindir: sınıf oyunda kapalı (`enabled: false`). Koddan silinip silinmeyeceği sahibinin kararı (K11).
 
-## ÖNERİ — onay bekliyor (henüz oyunda yok)
+### Çevik: taramalı ateş (round 04)
+Çevik artık şarj etmez: ATEŞ'e basılı tutunca saniyede **10 mermi**, mermi başına **80 hasar** (eskiden dokunma 260), ±2° rastgele sapma.
+Hız 4,2 → **5,0** (ivme 16,5, dönüş 8,0). Saniyedeki hasar ≈ 800 (eski dokunma hızında ≈ 930; şarjlı vuruş yok).
+Aşırı Yük ile 30 mermi/sn.
+
+### Topçu: inişte +%25 (B1, round 04)
+Kavisli mermiler (Topçu atışı ve Yaylım Ateşi) düştükleri yerde patlama hasarının **×1,25**'ini verir (780 → 975 merkez).
+
+## ESKİ ÖNERİ (round 04'te büyük bölümü uygulandı; aşağıdaki tablolar tarihsel)
 
 Bu bölüm 2026-10-10 bulut oturumunda konuşulan istek ve önerilerdir. **Hiçbiri uygulanmadı**; sayılar sahibinin onayıyla
 kesinleşir (`CLAUDE.md` §1, K5/K7/K8). Not: buluttaki öneriler eski ölçekteydi (Çevik hasarı 9); oyun şu an ×25 ölçekte

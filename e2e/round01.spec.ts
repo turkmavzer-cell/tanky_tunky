@@ -52,6 +52,13 @@ async function ability(page: Page): Promise<void> {
   await page.keyboard.up('KeyE');
 }
 
+/** Ultimate button (Q). */
+async function ult(page: Page): Promise<void> {
+  await page.keyboard.down('KeyQ');
+  await ticks(page, 4);
+  await page.keyboard.up('KeyQ');
+}
+
 const shot = (page: Page, name: string): Promise<Buffer> => page.screenshot({ path: `${OUT}/${name}.png` });
 
 test.describe.configure({ mode: 'serial' });
@@ -131,7 +138,7 @@ test('09 Artillery — Barrage warnings', async ({ page }) => {
   await startMatch(page, 'silent&endless&map=40&seed=11&bots=idle', 'artillery');
   await stage(page, 3, 3.6, -3.6);
   await ticks(page, 30);
-  await ability(page);
+  await ult(page);
   await page.waitForFunction(() => (window as unknown as W).__tanky.scene.state.shells.filter((s) => s.warn).length >= 2, null, { timeout: 30_000 });
   await shot(page, '09-ability-barrage');
 });

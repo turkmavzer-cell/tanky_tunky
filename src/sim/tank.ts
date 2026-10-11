@@ -1,14 +1,14 @@
 /** Per-tank update: targeting, ability, charged fire state machine and movement. */
-import { COMBAT, TANKS, evalCurve } from './config';
+import { COMBAT, TANKS, evalCurve, type SprayDef } from './config';
 import { clamp, datan2, dcos, dsin, rotateToward } from './dmath';
-import { AIM_AUTO, AIM_NONE, BTN_ABILITY, BTN_FIRE, aimToRad, type PlayerInput } from './input';
+import { AIM_AUTO, AIM_NONE, BTN_ABILITY, BTN_FIRE, BTN_ULT, aimToRad, type PlayerInput } from './input';
 import type { Rng } from './rng';
 import type { Shell, SimState, Tank } from './state';
 import { resolveTerrain } from './collision';
 import { nextId } from './combat';
 import { autoAimAngle, artilleryFlight, leadPoint, updateTarget } from './targeting';
 import { canSeeTank } from './visibility';
-import { abilityAllowsFire, abilityChargeTimeMul, abilityFireRateMul, abilityOnFire, abilitySpeedMul, tickAbility } from './abilities';
+import { abilityAllowsFire, abilityChargeTimeMul, abilityFireRateMul, abilityInstantShot, abilityOnFire, abilitySpeedMul, endAbility, tickAbility } from './abilities';
 import { speedMulAt } from '../world/map';
 import { isPassable } from '../world/passability';
 import { markCombat, updateRegen } from './upgrades';
@@ -34,7 +34,9 @@ export function updateTank(s: SimState, t: Tank, inp: PlayerInput | undefined, r
 
   // --- ability (rising edge of the button)
   const abilityPressed = (buttons & BTN_ABILITY) !== 0 && (t.prevButtons & BTN_ABILITY) === 0;
-  tickAbility(s, t, abilityPressed, rng, dt);
+  const ultPressed = (buttons & BTN_ULT) !== 0 && (t.prevButtons & BTN_ULT) === 0;
+  tickAbility(s, t, abilityPressed, ultPressed, rng, dt);
+  if (t.stun > 0) t.stun = Math.max(0, t.stun - dt);
 
   // --- targeting
   const auto = inp?.aim === AIM_AUTO;
@@ -44,10 +46,28 @@ export function updateTank(s: SimState, t: Tank, inp: PlayerInput | undefined, r
   // --- charge / fire state machine
   t.cooldown = Math.max(0, t.cooldown - dt);
   t.overheat = Math.max(0, t.overheat - dt);
-  const held = (buttons & BTN_FIRE) !== 0;
-  const canFire = abilityAllowsFire(t);
-  if (!held) t.needRelease = false;
-  if (t.overheat > 0 || !canFire) {
+  const stunned = t.stun > 0;
+  const pressed = (buttons & BTN_FIRE) !== 0;
+  const held = pressed && !stunned;
+  const canFire = abilityAllowsFire(t) && !stunned;
+  if (!pressed) t.needRelease = false;
+  const instant = held && canFire && t.overheat <= 0 && t.cooldown <= 0 && (t.prevButtons & BTN_FIRE) === 0 ? abilityInstantShot(t) : null;
+  if (instant) {
+    // Hazır Atış: no charge-up, fires at once and ends the ability (its cooldown starts)
+    fire(s, t, instant.shot.power, false, rng, instant.shot.reach);
+    t.charging = false;
+    t.chargeT = t.fullT = 0;
+    t.needRelease = true;
+    t.cooldown = def.fireCooldown / abilityFireRateMul(t);
+    endAbility(s, t, instant.slot, rng);
+  } else if (def.spray) {
+    // machine-gun fire: hold = stream, no charging (Scout)
+    t.charging = false;
+    if (held && canFire && !t.needRelease && t.overheat <= 0 && t.cooldown <= 0) {
+      fire(s, t, 0, false, rng, 0, def.spray);
+      t.cooldown = 1 / (def.spray.rate * abilityFireRateMul(t));
+    }
+  } else if (t.overheat > 0 || !canFire) {
     t.charging = false;
   } else if (held) {
     if (!t.charging && t.cooldown <= 0 && !t.needRelease) {
@@ -80,8 +100,8 @@ export function updateTank(s: SimState, t: Tank, inp: PlayerInput | undefined, r
   t.prevButtons = buttons;
 
   // --- movement
-  let mx = inp ? inp.moveX / 127 : 0;
-  let my = inp ? inp.moveY / 127 : 0;
+  let mx = inp && !stunned ? inp.moveX / 127 : 0;
+  let my = inp && !stunned ? inp.moveY / 127 : 0;
   const mag = Math.sqrt(mx * mx + my * my);
   if (mag > 1) {
     mx /= mag;
@@ -109,7 +129,9 @@ export function updateTank(s: SimState, t: Tank, inp: PlayerInput | undefined, r
 
   // --- turret: manual angle, auto lock (with lead), or settle back toward the hull
   const turnStep = def.turretTurn * dt;
-  if (inp && inp.aim !== AIM_NONE && inp.aim !== AIM_AUTO) t.turret = rotateToward(t.turret, aimToRad(inp.aim), turnStep);
+  if (stunned) {
+    // EMP: turret frozen
+  } else if (inp && inp.aim !== AIM_NONE && inp.aim !== AIM_AUTO) t.turret = rotateToward(t.turret, aimToRad(inp.aim), turnStep);
   else if (auto) {
     const a = autoAimAngle(s, t, chargeLevel(t));
     t.turret = rotateToward(t.turret, a ?? t.hull, a === null ? turnStep * 0.5 : turnStep);
@@ -163,17 +185,22 @@ function moveTank(s: SimState, t: Tank, dt: number, inX: number, inY: number): v
   }
 }
 
-function fire(s: SimState, t: Tank, c: number, perfect: boolean, rng: Rng): void {
+/**
+ * Spawns a shell. `c` = charge level for damage / blast radius; `reach` = charge level for speed, range and the
+ * artillery landing distance (defaults to `c`; Hazır Atış uses full reach with partial power). `spray` = machine-gun bullet.
+ */
+function fire(s: SimState, t: Tank, c: number, perfect: boolean, rng: Rng, reach: number = c, spray?: SprayDef): void {
   const def = TANKS[t.cls];
   markCombat(t); // firing interrupts regeneration
   const sc = COMBAT.scaling;
-  const ca = dcos(t.turret);
-  const sa = dsin(t.turret);
+  const aimErr = spray ? rng.range(-spray.spread, spray.spread) : 0;
+  const ca = dcos(t.turret + aimErr);
+  const sa = dsin(t.turret + aimErr);
   const muzzle = def.radius + 0.25;
   const x = t.x + ca * muzzle;
   const y = t.y + sa * muzzle;
-  const speed = def.shellSpeed * evalCurve(sc.speed, c);
-  const range = def.range * evalCurve(sc.range, c);
+  const speed = def.shellSpeed * evalCurve(sc.speed, reach);
+  const range = def.range * evalCurve(sc.range, reach);
   const map = s.map;
   const sh: Shell = {
     id: nextId(s),
@@ -185,7 +212,7 @@ function fire(s: SimState, t: Tank, c: number, perfect: boolean, rng: Rng): void
     vx: ca * speed,
     vy: sa * speed,
     dist: range,
-    damage: def.damage * evalCurve(sc.damage, c) * (perfect ? COMBAT.charge.perfectBonus : 1),
+    damage: spray ? spray.damage : def.damage * evalCurve(sc.damage, c) * (perfect ? COMBAT.charge.perfectBonus : 1),
     radius: def.splash * evalCurve(sc.radius, c),
     bounces: def.bounces,
     level: map.elev[Math.floor(t.y) * map.width + Math.floor(t.x)],
@@ -205,17 +232,17 @@ function fire(s: SimState, t: Tank, c: number, perfect: boolean, rng: Rng): void
   if (def.shell === 'artillery') {
     // Auto-lock: land on the predicted target position if reachable at this charge; otherwise
     // the charge sets the distance between min and max range (DECISIONS D-019).
-    let d = def.minRange + (range - def.minRange) * c;
+    let d = def.minRange + (range - def.minRange) * reach;
     const tgt = t.target >= 0 ? s.tanks[t.target] : null;
     if (tgt && canSeeTank(s, t.team, tgt)) {
-      const p = leadPoint(s, t, tgt, c);
+      const p = leadPoint(s, t, tgt, reach);
       const dl = Math.sqrt((p.x - t.x) * (p.x - t.x) + (p.y - t.y) * (p.y - t.y));
       if (dl >= def.minRange && dl <= range) d = dl;
     }
     sh.tx = clamp(t.x + ca * d, 0.01, map.width - 0.01);
     sh.ty = clamp(t.y + sa * d, 0.01, map.height - 0.01);
     sh.flight = artilleryFlight(d, speed);
-    sh.arc = def.arcHeight * (0.6 + 0.4 * c);
+    sh.arc = def.arcHeight * (0.6 + 0.4 * reach);
   }
   s.shells.push(sh);
   t.protect = 0; // firing ends spawn protection
