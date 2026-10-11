@@ -22,34 +22,49 @@ yenilik, düzeltme, geri alma, karar ve sahibinin (Cihan) isteği kayıtlıdır.
 - **Diğer dokümanlarla ilişki:** Ayrıntılı ölçümler `PROGRESS.md`, kararların gerekçeleri `DECISIONS.md`,
   performans `PERF.md`, gerçek cihaz listesi `PLAYTEST_CHECKLIST.md` içindedir. Bu dosya hepsini zaman çizgisinde birbirine bağlar.
 
-## 2. Oyun şu an nasıl işliyor (özet, 2026-10-09, commit `5b8654e`)
+## 2. Oyun şu an nasıl işliyor (özet, 2026-10-11, `fix/round-03-maps` dalı, oyun kodu tur 03)
+
+> Dikkat: varsayılan dal (`claude/tanky-tunky-setup-dw06hp`, `5b8654e`) hâlâ Faz 3 hâlinde. Tur 01–03 birleştirilmemiş
+> PR #1 → #2 → #3 dallarında. Sadece varsayılan dala bakan oturum oyunu eksik görür (2026-10-10 bulut notunda olduğu gibi).
 
 - **Tür:** Android, yatay, çevrimdışı izometrik tank savaşı (PixiJS 8 + React menüler + Capacitor).
-- **Kontrol:** Solda kayan joystick, sağda basılı tutarak şarj edilen ATEŞ (1x → 3x hasar), YETENEK ve duraklat butonları.
-  Çoklu dokunuş çalışıyor. Klavye/fare geliştirme için var.
-- **Sınıflar (kodda şu an):** Çevik, Ağır, Dengeli, Topçu, Tuzakçı. Değerler `src/data/tanks.json`. Yetenekler henüz boş.
-- **Harita:** Seed'li, nokta-simetrik, adil üretim (40/64/96). Nehir/köprü, plato/rampa, orman, yıkılabilir duvar.
-- **Yapay zeka:** Sadece geçici botlar (`dummyBot.ts`). Gerçek AI Faz 7.
-- **Sis savaşı:** Henüz yok (Faz 4).
-- **Simülasyon:** Deterministik, 60 Hz sabit adım, render'dan bağımsız (`src/sim`). Aynı seed + girdi = aynı sonuç hedefi.
-- **APK:** Sadece GitHub Actions üretir (`Android APK` iş akışı). Sabit debug keystore repoda (`keystore/debug.keystore`),
-  güncellemeler aynı imzayla üst üste kurulur. Release imzası GitHub Secrets'tan (`docs/RELEASE.md`).
-- **Git:** Tek branch `claude/tanky-tunky-setup-dw06hp` (D-001). `main` + PR akışı sahibin onayını bekliyor.
+- **Maç:** 3'e 3 Hızlı Maç, 5 dakika, 3-2-1 geri sayım, öldüğün yerden uzakta ve düşmanın görmediği yerde yeniden doğma
+  (2 sn bekleme + 2 sn koruma), canlı Ö/Ö ve maç sonu skor tablosu, en iyi skor kaydı.
+- **Sınıflar:** Çevik, Ağır, Dengeli, Topçu. Tuzakçı kapalı (`enabled: false`, verisi duruyor). Can/hasar orijinalin ×25'i.
+  Değerler `src/data/tanks.json`, tablolar `docs/TANKS.md`.
+- **Yetenekler (tank başına 1):** Saklan (Çevik, 5 sn, bekleme 4 sn), Gümbürtü (Ağır, anlık, 2,4 kare, 850 → 298 hasar,
+  bekleme 12 sn), Swift (Dengeli, 4 sn, bekleme 8 sn), Yaylım Ateşi (Topçu, 1 sn'de 6 mermi, bekleme 10 sn).
+- **Haritalar:** Çöl harabesi (varsayılan), Modern şehir, Orman/nehir. Seçim tank ekranında.
+- **Görüş:** Kararma yok, herkes her şeyi görür. Ormandaki düşman sadece 3 kareden yakında, yarı saydam. Saklan görünmez yapar.
+- **Yükseltme ve can yenilenmesi:** Kutudan +%5 can ve hasar (en fazla +%60, ölünce sıfır). Çatışma dışında 5 sn'de bir +%5 can.
+- **Botlar:** Gerçek yapay zekâ (devriye/şüphe/takip/saldırı/geri çekilme), Kolay/Normal/Zor/Ekstrem, müttefikler de aynı seviyede.
+- **Otomatik nişan:** En yakın görünen düşman. Bilinen sorun: tam görünürlükten beri ekran dışındaki düşmana da dönebiliyor (düzeltilmedi).
+- **APK:** GitHub Actions "Android APK", son çalıştırma #16. Debug imzası projedeki anahtarla açıkça yapılıyor, CI imzayı doğruluyor (D-035).
+  Telefonda bir kez kaldırıp kurmak gerekiyor; telefonda doğrulanmadı.
+- **Git:** Tur başına dal (`fix/round-NN-...`), PR'lar zincir hâlinde, birleştirme sahibinde.
 
 ## 3. Açık sorular ve bekleyenler
 
-- **Tuzakçı kaldırıldı mı?** Sahibi oyundan kaldırıldığını söyledi (2026-10-09). Repo kopyasında (`5b8654e`) hâlâ var.
-  Kod, `tanks.json`, `TANKS.md`, `CLAUDE.md` yol haritası güncellenmeli. Bkz. 2026-10-09 kayıtları.
-- **Tüm haritayı kim görecek?** Tuzakçı gidince "sadece Tuzakçı tüm haritayı görür" mekaniği ve mini harita/tuzak
-  fazları (5–6) yeniden tasarlanmalı. Sahibin kararı bekleniyor.
-- **Yetenek tablosu** (`docs/TANKS.md`) boş. Sahibi dolduracak veya taslağı onaylayacak.
-- **Gerçek cihaz testi** (his, titreşim, ses, FPS, INTERNET izni olmadan WebView) yapılmadı.
-- **Git akışı:** `main` + PR'a geçilsin mi? (D-001)
-- **Tank görselleri:** Nano Banana ile üretilecek, sahibi görselleri paylaşacak. Sonra `tools/import-art` yazılacak.
+Tam liste ve öneriler: `CLAUDE.md` §1 "Pending owner decisions" (B1, B2, A, K1–K11, T, G). Özet:
+- Topçu zayıf / Ağır güçlü (denge kararı).
+- Taret sadece ekranda görünen düşmana nişan alsın (hata, iş akışı A).
+- Ana menü (Tek/Çok oyunculu), kampanya, ilerleme, çok oyunculu mod — karar bekliyor.
+- Tank başına 2 yetenek (skill + ulti), Çevik taramalı ateş — sayılar karar bekliyor (×25 ölçeğe göre yeniden hesaplanmalı).
+- Tuzakçı koddan tamamen silinsin mi? Mini harita / yön oku?
+- PR'lar birleştirilsin mi? Tank görselleri (4 görsel sahibinde, repoda yok).
+- Telefon testi ve imza düzeltmesinin telefonda doğrulanması.
 
 ## 4. Günlük (en yeni en üstte)
 
 <!-- LOG:START -->
+### 2026-10-11 — [degisiklik] Belgeler güncellendi: CLAUDE.md, TANKS.md, PROGRESS.md, DECISIONS.md, CHANGELOG bölüm 2–3
+CLAUDE.md: durum, PR zinciri, son APK #16, bekleyen kararlar tablosu (B1, B2, A, K1–K11, T, G), iş akışları A–G, yol haritası, iki oturumun paralel çalışma kuralı ve çakışma riski olan dosyalar, riskler (INTERNET izni, taramalı ateş yükü). TANKS.md: Tuzakçı 'kapalı' işaretlendi, 'ÖNERİ — onay bekliyor' bölümü (Çevik güncellemesi, tank başına 2 yetenek). PROGRESS.md: uzlaştırma bölümü ve açık sorular. DECISIONS.md: sadece D-043. CHANGELOG: bölüm 2–3 güncel hâle getirildi, Tur 01–03 ve bu sohbetteki kayıtsız istekler geriye dönük eklendi. Oyun kodu değişmedi.
+### 2026-10-11 — [acik-soru] Otomatik nişan ekran dışındaki düşmana kilitlenebiliyor
+Tam görünürlükten (D-037) beri selectTarget haritadaki en yakın düşmanı seçiyor; ekran ya da menzil sınırı yok. Sahibinin isteği: sadece ekranda görünen düşmana nişan. Kod okundu, oyunda doğrulanmadı. Düzeltilmedi (iş akışı A, onay bekliyor).
+### 2026-10-11 — [konusma] Bulut devir notu (2026-10-10) repoyla karşılaştırıldı
+Not sadece varsayılan dalı (5b8654e, Faz 3) görmüş. PR #1–#3 dallarında zaten yapılmış olanlar: Tuzakçı kapatıldı (b5810c8), Saklan ve Gümbürtü yetenekleri, otomatik nişan, yükseklik netliği, gerçek bot yapay zekâsı, 60 sn → 5 dk maç, farklı yerde yeniden doğma, skor tablosu, imza düzeltmesi (c7ff097). Yapılmayanlar: yetenek ağacı; sahibinin 4 tank görseli repoda yok. Bulut sohbetindeki yeni istekler CLAUDE.md §1'e (K1–K11) ve docs/TANKS.md 'ÖNERİ' bölümüne yazıldı.
+### 2026-10-11 — [karar] Değişiklik günlüğü benimsendi, docs/changelog birleştirildi (D-043)
+Sahibi onayladı. origin/docs/changelog, fix/round-03-maps dalına birleştirildi (commit 3f5e915). CLAUDE.md çakışması iki taraf korunarak çözüldü: bulut oturumunun §4b günlük kuralı + tur 03 devir içeriği. package.json'a 'log' komutu eklendi, 'icons' komutu korundu. Doğrulama: npm run lint ve npm run typecheck temiz; birim/E2E çalıştırılmadı (oyun kodu değişmedi).
 ### 2026-10-10 — [acik-soru] Tank güncellemesi kararları bekliyor
 Sorular: taramalı ateş sadece Çevik'te mi; gümbürtü/görünmezlik şu anki değerleri; ateş edince görünmezlik bozulsun mu; Dengeli/Topçu skill seçimleri; dolma süreleri; sıra (taret+menü önce mi, tank güncellemesi mi). Not: Tuzakçı kodda hâlâ var (sahibi kaldırıldığını söyledi).
 ### 2026-10-10 — [konusma] Sahibi tank güncellemesi istedi: hızlı tank, taramalı ateş, 2 skill/tank
@@ -60,6 +75,31 @@ Sorular: (a) online mı, aynı Wi-Fi mı? (b) INTERNET izni eklenmesi (şu an yo
 Neden (kod okundu, çalıştırılmadı): GameScene.assistTarget() sadece mesafeye bakıyor (menzil x 1,15), ekranda/görüşte olup olmadığına bakmıyor. İstenen: sadece ekranda görünen düşmana nişan. Faz 4'te VisibilitySystem'e bağlanacak. Henüz düzeltilmedi.
 ### 2026-10-10 — [konusma] Sahibi yeni istekler: Tek/Çok oyunculu menü, ilerleme modu, büyük harita + düşman
 Sahibi şunları istedi: (1) açılışta Tek Oyunculu ve Çok Oyunculu seçenekleri, gerekirse ek menüler; (2) multiplayer ve ilerleme (progression) modu; (3) singleplayer için daha büyük harita, belirli yerlerde düşman askerler ve savunma kuleleri. Önce karar verilecek, kod yazılmadı. Plan sohbette sunuldu: sıra = taret nişan düzeltmesi + menü iskeleti, görüş sistemi, PvE varlıkları, kampanya haritası, ilerleme, multiplayer (en son).
+
+### 2026-10-09 — [yenilik] Tur 03 (PR #3, `fix/round-03-maps`) — geriye dönük kayıt (2026-10-11)
+İmza düzeltmesi (D-035, `build.gradle` açık debug imzası + CI imza kontrolü); Tuzakçı kapatıldı (D-036), Çevik can 1900 → 2200;
+kararma kalktı, ormanda 3 kare kuralı (D-037); kutu yükseltmeleri +%5, en fazla %60 (D-038); çatışma dışı can yenilenmesi (D-039);
+Çöl ve Şehir haritaları + harita seçici, kayıt şeması v4 (D-040); bot yol araması kısıtlandı (D-041); belgeler her değişiklikte (D-042).
+Doğrulama: 140 birim, 25 E2E, performans kapısı ve CI yeşil; APK #15/#16. Denge ölçüldü, değiştirilmedi.
+
+### 2026-10-09 — [konusma] Görselden 3D'ye ücretsiz araçlar — geriye dönük kayıt
+Tek görselden diğer açılar üretilemez (Claude görsel üretmez). Üç yol önerildi: 8–16 yön çizdirmek, üstten görünüm, 3D model.
+Ücretsiz araçlar (lisanslar sitelerden doğrulanmalı): Tripo (ücretsiz plan ticari değil), Meshy (ücretsiz modeller CC BY, kaynak gösterilmeli),
+Hunyuan3D, TRELLIS.2 (MIT). Öneri: gövde ve tareti ayrı üret, `.glb` indir; önce Tripo/Meshy ile dene.
+
+### 2026-10-09 — [karar] Sahibin kuralı: "uygula" demeden başlama — geriye dönük kayıt
+Tur 02'de ×25 ölçek ve 6 mermilik Yaylım Ateşi, sahibi listesini bitirmeden uygulandı. Sahibi: değişiklikleri topla, plan göster,
+"uygula" deyince başla. Kural `CLAUDE.md` §0'da.
+
+### 2026-10-09 — [konusma] Sahibinin alternatif can/zırh tablosu (uygulanmadı) — geriye dönük kayıt
+Sahibi şu tabloyu önermişti: Çevik 1050 / %10, Ağır 5500 / %35, Dengeli 2640 / %25, Topçu 1670 / %15, Tuzakçı 1990 / %15.
+Sonra "şimdilik senin tablona göre" diyerek ×25 orantılı tabloyu seçti (D-027). Claude'un ilk hasar önerisi
+(Çevik 240, Ağır 900, Dengeli 420, Topçu 720, Tuzakçı 300) de uygulanmadı. İleride dönülebilir.
+
+### 2026-10-09 — [degisiklik] Tur 02 (PR #2, `fix/round-02-feedback`) — geriye dönük kayıt (2026-10-11)
+Can/hasar ×25 (D-027), Yaylım Ateşi 1 sn'de 6 mermi (D-028), maç 5 dakika (D-029), bot zorluğu Kolay/Normal/Zor/Ekstrem, müttefik dahil (D-030),
+taret dokunma düzeltmesi (D-031), kaydırmalı tank kartları (D-032), uygulama ikonu (D-033), denge B seçeneği 3 tur (D-034).
+Doğrulama: 125 birim, 19 E2E, CI yeşil; APK #13.
 
 ### 2026-10-09 — [konusma] Tuzakçı oyundan kaldırıldı (sahibinin kararı)
 Sahibi Tuzakçı'nın oyundan kaldırıldığını bildirdi. Nano Banana prompt listesinden çıkarıldı (4 tank kaldı).
@@ -99,6 +139,11 @@ görülmedi, sürümde olup olmadığı belirsiz:
 - Dolaşan düşman tank.
 - 1 dakikalık turlar, farklı yerde yeniden doğma, öldürme/ölme skor tablosu.
 - Her tank için beceri ağacı (sonraki adım olarak planlanmıştı).
+
+### 2026-10-08 — [yenilik] Tur 01 (PR #1, `fix/round-01-core-loop`) — geriye dönük kayıt (2026-10-11)
+Görünürlük sistemi (D-015…D-017), otomatik taret nişanı, yükseklik/uçurum netliği tek `isPassable` kuralıyla (D-020, D-021),
+gerçek bot yapay zekâsı (D-025), 60 sn maç + farklı yerde yeniden doğma + skor tablosu (D-022), 5 yetenek veri + modül olarak (D-023),
+zemin pişirme ile performans düzeltmesi (D-026). Doğrulama: 115 birim, 16 E2E, CI yeşil.
 
 ### 2026-10-08 — [yenilik] Faz 3 — Tank ve kontrol (commit `5b8654e`)
 Çoklu dokunuş joystick + şarjlı ateş + yetenek, 5 sınıf oynanabilir, mermi/hasar/sektirme/kavisli atış/alan hasarı,

@@ -90,7 +90,27 @@ Gates: lint ✅ typecheck ✅ unit 140 ✅ E2E 25 ✅ perf ✅ (p95 16.8 ms; JS 
 
 To try on the phone: uninstall once (signature fix), then install; both new maps; picking up upgrades from crates; regen after leaving a fight; enemies in trees.
 
+## 2026-10-11 — cloud hand-off note reconciled (docs only, no game code)
+
+The owner ran a second (cloud) session that only saw the default branch (`5b8654e`, phase 3) and wrote a hand-off note.
+Checked against the round branches:
+- Already done in PR #1–#3 (the note could not see them): Trapper disabled, Hide and Rumble abilities, auto-aim,
+  readable heights, fog-fair AI ("wandering enemy"), 60 s → 5 min matches, respawn elsewhere, scoreboard, signing fix.
+- Not done: ability trees; the owner's 4 tank images are not in the repo.
+- Real gap found: since full visibility (D-037) auto-aim can lock an enemy outside the screen (work stream A).
+- New owner requests from the cloud chat (menu, campaign, progression, multiplayer, two abilities per tank, Scout spray fire,
+  art pipeline) recorded as pending decisions in `CLAUDE.md` §1 and as proposals in `docs/TANKS.md`.
+- `docs/changelog` merged: `docs/CHANGELOG.md` + `npm run log` + changelog-check workflow (D-043).
+- Verification: docs only; `npm run lint` / `npm run typecheck` run after the merge.
+
 ## Open questions for the owner
-- Balance: Heavy (63 %) and Artillery (31.5 %) are outside the band after option B — see BALANCE_REPORT (artillery blast rule / Heavy hp).
-- Tank art: owner may supply 3D models (.glb) or images (Nano Banana) — pipeline to be planned.
-- Merge the stacked PRs #1 → #2 → #3 so the default branch carries the current game (new sessions start from it).
+
+See `CLAUDE.md` §1 "Pending owner decisions" for options and proposals:
+- B1 Artillery weak (≈22 %), B2 Heavy strong (≈63–67 %).
+- A Auto-aim only on enemies visible on screen (bug since D-037).
+- K1 Multiplayer (online / Wi-Fi / later; INTERNET permission), K2 campaign map size and level count,
+  K3 map awareness after the Trapper (minimap for all? objective arrow?), K4 campaign enemy placement,
+  K5 spray fire for Scout only or all, K7 Scout numbers, K8 skill + ult per tank and cooldowns,
+  K9 work order, K10 merge PRs #1 → #2 → #3, K11 delete the Trapper from code or keep it disabled.
+- T Ability trees, G tank art pipeline (owner's 4 images needed in the repo).
+- Phone test of APK #16, including whether the update/signature error is gone after one uninstall.
