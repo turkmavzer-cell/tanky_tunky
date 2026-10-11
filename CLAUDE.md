@@ -37,13 +37,13 @@ design is gone with the Trapper, see D-036/D-037 and open decision K3.)
 
 ## 1. Where we are now (update every round)
 
-- **Last finished round:** Round 04 (2026-10-11, branch `fix/round-04-balance-aim-skills`, PR not opened yet) — B1 Artillery +25 %, A aim on screen only,
+- **Last finished round:** Round 04 (2026-10-11, branch `fix/round-04-balance-aim-skills`, **PR #4 open, CI green incl. perf gate, not merged** — waiting for the owner's "birleştir") — B1 Artillery +25 %, A aim on screen only,
   C two abilities per tank + Scout spray, B menu skeleton. See `docs/PROGRESS.md`. Round 03 was merged into the default branch the same day.
 - **Branches / PRs:** PR #1–#3 were merged into the default branch `claude/tanky-tunky-setup-dw06hp` on 2026-10-11
   (owner: "birleştir"; merge head `f94cbf8`). The default branch now holds round 03 + the change log. **Start new work
   from the default branch**: `git checkout -b fix/round-04-<topic> origin/claude/tanky-tunky-setup-dw06hp`.
   From 2026-10-11 the owner continues in the cloud/phone session; the desktop session pulls before working.
-- **Latest debug APK:** Android APK run **#16** (round 03 + docs; same game as #15). Signed with the committed debug
+- **Latest debug APK:** Android APK run **#23** (round 04: B1, A, C, B; green). Previous: run #16 (round 03). Signed with the committed debug
   key (`keystore/debug.sha256`), CI fails if the signature differs (D-035). The owner must uninstall **once** after
   D-035, then every newer APK installs over the old one — **not yet confirmed on the phone**.
 
@@ -175,6 +175,7 @@ android/     Capacitor project (committed), keystore/ debug key (committed) + de
 
 ## 7. Next steps (update every round)
 
+0. Owner: say "birleştir" to merge PR #4 into the default branch (branch `claude/tanky-tunky-setup-dw06hp`).
 1. Owner: install the round-04 APK (Actions → "Android APK" → artifact; first uninstall once if the update error appears), test with
    `docs/PLAYTEST_CHECKLIST.md`, report feel of spray / ultimates / menu and whether the update error is gone.
 2. Open owner decisions (§1): K1 multiplayer, K2 campaign size/levels, K3 map awareness, K4 enemy placement, K11 Trapper in code, T ability trees, G images.
@@ -184,17 +185,21 @@ android/     Capacitor project (committed), keystore/ debug key (committed) + de
 4. Balance: B1 follow-up (Artillery ≈22 % even with +25 %: landing correction), B2 Heavy (≈68 %), Scout ≈62 % after spray.
 5. Perf: the cloud container measured p95 66.7 ms for default branch AND round 04 (machine slower than in round 03); confirm in CI / on a phone.
 
+**Blocked on the owner (nothing below can be built honestly without an answer):** K1 (INTERNET permission + relay vs Wi-Fi) blocks F;
+K2/K4 (map size, level count, enemy placement) block D; the 4 tank images block G; B1 landing correction / B2 Heavy are balance numbers (rule 4).
+E (progression) depends on D (stars/credits need levels to earn them).
+
 ## 8. Roadmap
 
 | Phase / stream | Status |
 |---|---|
 | 0 Engine, 1 Skeleton, 2 World, 3 Tanks & controls | ✅ done (default branch) |
 | 4 Vision | ✅ built in round 01 (LOS, forest, Hide); replaced by full visibility in round 03 (D-037), LOS kept for spawns |
-| 5 Classes & Trapper map | ✅ 4 distinct classes + 1 ability each (round 01–02); Trapper/minimap dropped (D-036); **next: skill + ult per tank (C)** |
+| 5 Classes & Trapper map | ✅ 4 distinct classes + 1 ability each (round 01–02); Trapper/minimap dropped (D-036); skill + ult per tank done in round 04 |
 | 6 Traps | ⏸ dropped with the Trapper (only Mine exists, disabled with it); redefine or remove after K3/K11 |
 | 7 AI | ✅ FSM + A* + difficulty levels (round 01–03) |
 | 8 Headless sim & balance | ✅ tool + reports; auto-tune not done — balance is decided by the owner |
-| Skill system (C) | planned: two abilities per tank, ult button, ability trees later |
+| Skill system (C) | ✅ two abilities per tank + ult button (round 04, D-046); ability trees (T) later |
 | PvE / campaign (D) | planned: towers, soldiers, outposts, HQ, `enemies.json` / `levels.json` |
 | 9 Modes & progression (E) | partly: Quick Match only; campaign, survival, daily challenge, garage/credits planned |
 | Multiplayer (F) | planned, decision K1 |

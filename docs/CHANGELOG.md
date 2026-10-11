@@ -57,6 +57,8 @@ Tam liste ve öneriler: `CLAUDE.md` §1 "Pending owner decisions" (B1, B2, A, K1
 ## 4. Günlük (en yeni en üstte)
 
 <!-- LOG:START -->
+### 2026-10-11 — [degisiklik] CLAUDE.md güncellendi
+Round 04 durumu: PR #4 açık, CI yeşil (perf kapısı dahil), APK #23; yol haritasında yetenek sistemi (C) tamam; D/E/F/G için sahibinin cevabını bekleyen kararlar listelendi. Kod değişmedi.
 ### 2026-10-11 — [konusma] Round 04 durumu ve performans uyarısı
 A, B1, C, B yapıldı (birim 149, E2E 29 geçti, ekran görüntüleri docs/screens/round-04). Perf kapısı bu bulut makinesinde eski sürümde de p95 66,7 ms (round 03'te 16,8 idi): makine yavaşladı, round 04'ten kaynaklanmıyor; CI'da doğrulanmadı. D-G (kampanya, ilerleme, çok oyunculu, görsel hattı) başlamadı.
 ### 2026-10-11 — [yenilik] B: yeni ana menü iskeleti
