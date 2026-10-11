@@ -46,6 +46,8 @@ export interface TankClassDef {
   ult?: AbilityId;
   /** Spray fire (hold = rapid stream, no charging). */
   spray?: SprayDef;
+  /** Round 07: special of shots charged to >= minCharge (Heavy laser + shock, Standard pierce, Artillery fire). */
+  charged?: ChargedDef;
   /** Campaign structure: never moves, never respawns, no regeneration, no crate pickups. */
   pve?: boolean;
   /** Has no gun (headquarters). */
@@ -55,6 +57,16 @@ export interface TankClassDef {
 /** True for stationary campaign structures (tower, HQ). */
 export function isPve(cls: TankClassId): boolean {
   return TANKS[cls].pve === true;
+}
+
+export interface ChargedDef {
+  minCharge: number;
+  /** Heavy: shell speed at full charge (tiles/s), lerped from the normal speed at minCharge. */
+  speedAtFull?: number;
+  shock?: { ratio: number; radius: number };
+  wreck?: { ratio: number; radius: number };
+  pierce?: { ratio: number };
+  fire?: { duration: number; ratioPerSec: number; tick: number };
 }
 
 /** Machine-gun style fire (owner 2026-10-11, K5/K7: Scout only). */

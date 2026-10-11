@@ -63,6 +63,13 @@ Measurable items (frame time, input latency proxies, APK size) are automated —
 - [ ] No visible stutter while driving across the map (note FPS counter: target 60, min 45).
 - [ ] Device does not get uncomfortably hot after 10 min.
 
+## Round 07 (telefonda dene)
+- [ ] Çevik: 6 mermi/sn hâlâ eğlenceli mi, çok mu zayıf? Aşırı Yük 18/sn.
+- [ ] Ağır: şarjlı atış lazer gibi anında gidiyor mu, kırmızı çizgi görünüyor mu? Hedefin çevresindeki tanklar şok dalgasıyla hasar alıyor, hedef almıyor.
+- [ ] Ağır şarjlı atışla bir tank patlayınca ekstra patlama ve parçalar.
+- [ ] Dengeli: şarjlı mermi ilk tankın içinden geçip arkadakine vuruyor.
+- [ ] Topçu: şarjlı mermi düştüğü yerde 2 sn koyu yanan alan bırakıyor; alan büyümüyor; kendi takımına zarar yok.
+
 ## Round 06 (telefonda dene)
 - [ ] Menüde "Görevler" yazıyor.
 - [ ] Çevik: ATEŞ'e basılı tut + Aşırı Yük → hâlâ kasıyor mu? Alttaki FPS sayısını ateş etmeden ve ederken not et.

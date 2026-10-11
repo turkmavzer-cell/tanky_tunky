@@ -72,6 +72,8 @@ export const barrage: AbilityModule = {
         arc: 2.6,
         warn: true,
         cause: 'barrage',
+        special: 'none',
+        pierced: false,
       };
       s.shells.push(shell);
       s.events.push({ type: 'fire', tank: t.id, x: t.x, y: t.y, angle: t.turret, charge: 0.5, perfect: false, kind: 'artillery' });

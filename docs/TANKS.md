@@ -58,10 +58,22 @@ Klavye: E = yetenek, Q = ulti.
 
 > Tuzakçı satırları sadece bilgi içindir: sınıf oyunda kapalı (`enabled: false`). Koddan silinip silinmeyeceği sahibinin kararı (K11).
 
-### Çevik: taramalı ateş (round 04)
-Çevik artık şarj etmez: ATEŞ'e basılı tutunca saniyede **10 mermi**, mermi başına **80 hasar** (eskiden dokunma 260), ±2° rastgele sapma.
-Hız 4,2 → **5,0** (ivme 16,5, dönüş 8,0). Saniyedeki hasar ≈ 800 (eski dokunma hızında ≈ 930; şarjlı vuruş yok).
-Aşırı Yük ile 30 mermi/sn.
+## Basılı tutma özellikleri (round 07) — senin kararın, sayılar onaylı öneri
+
+Şarjı **%30 veya üstü** olan atışlar sınıfa özel bir etki kazanır (sınırı Claude seçti; sen bıraktın). Kısa dokunuş atışları eskisi gibi.
+
+| Tank | Etki | Sayılar |
+|---|---|---|
+| Ağır | Lazer hızında mermi + şok dalgası + enkaz | mermi hızı tam şarjda **45 kare/sn** (eskiden 12,8). İsabet olunca hedefin **çevresindeki düşmanlara** (hedefin kendisine ve kendi takımına değil) mermi hasarının **%30**'u, **2 kare** yarıçap. Hedef bu isabetle patlarsa ayrıca **%15** enkaz patlaması, **1,5 kare** |
+| Dengeli | Delici atış | ilk tankın içinden geçer, yolundaki ikinci tanka **%50** hasar |
+| Topçu | Ateş alanı | düştüğü yerde patlama büyüklüğünde, **yayılmayan** koyu yanık alan; **2 sn**, içindeki düşmanlara saniyede iniş hasarının **%10**'u (0,25 sn'de bir) |
+
+Tam şarjlı Ağır örneği: isabet 2280 (+%15 kusursuz şarj) · çevreye şok 684 · patlatırsa enkaz 342.
+
+### Çevik: taramalı ateş (round 04; round 07: 6 mermi/sn)
+Çevik artık şarj etmez: ATEŞ'e basılı tutunca saniyede **6 mermi** (round 07, eskiden 10), mermi başına **80 hasar** (eskiden dokunma 260), ±2° rastgele sapma.
+Hız 4,2 → **5,0** (ivme 16,5, dönüş 8,0). Saniyedeki hasar ≈ 480 (round 04'te 800).
+Aşırı Yük ile ×3 = 18 mermi/sn.
 
 ### Topçu: inişte +%25 (B1, round 04)
 Kavisli mermiler (Topçu atışı ve Yaylım Ateşi) düştükleri yerde patlama hasarının **×1,25**'ini verir (780 → 975 merkez).
@@ -108,7 +120,7 @@ kesinleşir (`CLAUDE.md` §1, K5/K7/K8). Not: buluttaki öneriler eski ölçekte
 | Değer | Şimdi | Öneri |
 |---|---|---|
 | Azami hız | 4,2 | ~5,0 (ivme ve dönüş orantılı) |
-| Ateş | dokun / basılı tut şarj, atış arası 0,28 sn | basılı tut = tarama, şarj yok, ~10 mermi/sn, ±2° sapma |
+| Ateş | dokun / basılı tut şarj, atış arası 0,28 sn | basılı tut = tarama, şarj yok, 6 mermi/sn (round 07), ±2° sapma |
 | Mermi başına hasar | 260 (dokunma) | düşük; saniyedeki hasar bugünküne yakın kalacak şekilde hesaplanacak (×25 ölçek) |
 | Taramalı ateş kimde | — | sadece Çevik mi, tüm tanklar mı? (K5) |
 

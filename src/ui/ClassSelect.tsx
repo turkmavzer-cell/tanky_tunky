@@ -72,6 +72,17 @@ function AbilityBlock({ id, kind }: { id: AbilityId; kind: 'skill' | 'ult' }) {
   );
 }
 
+/** Round 07: what a charged shot (>= minCharge) adds, read from tanks.json → charged. */
+function chargedText(cls: TankClassId): string {
+  const c = TANKS[cls].charged;
+  if (!c) return '';
+  const pc = (v: number): number => Math.round(v * 100);
+  if (c.shock) return t('charged.heavy', { s: pc(c.shock.ratio), w: pc(c.wreck?.ratio ?? 0) });
+  if (c.pierce) return t('charged.standard', { r: pc(c.pierce.ratio) });
+  if (c.fire) return t('charged.artillery', { d: fmt(c.fire.duration), r: pc(c.fire.ratioPerSec) });
+  return '';
+}
+
 /** Card content: every number is read from the data files (tanks.json, combat.json, abilities.json). */
 function Card({ cls, on, onPick }: { cls: TankClassId; on: boolean; onPick: () => void }) {
   const d = TANKS[cls];
@@ -101,6 +112,11 @@ function Card({ cls, on, onPick }: { cls: TankClassId; on: boolean; onPick: () =
             </div>
           ))}
         </dl>
+        {d.charged && (
+          <div className="tc-charged" data-testid="card-charged">
+            <b>{t('card.charged', { p: Math.round(d.charged.minCharge * 100) })}</b> <span>{chargedText(cls)}</span>
+          </div>
+        )}
         <AbilityBlock id={d.ability} kind="skill" />
         {d.ult && <AbilityBlock id={d.ult} kind="ult" />}
         <div className="tc-tree">

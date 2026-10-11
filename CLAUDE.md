@@ -37,7 +37,9 @@ design is gone with the Trapper, see D-036/D-037 and open decision K3.)
 
 ## 1. Where we are now (update every round)
 
-- **Last finished round:** Round 06 (2026-10-11, branch `fix/round-06-missions-perf-parts`, **PR #6 into the round-05 branch, CI #47/#48 green incl. both perf gates, not merged**) — Kampanya → "Görevler"
+- **Last finished round:** Round 07 (2026-10-11, branch `fix/round-07-charged-specials`, PR into the round-06 branch) — Scout 6 shots/s (D-052),
+  charged specials ≥ 30 %: Heavy laser + shock + wreck, Standard pierce, Artillery fire patch (D-053). See `docs/PROGRESS.md`.
+- **Round 06** (branch `fix/round-06-missions-perf-parts`, **PR #6 into the round-05 branch, CI #47/#48 green incl. both perf gates, not merged**) — Kampanya → "Görevler"
   (D-049), spray-fire stutter fixes (D-050), upgrade parts → class perks (D-051), save v6. See `docs/PROGRESS.md`.
 - **Round 05** (branch `fix/round-05-campaign-progression`, **PR #5 into the round-04 branch, CI green incl. perf gate, not merged**) —
   D campaign (3 levels, towers + HQ + guarded outposts) and E progression (stars, credits, garage, save v5).
@@ -71,11 +73,12 @@ design is gone with the Trapper, see D-036/D-037 and open decision K3.)
 | T | Ability trees | cards show "Yakında"; owner designs them | round 02 |
 | G | Tank art | owner has 4 Nano Banana images (Çevik, Dengeli, Ağır, Topçu; **not in the repo**). Plan: hull and turret as separate images → image→3D (.glb) → render 16–32 angles → atlas + team colour; procedural art stays as fallback. Fixes noted: Heavy emblem must be a square, Artillery barrel faces the wrong way | this chat + cloud note §5.5 |
 
-### Current game (round 06)
+### Current game (round 07)
 | Topic | State | Data / code |
 |---|---|---|
 | Classes | Scout (Çevik), Heavy (Ağır), Standard (Dengeli), Artillery (Topçu); Trapper disabled (`enabled: false`, data kept) | `src/data/tanks.json`, `docs/TANKS.md` |
 | Scale | hp/damage ×25 of the original (Heavy hp 5500) | D-027 |
+| Charged specials (round 07) | shots ≥ 30 % charge: Heavy laser 45 t/s + shock 30 % r2 (around the target, enemies only) + wreck 15 % r1.5 on a kill · Standard pierce 50 % · Artillery fire patch 2 s 10 %/s | `tanks.json → charged`, `combat.ts` (`ring`, `updateFires`), `SimState.fires` |
 | Abilities (skill + ult) | Çevik: Saklan 5 s/cd 5 · Aşırı Yük (fire rate ×3, 5 s/cd 30) · Ağır: Gümbürtü r 4, flat 1000, cd 10 · Onarım (full heal, cd 45) · Dengeli: Swift 4 s/cd 8 · EMP (r 4, stun 2.5 s, cd 40) · Topçu: Hazır Atış (cd 8) · Yaylım Ateşi (6 shells, cd 45) · Mine (Trapper only). Keys E / Q, `BTN_ABILITY`/`BTN_ULT` | `src/data/abilities.json`, `src/sim/abilities/` |
 | Match | 3v3 Quick Match, 5 minutes, 3-2-1 countdown, respawn 2 s + 2 s protection away from death/enemy sight, K/D + results screen | `src/data/match.json`, `src/sim/match.ts` |
 | Maps | Desert ruins (default), Modern city, Forest/river (original) — chosen on the tank-select screen | `src/world/themes.ts`, `generator.ts` |
@@ -185,14 +188,14 @@ android/     Capacitor project (committed), keystore/ debug key (committed) + de
 
 ## 7. Next steps (update every round)
 
-0. Owner: say "birleştir" to merge PR #4, #5 and the round-06 PR in order (into the default branch `claude/tanky-tunky-setup-dw06hp`).
-1. Owner: install the round-06 APK (contains rounds 04–06; GitHub artifacts need a signed-in browser — offered: a Release page without sign-in) (Actions → "Android APK" → artifact; first uninstall once if the update error appears), test with
+0. Owner: say "birleştir" to merge PR #4, #5, #6 and the round-07 PR in order (into the default branch `claude/tanky-tunky-setup-dw06hp`).
+1. Owner: install the round-07 APK (contains rounds 04–07; GitHub artifacts need a signed-in browser — offered: a Release page without sign-in) (Actions → "Android APK" → artifact; first uninstall once if the update error appears), test with
    `docs/PLAYTEST_CHECKLIST.md`, report feel of spray / ultimates / menu and whether the update error is gone.
 2. Open owner decisions (§1): K1 multiplayer, K3 map awareness (keep the HQ arrow?), K11 Trapper in code, T ability trees, G images; review the round-05/06 numbers (tower/HQ, budgets, stars, rewards, garage, perks); report whether Scout spray still stutters on the phone (FPS counter).
 3. Campaign follow-ups (D): levels 4–12, other objectives (convoy, flag, survive), boss tanks every 4 levels, foot soldiers, hand-made/asymmetric maps.
    Not started: **(F)** multiplayer (lockstep over relay or Wi-Fi; needs INTERNET permission);
    **(G)** tank art pipeline from the owner's images / 3D models.
-4. Balance: B1 follow-up (Artillery ≈22 % even with +25 %: landing correction), B2 Heavy (≈68 %), Scout ≈62 % after spray.
+4. Balance (round 07, 200 matches hard): Scout 52.6 % ✅, Heavy 68.9 %, Standard 57.8 %, Artillery 23.1 % — B1 landing correction, B2 Heavy, pierce ratio: owner decides.
 5. Perf: the cloud container measured p95 66.7 ms for default branch AND round 04 (machine slower than in round 03); confirm in CI / on a phone.
 
 **Blocked on the owner:** K1 (INTERNET permission + relay vs Wi-Fi) blocks F; the 4 tank images block G;

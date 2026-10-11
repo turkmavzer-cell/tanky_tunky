@@ -1,7 +1,7 @@
 /** Shells, explosions, damage and kill attribution. */
 import { COMBAT, MATCH, TANKS, evalCurve, type ShellKind } from './config';
 import type { Rng } from './rng';
-import type { DamageCause, Shell, SimState, Tank } from './state';
+import type { DamageCause, FireZone, Shell, SimState, Tank } from './state';
 import { damageFeature } from '../world/map';
 import { FEATURE } from '../world/terrain';
 import { damageMul, markCombat, onFeatureDestroyed } from './upgrades';
@@ -57,7 +57,7 @@ export interface ExplosionSpec {
   /** Tank directly hit (full damage) or -1. */
   direct: number;
   charge: number;
-  kind: ShellKind | 'mine' | 'rumble' | 'emp';
+  kind: ShellKind | 'mine' | 'rumble' | 'emp' | 'shock' | 'wreck';
   cause: DamageCause;
   terrainDamage: number;
 }
@@ -104,7 +104,25 @@ export function damageTerrainDisc(state: SimState, x: number, y: number, r: numb
   }
 }
 
+/**
+ * Flat damage to every living enemy of `team` within `radius` (+ their hull radius) of (x, y), except `skip`.
+ * Used by the Heavy shock wave and wreck explosion (round 07): allies are never hurt.
+ */
+function ring(state: SimState, x: number, y: number, radius: number, raw: number, owner: number, team: number, skip: number, kind: 'shock' | 'wreck'): void {
+  state.events.push({ type: 'explode', x, y, radius, charge: 1, kind, owner });
+  for (const t of state.tanks) {
+    if (!t.alive || t.team === team || t.id === skip) continue;
+    const dx = t.x - x;
+    const dy = t.y - y;
+    const r = radius + TANKS[t.cls].radius;
+    if (dx * dx + dy * dy > r * r) continue;
+    applyDamage(state, t, raw, owner, x, y, kind);
+  }
+}
+
 function shellExplosion(state: SimState, s: Shell, x: number, y: number, direct: number): void {
+  const victim = direct >= 0 ? state.tanks[direct] : undefined;
+  const wasAlive = victim?.alive === true;
   explode(state, {
     x,
     y,
@@ -120,6 +138,43 @@ function shellExplosion(state: SimState, s: Shell, x: number, y: number, direct:
     cause: s.cause,
     terrainDamage: s.damage * COMBAT.shell.splashFalloff * COMBAT.shell.terrainDamageMul,
   });
+  const ch = TANKS[state.tanks[s.owner]?.cls ?? 'standard'].charged;
+  if (s.special === 'shock' && victim && ch?.shock) {
+    // shock wave around the hit tank: the hit tank itself is not affected (owner 2026-10-11)
+    ring(state, victim.x, victim.y, ch.shock.radius, s.damage * ch.shock.ratio, s.owner, s.team, victim.id, 'shock');
+    if (wasAlive && !victim.alive && ch.wreck) ring(state, victim.x, victim.y, ch.wreck.radius, s.damage * ch.wreck.ratio, s.owner, s.team, victim.id, 'wreck');
+  }
+  if (s.special === 'fire' && ch?.fire) {
+    const landing = s.kind === 'artillery' ? s.damage * COMBAT.shell.artilleryDamageMul : s.damage;
+    const z: FireZone = { id: nextId(state), x, y, r: s.radius, t: ch.fire.duration, next: ch.fire.tick, chunk: landing * ch.fire.ratioPerSec * ch.fire.tick, owner: s.owner, team: s.team };
+    state.fires.push(z);
+  }
+}
+
+/** Burning patches: every `tick` s each enemy inside takes one damage chunk; the patch never grows. */
+export function updateFires(state: SimState, dt: number): void {
+  const fires = state.fires;
+  for (let i = fires.length - 1; i >= 0; i--) {
+    const z = fires[i];
+    z.t -= dt;
+    z.next -= dt;
+    if (z.next <= 0 && z.t > -1e-9) {
+      const ch = TANKS[state.tanks[z.owner]?.cls ?? 'artillery'].charged;
+      z.next += ch?.fire?.tick ?? 0.25;
+      for (const t of state.tanks) {
+        if (!t.alive || t.team === z.team) continue;
+        const dx = t.x - z.x;
+        const dy = t.y - z.y;
+        const r = z.r + TANKS[t.cls].radius * 0.5;
+        if (dx * dx + dy * dy > r * r) continue;
+        applyDamage(state, t, z.chunk, z.owner, t.x, t.y, 'fire');
+      }
+    }
+    if (z.t <= 0) {
+      fires[i] = fires[fires.length - 1];
+      fires.pop();
+    }
+  }
 }
 
 export function updateShells(state: SimState, rng: Rng, dt: number): void {
@@ -176,7 +231,7 @@ export function updateShells(state: SimState, rng: Rng, dt: number): void {
             s.x = px;
             s.y = py;
             s.bounces--;
-            state.events.push({ type: 'bounce', x: px, y: py });
+            state.events.push({ type: 'bounce', x: px, y: py, owner: s.owner });
             continue;
           }
           shellExplosion(state, s, px, py, -1);
@@ -197,6 +252,14 @@ export function updateShells(state: SimState, rng: Rng, dt: number): void {
             continue;
           }
           shellExplosion(state, s, s.x, s.y, t.id);
+          if (s.special === 'pierce' && !s.pierced) {
+            // Dengeli charged shot: goes through the first tank and keeps flying with reduced damage
+            const ch = TANKS[state.tanks[s.owner]?.cls ?? 'standard'].charged;
+            s.pierced = true;
+            s.ignore = t.id;
+            s.damage *= ch?.pierce?.ratio ?? 0.5;
+            break;
+          }
           done = true;
           break;
         }

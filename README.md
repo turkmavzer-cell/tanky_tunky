@@ -15,6 +15,7 @@ basılı tutarak güçlenen atışlar, her tanka özel yetenekler ve kutulardan 
 - **Kutulardan yükseltme:** her biri +%5 can ve hasar verir, en fazla +%60; ölünce sıfırlanır.
 - **Can yenilenmesi:** çatışmadan 5 sn uzak kalınca her 5 sn'de +%5 can.
 - **Görevler (3 görev):** büyük haritada karakolları (kuleler + düşman tankları) geçip düşman karargâhını yık; yıldız, kredi ve güçlendirme parçası kazan.
+- **Basılı tutma özellikleri:** Ağır lazer hızında mermi + şok dalgası, Dengeli delici atış, Topçu ateş alanı bırakır.
 - **Güçlendirme parçaları:** her parça seçtiğin tanka özel güçlendirme verir (Ağır can, Çevik atış hızı, Dengeli şarj hızı, Topçu patlama alanı).
 - **Garaj:** kredilerle her tank için Zırh, Motor ve Top yükseltmesi (3'er seviye).
 - **Bot zorluğu:** Kolay, Normal, Zor, Ekstrem.

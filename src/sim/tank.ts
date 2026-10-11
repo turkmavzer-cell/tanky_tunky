@@ -44,7 +44,8 @@ export function updateTank(s: SimState, t: Tank, inp: PlayerInput | undefined, r
   else t.target = -1;
 
   // --- charge / fire state machine
-  t.cooldown = Math.max(0, t.cooldown - dt);
+  // spray keeps up to one tick of overshoot so non-integer intervals (e.g. 18 shots/s = 3.33 ticks) average exactly
+  t.cooldown = Math.max(def.spray ? -dt : 0, t.cooldown - dt);
   t.overheat = Math.max(0, t.overheat - dt);
   const stunned = t.stun > 0;
   const pressed = (buttons & BTN_FIRE) !== 0;
@@ -65,7 +66,7 @@ export function updateTank(s: SimState, t: Tank, inp: PlayerInput | undefined, r
     t.charging = false;
     if (held && canFire && !t.needRelease && t.overheat <= 0 && t.cooldown <= 0) {
       fire(s, t, 0, false, rng, 0, def.spray);
-      t.cooldown = 1 / (def.spray.rate * abilityFireRateMul(t) * t.boost.fireRate);
+      t.cooldown += 1 / (def.spray.rate * abilityFireRateMul(t) * t.boost.fireRate);
     }
   } else if (t.overheat > 0 || !canFire) {
     t.charging = false;
@@ -202,7 +203,10 @@ function fire(s: SimState, t: Tank, c: number, perfect: boolean, rng: Rng, reach
   const muzzle = def.radius + 0.25;
   const x = t.x + ca * muzzle;
   const y = t.y + sa * muzzle;
-  const speed = def.shellSpeed * evalCurve(sc.speed, reach);
+  // round 07: shots charged to >= minCharge get the class special (Heavy also flies like a laser)
+  const ch = !spray && def.charged && c >= def.charged.minCharge ? def.charged : undefined;
+  let speed = def.shellSpeed * evalCurve(sc.speed, reach);
+  if (ch?.speedAtFull) speed += (ch.speedAtFull - speed) * ((c - ch.minCharge) / (1 - ch.minCharge));
   const range = def.range * evalCurve(sc.range, reach);
   const map = s.map;
   const sh: Shell = {
@@ -231,6 +235,8 @@ function fire(s: SimState, t: Tank, c: number, perfect: boolean, rng: Rng, reach
     arc: 0,
     warn: false,
     cause: 'shell',
+    special: ch ? (ch.shock ? 'shock' : ch.pierce ? 'pierce' : ch.fire ? 'fire' : 'none') : 'none',
+    pierced: false,
   };
   if (def.shell === 'artillery') {
     // Auto-lock: land on the predicted target position if reachable at this charge; otherwise

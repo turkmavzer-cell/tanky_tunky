@@ -180,6 +180,25 @@ Perk numbers (6 %/level, 5 levels, parts per win) and the Dengeli/Topçu perk ch
 To try on the phone: Çevik hold fire + Aşırı Yük — still stutters? note the FPS counter; Görevler → win a mission → pick a tank for the part →
 feel it (Ağır more hp, Çevik faster fire, Dengeli faster charge, Topçu bigger blast).
 
+## Round 07 (2026-10-11) — Scout 6/s, charged-shot specials
+
+Branch `fix/round-07-charged-specials` (from round 06; PR into the round-06 branch). Owner plan approved with answers: shock not on the hit tank,
+never on allies, threshold left to Claude (30 % charge), Artillery = fire patch (dark, does not spread), numbers 45 / 2 / 1.5 / 50 % OK.
+
+| Item | State | Evidence |
+|---|---|---|
+| Scout spray 10 → 6 shots/s, Aşırı Yük still ×3 (18/s; fractional interval carried so ×3 is exact) | ✅ | `tests/charged.test.ts`, `tests/abilities.test.ts` |
+| Heavy ≥ 30 % charge: speed up to 45 tiles/s, shock 30 % r 2 (not the hit tank, enemies only), wreck 15 % r 1.5 on a kill; laser beam that bends at ricochets | ✅ | 3 unit tests; e2e round07 02 (kill + shock victims), screenshots |
+| Standard ≥ 30 %: pierce, second tank 50 % | ✅ | 2 unit tests |
+| Artillery ≥ 30 %: fire patch = blast size, 2 s, 10 %/s in 0.25 s chunks, enemies only, fixed size | ✅ | unit test; e2e round07 03, screenshot `04-artillery-fire.png` |
+| Tank cards show the charged special | ✅ | e2e round07 01 (card right column scrolls now) |
+
+Balance (200 matches, hard, desert): Scout 52.6 % ✅, Heavy 68.9 %, Standard 57.8 %, Artillery 23.1 % — see BALANCE_REPORT; not tuned (rule 4).
+Gates: lint ✅ typecheck ✅ unit 176 ✅ E2E 44 ✅. Headless browser runs at 3–5 fps, so the 0.25 s laser flash is only sometimes in a screenshot.
+
+To try on the phone: Ağır hold fire → red laser line, ring around the target, other tanks nearby lose hp; kill one → extra blast;
+Dengeli charged shot through two tanks; Topçu charged shot → dark burning patch for 2 s; Çevik now 6 shots/s.
+
 ## Open questions for the owner
 
 See `CLAUDE.md` §1 "Pending owner decisions" for options and proposals:

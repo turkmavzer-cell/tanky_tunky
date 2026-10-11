@@ -9,7 +9,7 @@ import { Rng } from './rng';
 import type { MatchRules, SimState, Tank, TankBoost } from './state';
 import type { GameMap } from '../world/map';
 import { collideTanks } from './collision';
-import { updateShells } from './combat';
+import { updateFires, updateShells } from './combat';
 import { updateMines } from './abilities/mine';
 import { newAbilityState } from './abilities';
 import { createVision, updateVision, VISION_INTERVAL } from './visibility';
@@ -85,6 +85,7 @@ export function createState(opts: SimOptions): SimState {
     tanks,
     shells: [],
     mines: [],
+    fires: [],
     pickups: [],
     crateRespawns: [],
     nextId: 1,
@@ -118,6 +119,7 @@ export function step(state: SimState, inputs: readonly PlayerInput[]): void {
     }
     collideTanks(state);
     updateShells(state, rng, dt);
+    updateFires(state, dt);
     updateMines(state, dt);
     if (playing) updatePickups(state, dt);
     if (playing) checkObjective(state);
