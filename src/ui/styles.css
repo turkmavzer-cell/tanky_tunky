@@ -135,8 +135,9 @@ input[type='range'] { width: 200px; accent-color: var(--accent); }
 @keyframes pop { from { transform: translate(-50%, -50%) scale(1.8); opacity: 0; } 30% { opacity: 1; } to { transform: translate(-50%, -50%) scale(1); } }
 .kd { font-weight: 800; font-size: 16px; text-shadow: 0 2px 2px #000; }
 .kd b { color: var(--accent); font-size: 19px; }
-.minimap-host { position: absolute; top: calc(38px + var(--safe-t)); left: calc(12px + var(--safe-l)); pointer-events: none; }
+.minimap-host { position: absolute; top: calc(64px + var(--safe-t)); left: calc(12px + var(--safe-l)); pointer-events: auto; touch-action: none; z-index: 3; }
 .minimap-host.right { left: auto; right: calc(80px + var(--safe-r)); }
+.minimap.big { box-shadow: 0 4px 24px #000c; border-color: #ffffffaa; }
 .minimap { display: block; border: 2px solid #ffffff55; border-radius: 8px; background: #0009; box-shadow: 0 2px 8px #000a; }
 .ability-btn.active { border-color: #7fe0ff; box-shadow: 0 0 18px 4px #7fe0ff88; }
 .ability-btn.ready { border-color: var(--accent); box-shadow: 0 0 10px 1px #ffb34755; }

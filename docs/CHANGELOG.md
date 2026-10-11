@@ -57,6 +57,10 @@ Tam liste ve öneriler: `CLAUDE.md` §1 "Pending owner decisions" (B1, B2, A, K1
 ## 4. Günlük (en yeni en üstte)
 
 <!-- LOG:START -->
+### 2026-10-11 — [konusma] Mini harita isteği
+Sahibi: 'Orijinal oyunda solda üstte tam harita gözüktüğü gibi bu oyunda da gözüksün'; plan sonrası 'Uygula bakalım sonuca göre güncellenir'.
+### 2026-10-11 — [yenilik] Mini harita herkes için
+Sol üstte tüm haritayı gösteren mini harita (Hızlı Maç + Görevler): sen beyaz ok, dost mavi, düşman kırmızı, kule kare, karargâh yıldız; Saklan'daki düşman görünmez. Dokununca büyük harita. Oyunun izometrik yönüyle aynı (elmas). Telefonda doğrulanmadı.
 ### 2026-10-11 — [konusma] Görsel harita isteği
 Sahibi bir LoL (Warcraft 3) harita görseli gönderdi: 'Bu tarz bir harita istiyorum, labirent haritayı kaldır ve görseldeki haritayı uygula.'
 ### 2026-10-11 — [degisiklik] Görev haritası: labirent yerine Üç Yol (LoL/WC3 tarzı)

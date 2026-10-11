@@ -260,7 +260,7 @@ export class GameScene {
       this.wreckSmoke.push(0);
       this.engines.push(this.audio.createEngine(isPve(t.cls) ? 'heavy' : (t.cls as CombatClassId))); // structures never move → silent
     }
-    if (this.state.tanks[this.localId].cls === 'trapper') this.minimap = new Minimap();
+    this.minimap = new Minimap(); // every tank sees the whole map (round 08)
     const p = this.state.tanks[this.localId];
     this.camera.snap(this.sx(p.x, p.y), this.sy(p.x, p.y));
     this.updateBaseZoom();

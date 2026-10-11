@@ -250,7 +250,7 @@ export function GameView({ settings, playerClass, seed, record, onQuit, onAgain,
             <span style={{ transform: `rotate(${-hud.hqAngle}rad)` }}>{hud.hqDist}</span>
           </div>
         )}
-        <div ref={minimapHost} className={'minimap-host' + (settings.leftHanded ? ' right' : '')} />
+        <div ref={minimapHost} className={'minimap-host' + (settings.leftHanded ? ' right' : '')} data-testid="minimap-host" onPointerDown={(e) => { e.stopPropagation(); sceneRef.current?.minimap?.toggle(); }} />
         {hud && hud.phase !== 'ended' && !hud.endless && (
           <div className={'match-timer' + (finalWarn ? ' warn' : '')} data-testid="timer">
             {mm}:{ss}

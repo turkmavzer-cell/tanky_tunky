@@ -74,3 +74,31 @@ test('03 upgrades apply in missions only; Quick Match tanks are equal', async ({
   const quick = await page.evaluate(() => (window as unknown as W).__tanky.scene.state.tanks[0].boost.hp);
   expect(quick).toBe(1);
 });
+
+test('04 minimap: whole map top-left, tap = big map', async ({ page }) => {
+  await startMission(page, '', 'standard');
+  const map = page.locator('canvas.minimap');
+  await expect(map).toBeVisible();
+  const small = await map.boundingBox();
+  expect(small!.x).toBeLessThan(40);
+  expect(small!.y).toBeLessThan(120);
+  await page.waitForTimeout(600);
+  await shot(page, '04-minimap');
+  await page.getByTestId('minimap-host').tap();
+  await page.waitForTimeout(600);
+  const big = await map.boundingBox();
+  expect(big!.width).toBeGreaterThan(small!.width * 1.8);
+  await shot(page, '05-minimap-big');
+  await page.getByTestId('minimap-host').tap();
+  await page.waitForTimeout(400);
+  expect((await map.boundingBox())!.width).toBeLessThan(big!.width * 0.7);
+  // Quick Match shows it too
+  await page.goto('/?silent');
+  await page.getByTestId('solo').click();
+  await page.getByTestId('play').click();
+  await page.getByTestId('class-heavy').click();
+  await page.getByTestId('start').click();
+  await playing(page);
+  await expect(page.locator('canvas.minimap')).toBeVisible();
+  await shot(page, '06-minimap-quick-match');
+});
