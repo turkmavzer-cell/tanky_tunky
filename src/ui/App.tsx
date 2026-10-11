@@ -111,20 +111,24 @@ export function App() {
             }}
             onQuit={() => setScreen(level !== null ? 'campaign' : 'menu')}
             onAgain={() => setSeed(newSeed())}
+            save={save}
+            onSave={updateSave}
             onMatchEnd={(sum) => {
               let next = recordMatch(save, sum.kills, sum.deaths);
               let credits = 0;
+              let parts = 0;
               const lv = level ? levelById(level) : undefined;
               if (lv && sum.mission) {
                 const r = applyMission(next, lv, sum.mission);
                 next = r.save;
                 credits = r.credits;
+                parts = r.parts;
               } else if (!lv) {
                 credits = quickMatchCredits(sum.kills, sum.teamWon);
                 next = { ...next, credits: next.credits + credits };
               }
               updateSave(next);
-              return credits;
+              return { credits, parts };
             }}
           />}
         <div className="rotate-hint">{t('menu.rotate')}</div>

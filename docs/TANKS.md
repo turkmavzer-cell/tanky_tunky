@@ -76,6 +76,18 @@ Kavisli mermiler (Topçu atışı ve Yaylım Ateşi) düştükleri yerde patlama
 Karakol "tehdit bütçesi" (`enemies.json`): Kule 2, Çevik 2, Dengeli 3, Topçu 3, Ağır 4. Düşman tankları karakolunun 3 kare çevresinde
 dolaşır, karakola 9 kareden uzak düşmana tepki vermez.
 
+## Güçlendirme parçaları (round 06) — ilk öneri, sen karar verirsin
+
+Kazanılan her görev **1 parça**; bir görevi ilk kez 3 yıldızla kazanınca **+1 parça**. Bir parça = seçtiğin tanka 1 seviye özel güçlendirme
+(en fazla 5 seviye). Sadece senin tankına, her modda.
+
+| Tank | Güçlendirme | Seviye başına | 5 seviyede |
+|---|---|---|---|
+| Ağır | can (senin isteğin) | +%6 | +%30 |
+| Çevik | atış hızı (senin isteğin; taramalı ateş ve Aşırı Yük ile çarpılır) | +%6 | +%30 |
+| Dengeli | şarj süresi kısalır | −%6 | −%30 |
+| Topçu | patlama alanı büyür (mermiler hedefin kenarına düştüğü için en çok bu yardım eder) | +%6 | +%30 |
+
 ## Garaj yükseltmeleri (round 05) — ilk öneri
 
 | Dal | Seviye başına | En fazla | Fiyat (1/2/3. seviye) |

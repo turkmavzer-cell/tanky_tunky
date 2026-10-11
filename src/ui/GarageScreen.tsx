@@ -2,6 +2,7 @@ import { t } from '../i18n';
 import type { SaveData } from '../core/save';
 import { TANK_CLASSES } from '../sim/config';
 import { GARAGE_BRANCHES, PROGRESSION, buyUpgrade, garageOf, upgradeCost } from '../game/progression';
+import { PerkRow } from './PerkPicker';
 
 /** Garage (round 05, stream E): three upgrade branches per tank, bought with credits. */
 export function GarageScreen({ save, onChange, onBack }: { save: SaveData; onChange: (s: SaveData) => void; onBack: () => void }) {
@@ -12,8 +13,13 @@ export function GarageScreen({ save, onChange, onBack }: { save: SaveData; onCha
         <span className="credits" data-testid="credits">
           {t('menu.credits', { n: save.credits })}
         </span>
+        <span className="credits" data-testid="parts">
+          {t('perk.parts', { n: save.parts })}
+        </span>
       </div>
-      <p className="menu-note">{t('garage.note')}</p>
+      <p className="menu-note">
+        {t('garage.note')} {t('garage.partsNote')}
+      </p>
       <div className="garage-grid">
         {TANK_CLASSES.map((cls) => {
           const g = garageOf(save, cls);
@@ -49,6 +55,7 @@ export function GarageScreen({ save, onChange, onBack }: { save: SaveData; onCha
                   </div>
                 );
               })}
+              <PerkRow save={save} cls={cls} onChange={onChange} />
             </div>
           );
         })}

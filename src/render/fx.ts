@@ -2,7 +2,7 @@
  * Pooled particle effects + damage numbers (brief §4, §12). Screen-space pixels (world layer).
  * Zero allocations in steady state: particles live in fixed pools and are recycled.
  */
-import { Container, Sprite, Text, type Texture } from 'pixi.js';
+import { BitmapFont, BitmapText, Container, Sprite, type Texture } from 'pixi.js';
 import { fxTextures, type FxTextures } from './fxTextures';
 
 interface Particle {
@@ -25,12 +25,21 @@ interface Particle {
 }
 
 interface Num {
-  t: Text;
+  t: BitmapText;
   live: boolean;
   x: number;
   y: number;
   life: number;
+  /** Aggregation key (target tank id) or -1; hits on the same key within `AGG_WINDOW` add up in one number. */
+  key: number;
+  sum: number;
+  crit: boolean;
 }
+
+/** Seconds during which repeated hits on one target are summed into the same rising number (spray fire, round 06). */
+const AGG_WINDOW = 0.35;
+const NUM_FONT = 'tanky-num';
+let fontInstalled = false;
 
 export class Fx {
   /** Below objects: track marks / scorch decals. */
@@ -42,18 +51,32 @@ export class Fx {
   private readonly under_: Particle[] = [];
   private readonly nums: Num[] = [];
   private seed = 1;
+  /** Ring cursors: the next slot to try (O(1) pool grabs instead of scanning 700 particles per emit). */
+  private cur = 0;
+  private curUnder = 0;
   quality = 1; // 0.5 low, 1 medium/high
 
   constructor(maxParticles = 700) {
     this.tex = fxTextures();
     for (let i = 0; i < maxParticles; i++) this.parts.push(this.mk(this.over));
     for (let i = 0; i < 260; i++) this.under_.push(this.mk(this.under));
+    // Bitmap font: glyphs are rasterised once; changing a number's text or colour never re-renders a texture
+    // (the old Text objects re-drew a canvas + GPU upload per hit — a stutter source with spray fire).
+    if (!fontInstalled) {
+      BitmapFont.install({
+        name: NUM_FONT,
+        style: { fontFamily: 'Trebuchet MS, sans-serif', fontSize: 22, fontWeight: '900', fill: '#ffffff', stroke: { color: '#000000', width: 4 } },
+        chars: [['0', '9'], '+%-., abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZçğıöşüÇĞİÖŞÜ!'],
+        resolution: 2,
+      });
+      fontInstalled = true;
+    }
     for (let i = 0; i < 24; i++) {
-      const t = new Text({ text: '', style: { fontFamily: 'Trebuchet MS, sans-serif', fontSize: 22, fontWeight: '900', fill: '#ffffff', stroke: { color: '#000000', width: 4 } } });
+      const t = new BitmapText({ text: '', style: { fontFamily: NUM_FONT, fontSize: 22 } });
       t.anchor.set(0.5);
       t.visible = false;
       this.over.addChild(t);
-      this.nums.push({ t, live: false, x: 0, y: 0, life: 0 });
+      this.nums.push({ t, live: false, x: 0, y: 0, life: 0, key: -1, sum: 0, crit: false });
     }
   }
 
@@ -71,12 +94,29 @@ export class Fx {
     return this.seed / 4294967296;
   }
 
+  /**
+   * Next particle slot: walks a ring cursor a few steps looking for a free slot; if the pool is saturated the slot
+   * under the cursor is recycled (approximately the oldest, since slots are handed out in ring order). O(1) per emit.
+   */
   private grab(pool: Particle[]): Particle {
-    for (let i = 0; i < pool.length; i++) if (!pool[i].live) return pool[i];
-    // steal the oldest (least remaining life)
-    let best = pool[0];
-    for (const p of pool) if (p.life < best.life) best = p;
-    return best;
+    const under = pool === this.under_;
+    let c = under ? this.curUnder : this.cur;
+    const n = pool.length;
+    let p = pool[c];
+    for (let k = 0; k < 8 && p.live; k++) {
+      c = (c + 1) % n;
+      p = pool[c];
+    }
+    c = (c + 1) % n;
+    if (under) this.curUnder = c;
+    else this.cur = c;
+    return p;
+  }
+
+  /** Spray-fire muzzle: one small flash and a wisp of smoke (the full muzzle is ~6–13 particles per shot). */
+  muzzleLight(x: number, y: number, angle: number): void {
+    this.emit(this.tex.flash, x, y, { life: 0.06, s0: 0.55, s1: 0.8, a0: 0.9, a1: 0, add: true, rot: angle });
+    if (this.rand() < 0.35) this.emit(this.tex.smoke, x, y, { vx: Math.cos(angle) * 40, vy: Math.sin(angle) * 24 - 8, drag: 3, life: 0.4, s0: 0.2, s1: 0.5, a0: 0.35, a1: 0, tint: 0xb9b2a6, rot: this.rand() * 6 });
   }
 
   emit(
@@ -167,9 +207,34 @@ export class Fx {
     this.emit(this.tex.track, x, y, { under: true, life: 7, s0: 1, s1: 1, a0: 0.5, a1: 0, rot: screenAngle });
   }
 
-  damageNumber(x: number, y: number, value: number, crit: boolean): void {
+  /**
+   * Damage number. With `key` (target id) hits within AGG_WINDOW s add up in one rising number instead of a stream
+   * of separate "80"s (spray fire).
+   */
+  damageNumber(x: number, y: number, value: number, crit: boolean, key = -1): void {
+    if (key >= 0) {
+      for (const n of this.nums) {
+        if (!n.live || n.key !== key || n.life < 0.9 - AGG_WINDOW) continue;
+        n.sum += value;
+        n.crit = n.crit || crit;
+        n.t.text = String(Math.round(n.sum));
+        n.t.tint = n.crit ? 0xffe066 : 0xffffff;
+        n.life = 0.9; // keep it fresh while the stream continues
+        return;
+      }
+    }
     this.floatText(x, y, String(Math.round(value)), crit ? '#ffe066' : '#ffffff', crit ? 1.35 : 1);
+    if (key >= 0) {
+      const n = this.lastNum;
+      if (n) {
+        n.key = key;
+        n.sum = value;
+        n.crit = crit;
+      }
+    }
   }
+
+  private lastNum: Num | null = null;
 
   /** Rising text (damage numbers, "+120" heals, "+5 %" upgrades). */
   floatText(x: number, y: number, text: string, color: string, scale = 1): void {
@@ -180,9 +245,11 @@ export class Fx {
     n.y = y;
     n.life = 0.9;
     n.t.text = text;
-    n.t.style.fill = color;
+    n.t.tint = parseInt(color.slice(1), 16);
     n.t.scale.set(scale);
     n.t.visible = true;
+    n.key = -1;
+    this.lastNum = n;
   }
 
   update(dt: number): void {

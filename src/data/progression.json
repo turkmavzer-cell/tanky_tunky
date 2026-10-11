@@ -2,12 +2,55 @@
   "$comment": "Progression (round 05, stream E; brief §3: three upgrade branches per class, small but noticeable, bought with credits). perLevel = multiplier added per bought level on base max hp (armor), top speed (engine) or damage dealt (gun). cost[i] = credits for level i+1. Applies to the human player's tank only, in every mode. quickMatch: credits per kill and for a won match (your team has more kills). All numbers are a first proposal — owner decides (rule 4).",
   "garage": {
     "maxLevel": 3,
-    "cost": [150, 300, 500],
+    "cost": [
+      150,
+      300,
+      500
+    ],
     "branches": {
-      "armor": { "stat": "hp", "perLevel": 0.04 },
-      "engine": { "stat": "speed", "perLevel": 0.03 },
-      "gun": { "stat": "damage", "perLevel": 0.04 }
+      "armor": {
+        "stat": "hp",
+        "perLevel": 0.04
+      },
+      "engine": {
+        "stat": "speed",
+        "perLevel": 0.03
+      },
+      "gun": {
+        "stat": "damage",
+        "perLevel": 0.04
+      }
     }
   },
-  "quickMatch": { "perKill": 5, "win": 25 }
+  "quickMatch": {
+    "perKill": 5,
+    "win": 25
+  },
+  "parts": {
+    "perWin": 1,
+    "threeStarBonus": 1
+  },
+  "perks": {
+    "maxLevel": 5,
+    "cost": 1,
+    "classes": {
+      "heavy": {
+        "stat": "hp",
+        "perLevel": 0.06
+      },
+      "scout": {
+        "stat": "fireRate",
+        "perLevel": 0.06
+      },
+      "standard": {
+        "stat": "chargeTime",
+        "perLevel": -0.06
+      },
+      "artillery": {
+        "stat": "splash",
+        "perLevel": 0.06
+      }
+    }
+  },
+  "$perks": "Round 06 (owner 2026-10-11): every won mission gives perWin upgrade parts (+threeStarBonus the first time it is won with 3 stars). One part = one perk level on any tank; the perk depends on the class: Heavy max hp (owner), Scout fire rate (owner), Standard shorter charge time, Artillery bigger blast radius (Claude's picks). perLevel per level, maxLevel levels. Player's tank only, every mode. Numbers are a first proposal — owner decides (rule 4)."
 }

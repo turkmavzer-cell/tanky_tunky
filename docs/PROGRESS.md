@@ -157,6 +157,29 @@ owner decides (rule 4). Assumption: HQ direction arrow on screen (part of open d
 To try on the phone: Tek Oyunculu → Kampanya → Bölüm 1; find and destroy the HQ (red arrow + distance); towers shoot when you come
 close; enemy tanks stay at their outposts; results stars/credits; Garaj: buy an upgrade and feel it in a match.
 
+## Round 06 (2026-10-11) — "Görevler", spray-fire stutter, upgrade parts
+
+Branch `fix/round-06-missions-perf-parts` (from round 05; PR into the round-05 branch). Owner: rename Kampanya → Görevler;
+"kasma planını sana bırakıyorum"; new: won missions give upgrade parts, each part powers up a chosen tank with a class-specific perk.
+
+| Item | State | Evidence |
+|---|---|---|
+| Menu/screens: Kampanya → **Görevler** (EN Missions, AR المهام), "Bölüm n" → "Görev n" | ✅ | e2e round06 01 |
+| Spray-fire stutter: light muzzle + spark impacts for spray bullets, summed damage numbers per target, BitmapText numbers (no texture redraw), O(1) particle pool, pooled shell sprites, haptic ≤ 1 per 140 ms, lower shake, sound caps (fire_light 60 ms, hit_metal 70 ms, explosion_small 50 ms) | ✅ | new perf spec "spray stress, 6 scouts" |
+| Upgrade parts: +1 per won mission, +1 the first time with 3 stars; spend on the results screen or in the garage; perks: Ağır +6 % can, Çevik +6 % atış hızı, Dengeli −6 % şarj süresi, Topçu +6 % patlama alanı per level, 5 levels | ✅ | 3 unit tests (pay, perk levels, perks reach the sim), e2e round06 02–03 |
+| Save schema v6 (parts, perks) | ✅ | `tests/save.test.ts` |
+
+Spray stress (6 Scouts, Overdrive, 40×40, CPU 4x, this container): **before** JS work mean 12.5 ms / p95 30.7 ms, 24.6 fps, frame p95 99.9 ms →
+**after** 7.0 ms / 14.9 ms, 39.2 fps, frame p95 50.1 ms. Normal perf scene unchanged (work mean 6.1 ms). Both 22 ms frame gates fail in this
+container (it is slower than CI; the unchanged round-04 baseline measured 66.7 ms here) — CI decides. Haptics and sound cannot be measured in the
+headless browser (silent, no vibration): **the real gain on the phone is not verified**.
+
+Gates: lint ✅ typecheck ✅ unit 169 ✅ E2E 41 ✅. Screenshots `docs/screens/round-06/` inspected (garage perk row overflow found and fixed).
+Perk numbers (6 %/level, 5 levels, parts per win) and the Dengeli/Topçu perk choices are Claude's proposal — owner decides.
+
+To try on the phone: Çevik hold fire + Aşırı Yük — still stutters? note the FPS counter; Görevler → win a mission → pick a tank for the part →
+feel it (Ağır more hp, Çevik faster fire, Dengeli faster charge, Topçu bigger blast).
+
 ## Open questions for the owner
 
 See `CLAUDE.md` §1 "Pending owner decisions" for options and proposals:

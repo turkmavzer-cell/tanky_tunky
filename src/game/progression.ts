@@ -8,9 +8,12 @@ import type { TankBoost } from '../sim/state';
 import type { GarageBranch, GarageLevels, SaveData } from '../core/save';
 import { LEVELS, type CampaignLevel, type MissionResult } from './campaign';
 
-export const PROGRESSION = progJson as {
-  garage: { maxLevel: number; cost: number[]; branches: Record<GarageBranch, { stat: keyof TankBoost; perLevel: number }> };
+export type PerkStat = 'hp' | 'fireRate' | 'chargeTime' | 'splash';
+export const PROGRESSION = progJson as unknown as {
+  garage: { maxLevel: number; cost: number[]; branches: Record<GarageBranch, { stat: 'hp' | 'speed' | 'damage'; perLevel: number }> };
   quickMatch: { perKill: number; win: number };
+  parts: { perWin: number; threeStarBonus: number };
+  perks: { maxLevel: number; cost: number; classes: Record<CombatClassId, { stat: PerkStat; perLevel: number } | undefined> };
 };
 export const GARAGE_BRANCHES: readonly GarageBranch[] = ['armor', 'engine', 'gun'];
 
@@ -21,12 +24,36 @@ export function garageOf(save: SaveData, cls: CombatClassId): GarageLevels {
 /** Multipliers the garage gives the player's tank of this class. */
 export function boostFor(save: SaveData, cls: CombatClassId): TankBoost {
   const g = garageOf(save, cls);
-  const b: TankBoost = { hp: 1, speed: 1, damage: 1 };
+  const b: TankBoost = { hp: 1, speed: 1, damage: 1, fireRate: 1, chargeTime: 1, splash: 1 };
   for (const br of GARAGE_BRANCHES) {
     const def = PROGRESSION.garage.branches[br];
     b[def.stat] += def.perLevel * g[br];
   }
+  const perk = PROGRESSION.perks.classes[cls];
+  if (perk) b[perk.stat] += perk.perLevel * perkLevel(save, cls);
   return b;
+}
+
+/** Round 06 perk level (0..maxLevel) of a class. */
+export function perkLevel(save: SaveData, cls: CombatClassId): number {
+  return save.perks[cls] ?? 0;
+}
+
+/** Can one upgrade part be spent on this class now? */
+export function canUsePart(save: SaveData, cls: CombatClassId): boolean {
+  return PROGRESSION.perks.classes[cls] !== undefined && save.parts >= PROGRESSION.perks.cost && perkLevel(save, cls) < PROGRESSION.perks.maxLevel;
+}
+
+/** Spends parts for one perk level on `cls`; null when not possible. */
+export function spendPart(save: SaveData, cls: CombatClassId): SaveData | null {
+  if (!canUsePart(save, cls)) return null;
+  return { ...save, parts: save.parts - PROGRESSION.perks.cost, perks: { ...save.perks, [cls]: perkLevel(save, cls) + 1 } };
+}
+
+/** Parts a mission pays: perWin for every win, + threeStarBonus the first time the level is won with 3 stars. */
+export function missionParts(oldStars: number, r: MissionResult): number {
+  if (!r.won) return 0;
+  return PROGRESSION.parts.perWin + (r.stars === 3 && oldStars < 3 ? PROGRESSION.parts.threeStarBonus : 0);
 }
 
 /** Credits for the next level of a branch, or null when it is maxed. */
@@ -57,16 +84,19 @@ export function missionCredits(level: CampaignLevel, oldStars: number, r: Missio
   return (oldStars === 0 ? level.reward.base : 0) + newStars * level.reward.perStar;
 }
 
-export function applyMission(save: SaveData, level: CampaignLevel, r: MissionResult): { save: SaveData; credits: number } {
+export function applyMission(save: SaveData, level: CampaignLevel, r: MissionResult): { save: SaveData; credits: number; parts: number } {
   const old = save.campaign.stars[level.id] ?? 0;
   const credits = missionCredits(level, old, r);
-  if (!r.won) return { save, credits: 0 };
+  const parts = missionParts(old, r);
+  if (!r.won) return { save, credits: 0, parts: 0 };
   const best = save.campaign.bestTime[level.id];
   return {
     credits,
+    parts,
     save: {
       ...save,
       credits: save.credits + credits,
+      parts: save.parts + parts,
       campaign: {
         stars: { ...save.campaign.stars, [level.id]: Math.max(old, r.stars) },
         bestTime: { ...save.campaign.bestTime, [level.id]: best === undefined ? Math.round(r.time) : Math.min(best, Math.round(r.time)) },

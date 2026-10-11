@@ -37,8 +37,10 @@ design is gone with the Trapper, see D-036/D-037 and open decision K3.)
 
 ## 1. Where we are now (update every round)
 
-- **Last finished round:** Round 05 (2026-10-11, branch `fix/round-05-campaign-progression`, **PR #5 into the round-04 branch, CI green incl. perf gate, not merged**) —
-  D campaign (3 levels, towers + HQ + guarded outposts) and E progression (stars, credits, garage, save v5). See `docs/PROGRESS.md`.
+- **Last finished round:** Round 06 (2026-10-11, branch `fix/round-06-missions-perf-parts`, PR into the round-05 branch) — Kampanya → "Görevler"
+  (D-049), spray-fire stutter fixes (D-050), upgrade parts → class perks (D-051), save v6. See `docs/PROGRESS.md`.
+- **Round 05** (branch `fix/round-05-campaign-progression`, **PR #5 into the round-04 branch, CI green incl. perf gate, not merged**) —
+  D campaign (3 levels, towers + HQ + guarded outposts) and E progression (stars, credits, garage, save v5).
 - **Previous:** Round 04 (branch `fix/round-04-balance-aim-skills`, **PR #4 open, CI green incl. perf gate, not merged** — waiting for
   the owner's "birleştir") — B1 Artillery +25 %, A aim on screen only, C two abilities per tank + Scout spray, B menu skeleton.
 - **Branches / PRs:** PR #1–#3 were merged into the default branch `claude/tanky-tunky-setup-dw06hp` on 2026-10-11
@@ -69,7 +71,7 @@ design is gone with the Trapper, see D-036/D-037 and open decision K3.)
 | T | Ability trees | cards show "Yakında"; owner designs them | round 02 |
 | G | Tank art | owner has 4 Nano Banana images (Çevik, Dengeli, Ağır, Topçu; **not in the repo**). Plan: hull and turret as separate images → image→3D (.glb) → render 16–32 angles → atlas + team colour; procedural art stays as fallback. Fixes noted: Heavy emblem must be a square, Artillery barrel faces the wrong way | this chat + cloud note §5.5 |
 
-### Current game (round 05)
+### Current game (round 06)
 | Topic | State | Data / code |
 |---|---|---|
 | Classes | Scout (Çevik), Heavy (Ağır), Standard (Dengeli), Artillery (Topçu); Trapper disabled (`enabled: false`, data kept) | `src/data/tanks.json`, `docs/TANKS.md` |
@@ -83,10 +85,11 @@ design is gone with the Trapper, see D-036/D-037 and open decision K3.)
 | Bots | FSM AI (patrol/suspicion/chase/attack/retreat); Kolay/Normal/Zor/Ekstrem (first shot 5/3/1/0 s after an enemy is in range), allies use the same level | `src/data/ai.json`, `src/systems/ai/bot.ts` |
 | Auto-aim | nearest visible enemy **inside the camera view** (D-045), 10 % hysteresis; touch manual aim needs a 60 px drag | `targeting.ts`, `touchControls.ts` |
 | Heights | cliffs/ramps from one `isPassable` rule, bump flash + haptic, "Engel vurgusu" setting | `passability.ts`, D-020/021 |
-| UI | main menu Tek Oyunculu (Hızlı Maç, Kampanya, Garaj) / Çok Oyunculu ("Yakında") / Ayarlar, swipeable tank cards (skill + ult), map + difficulty selectors, two ability buttons with countdown rings, upgrade chip | `src/ui/` |
+| UI | main menu Tek Oyunculu (Hızlı Maç, Görevler [= campaign], Garaj) / Çok Oyunculu ("Yakında") / Ayarlar, swipeable tank cards (skill + ult), map + difficulty selectors, two ability buttons with countdown rings, upgrade chip | `src/ui/` |
 | Campaign (round 05) | 3 levels (`levels.json`), 96×96 themed maps; towers + HQ = `pve` classes in `tanks.json`; outpost solver + guard mode (`enemies.json`); win = HQ destroyed, time out = loss; player respawns at own base; stars/credits | `src/game/campaign.ts`, `src/systems/ai/tower.ts`, `tools/campaign-sim.ts` |
 | Progression (round 05) | credits (campaign rewards, Quick Match 5/kill + 25/win), unlock chain, garage armor/engine/gun × 3 → `Tank.boost` for the player only | `src/game/progression.ts`, `src/data/progression.json` |
-| Save | schema v5 (settings, records, credits, campaign stars/bestTime, garage) | `src/core/save.ts` |
+| Upgrade parts (round 06) | +1 per won mission (+1 first 3-star win) → perk level on a chosen tank: Heavy hp, Scout fire rate, Standard charge time, Artillery blast radius (6 %/level, 5 levels) → `Tank.boost` | `progression.json → parts/perks`, `src/ui/PerkPicker.tsx` |
+| Save | schema v6 (settings, records, credits, campaign stars/bestTime, garage, parts, perks) | `src/core/save.ts` |
 | Android | no INTERNET permission, explicit debug signing, isometric tank icon | `android/`, D-033, D-035 |
 
 ## 2. Stack
@@ -115,7 +118,7 @@ Vite 8 + TypeScript 5.9 (strict) + React 19 (menus/HUD as DOM overlay only) + **
 | Signed release | push tag `v*` (secrets described in `docs/RELEASE.md`) |
 
 Never run `playwright install` (Chromium is preinstalled; version pinned to 1.56.1).
-Dev URL overrides: `?silent&campaign=c1&theme=desert|city|forest&map=40|64|96|debug_heights&seed=5&cls=heavy&diff=hard&bots=idle|enemies&endless&dur=20&renderScale=0.25&view=20,20&zoom=0.4`.
+Dev URL overrides: `?silent&campaign=c1&roster=scout&theme=desert|city|forest&map=40|64|96|debug_heights&seed=5&cls=heavy&diff=hard&bots=idle|enemies&endless&dur=20&renderScale=0.25&view=20,20&zoom=0.4`.
 
 ## 4. Architecture
 
@@ -182,10 +185,10 @@ android/     Capacitor project (committed), keystore/ debug key (committed) + de
 
 ## 7. Next steps (update every round)
 
-0. Owner: say "birleştir" to merge PR #4, then the round-05 PR (into the default branch `claude/tanky-tunky-setup-dw06hp`).
-1. Owner: install the round-05 APK (campaign + garage are in it; it also contains round 04) (Actions → "Android APK" → artifact; first uninstall once if the update error appears), test with
+0. Owner: say "birleştir" to merge PR #4, #5 and the round-06 PR in order (into the default branch `claude/tanky-tunky-setup-dw06hp`).
+1. Owner: install the round-06 APK (contains rounds 04–06; GitHub artifacts need a signed-in browser — offered: a Release page without sign-in) (Actions → "Android APK" → artifact; first uninstall once if the update error appears), test with
    `docs/PLAYTEST_CHECKLIST.md`, report feel of spray / ultimates / menu and whether the update error is gone.
-2. Open owner decisions (§1): K1 multiplayer, K3 map awareness (keep the HQ arrow?), K11 Trapper in code, T ability trees, G images; review the round-05 numbers (tower/HQ, budgets, stars, rewards, garage).
+2. Open owner decisions (§1): K1 multiplayer, K3 map awareness (keep the HQ arrow?), K11 Trapper in code, T ability trees, G images; review the round-05/06 numbers (tower/HQ, budgets, stars, rewards, garage, perks); report whether Scout spray still stutters on the phone (FPS counter).
 3. Campaign follow-ups (D): levels 4–12, other objectives (convoy, flag, survive), boss tanks every 4 levels, foot soldiers, hand-made/asymmetric maps.
    Not started: **(F)** multiplayer (lockstep over relay or Wi-Fi; needs INTERNET permission);
    **(G)** tank art pipeline from the owner's images / 3D models.
@@ -236,6 +239,6 @@ B1 landing correction / B2 Heavy are balance numbers (rule 4).
 - **No GPU in cloud CI** — perf gate uses a fill-rate-normalised backbuffer; real-device FPS must be noted by hand.
 - **Object occlusion** — tall buildings / plateau edges can hide tanks behind them (no see-through yet).
 - **Busier fights since round 03** — JS work per frame ~+2 ms vs round 02 (CPU 4x, 96×96); keep an eye on the perf gate.
-- **Spray fire load (C)** — 10–30 shells/s: pool shells, small hits = sparks not explosions, knockback scaled by damage,
+- **Spray fire load (C)** — mitigated in round 06 (D-050, perf spec "spray stress"); phone not measured. 10–30 shells/s: pool shells, small hits = sparks not explosions, knockback scaled by damage,
   aggregated damage numbers, continuous haptic pattern, capped sfx; spread via the sim `Rng`.
 - **Parallel sessions** — see §6; a session reading only the default branch sees an outdated game until PRs are merged.

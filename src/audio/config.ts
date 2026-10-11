@@ -28,7 +28,10 @@ export const AUDIO_CONFIG = {
   /** Default minimum interval between two identical sfx (ms) and per-sound overrides. */
   rateLimitMs: 30,
   rateLimitOverridesMs: {
-    hit_metal: 30,
+    // round 06: spray fire (10–30 bullets/s) — cap the per-bullet sounds so voices are not stolen every frame
+    hit_metal: 70,
+    fire_light: 60,
+    explosion_small: 50,
     hit_wall: 35,
     ricochet: 60,
     shell_whistle: 120,

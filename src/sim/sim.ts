@@ -25,7 +25,7 @@ export interface PlayerSpec {
   y: number;
   name?: string;
   /** Garage upgrades (human player only). */
-  boost?: TankBoost;
+  boost?: Partial<TankBoost>;
 }
 
 export interface SimOptions {
@@ -75,7 +75,7 @@ export function createState(opts: SimOptions): SimState {
     upgrades: 0,
     combatT: 0,
     regenNext: COMBAT.regen.outOfCombat,
-    boost: { hp: 1, speed: 1, damage: 1, ...p.boost },
+    boost: { hp: 1, speed: 1, damage: 1, fireRate: 1, chargeTime: 1, splash: 1, ...p.boost },
   }));
   const s: SimState = {
     tick: 0,

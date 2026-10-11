@@ -140,7 +140,7 @@ export interface CampaignOptions {
   level: CampaignLevel;
   playerClass: CombatClassId;
   aiLevel?: AiLevel;
-  playerBoost?: TankBoost;
+  playerBoost?: Partial<TankBoost>;
   playerName?: string;
   /** Debug/tests: shorter mission. */
   duration?: number;

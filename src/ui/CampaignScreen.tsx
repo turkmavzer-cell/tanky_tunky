@@ -29,6 +29,7 @@ export function CampaignScreen({ save, onPlay, onBack }: { save: SaveData; onPla
         <span className="credits" data-testid="credits">
           {t('menu.credits', { n: save.credits })}
         </span>
+        <span className="credits">{t('perk.parts', { n: save.parts })}</span>
       </div>
       <div className="level-list">
         {LEVELS.map((lv, i) => {

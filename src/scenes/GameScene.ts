@@ -66,10 +66,12 @@ export interface GameSceneOptions {
   noFog?: boolean;
   /** Override match length (s) — tests. */
   duration?: number;
+  /** Debug/perf: every tank of both teams uses this class (spray stress test, round 06). */
+  roster?: TankClassId;
   /** Campaign level id (round 05): play that mission instead of a Quick Match. */
   campaignLevel?: string;
   /** Garage multipliers for the player's tank (round 05). */
-  playerBoost?: TankBoost;
+  playerBoost?: Partial<TankBoost>;
 }
 
 export interface HudSnapshot {
@@ -111,6 +113,9 @@ export interface HudSnapshot {
   hqDist: number;
 }
 
+/** Spray fire: at most one vibration per this many ms (Capacitor bridge call per bullet stuttered, round 06). */
+const SPRAY_HAPTIC_MS = 140;
+
 const RES_CAP: Record<Quality, number> = { low: 1, medium: 1.5, high: 2 };
 const ARC_PX = 46;
 
@@ -141,6 +146,7 @@ export class GameScene {
   private chargeG = new Graphics();
   private tankViews: TankView[] = [];
   private shellViews = new Map<number, ShellView>();
+  private shellPool: ShellView[] = [];
   private lastRender = 0;
   private raf = 0;
   private disposed = false;
@@ -210,7 +216,7 @@ export class GameScene {
       this.match = createMatch({
         seed,
         map: map0,
-        teams: defaultTeams(seed, this.opts.playerClass ?? 'standard'),
+        teams: this.opts.roster ? [[this.opts.roster, this.opts.roster, this.opts.roster], [this.opts.roster, this.opts.roster, this.opts.roster]] : defaultTeams(seed, this.opts.playerClass ?? 'standard'),
         humanPlayer: true,
         aiLevel: this.opts.aiLevel,
         playerBoost: this.opts.playerBoost,
@@ -375,15 +381,23 @@ export class GameScene {
         case 'fire': {
           const t = s.tanks[e.tank];
           const visible = t.team === this.myTeam || this.seenAt(e.x, e.y);
+          const spray = TANKS[t.cls].spray !== undefined;
           if (visible) {
-            this.tankViews[e.tank].kick(6 + e.charge * 10);
-            this.fx.muzzle(this.sx(e.x, e.y), this.sy(e.x, e.y) - 14, worldAngleToScreen(e.angle), e.charge, e.kind === 'heavy');
+            if (spray) {
+              // spray bullets (10–30/s): tiny muzzle, small kick — the full effect per bullet caused stutter (round 06)
+              this.tankViews[e.tank].kick(2);
+              this.fx.muzzleLight(this.sx(e.x, e.y), this.sy(e.x, e.y) - 14, worldAngleToScreen(e.angle));
+            } else {
+              this.tankViews[e.tank].kick(6 + e.charge * 10);
+              this.fx.muzzle(this.sx(e.x, e.y), this.sy(e.x, e.y) - 14, worldAngleToScreen(e.angle), e.charge, e.kind === 'heavy');
+            }
           }
           const snd: SfxName = e.charge >= 0.95 ? 'fire_charged' : e.kind === 'artillery' ? 'fire_artillery' : t.cls === 'heavy' ? 'fire_heavy' : t.cls === 'scout' ? 'fire_light' : 'fire_medium';
           this.play(snd, e.x, e.y, e.charge);
           if (e.tank === this.localId) {
-            this.camera.addTrauma(0.12 + e.charge * 0.35);
-            haptic(e.charge >= 0.9 ? 'heavy' : e.charge >= 0.4 ? 'medium' : 'light');
+            this.camera.addTrauma(spray ? 0.02 : 0.12 + e.charge * 0.35);
+            if (spray) haptic('light', SPRAY_HAPTIC_MS);
+            else haptic(e.charge >= 0.9 ? 'heavy' : e.charge >= 0.4 ? 'medium' : 'light');
           }
           break;
         }
@@ -418,6 +432,10 @@ export class GameScene {
             if (seen) this.fx.sparks(px, py - 10, 24);
             this.play('alarm', e.x, e.y);
             if (e.owner === this.localId) haptic('heavy');
+          } else if (e.kind === 'standard' && e.owner >= 0 && TANKS[s.tanks[e.owner].cls].spray !== undefined) {
+            // spray bullet impact: a few sparks, no fireball, no explosion sound (the hit sound covers it)
+            if (seen) this.fx.sparks(px, py - 8, 3);
+            break;
           } else {
             if (seen) this.fx.explosion(px, py - 6, e.radius * 90, e.charge);
             this.play(e.kind === 'mine' ? 'mine_explode' : e.radius > 0.8 || e.charge > 0.6 ? 'explosion_big' : 'explosion_small', e.x, e.y, e.charge);
@@ -429,15 +447,19 @@ export class GameScene {
         case 'hit': {
           const t = s.tanks[e.target];
           const visible = canSeeTank(s, this.myTeam, t) || t.team === this.myTeam;
+          const by = e.by >= 0 ? s.tanks[e.by] : undefined;
+          const sprayHit = by !== undefined && TANKS[by.cls].spray !== undefined;
           if (visible) {
             this.tankViews[e.target].hitFlash();
-            this.fx.damageNumber(this.sx(t.x, t.y), this.sy(t.x, t.y) - 50, e.damage, e.damage >= TANKS[t.cls].hp * 0.25); // big hit = a quarter of the max hp
-            this.fx.sparks(this.sx(t.x, t.y), this.sy(t.x, t.y) - 16, 8);
+            // hits on one target within 0.35 s add up into one rising number (spray streams)
+            this.fx.damageNumber(this.sx(t.x, t.y), this.sy(t.x, t.y) - 50, e.damage, e.damage >= TANKS[t.cls].hp * 0.25, sprayHit ? e.target : -1);
+            this.fx.sparks(this.sx(t.x, t.y), this.sy(t.x, t.y) - 16, sprayHit ? 3 : 8);
           }
           this.play('hit_metal', t.x, t.y);
           if (e.target === this.localId) {
-            this.camera.addTrauma(0.3);
-            haptic('heavy');
+            this.camera.addTrauma(sprayHit ? 0.06 : 0.3);
+            if (sprayHit) haptic('medium', SPRAY_HAPTIC_MS);
+            else haptic('heavy');
           }
           break;
         }
@@ -688,13 +710,19 @@ export class GameScene {
       if (!ownShell && !this.seenAt(sh.x, sh.y)) continue;
       let v = this.shellViews.get(sh.id);
       if (!v) {
-        const sp = new Sprite(sh.kind === 'heavy' || sh.kind === 'artillery' ? this.fx.tex.shellHeavy : this.fx.tex.shell);
-        sp.anchor.set(0.5);
-        sp.blendMode = 'add';
-        const shd = new Sprite(this.fx.tex.shadow);
-        shd.anchor.set(0.5);
-        this.worldView.objects.addChild(shd, sp);
-        v = { s: sp, shadow: shd, seen: 1 };
+        // pooled (round 06): spray fire creates 10–30 shells/s; no Sprite allocation/destroy per bullet
+        v = this.shellPool.pop();
+        if (!v) {
+          const sp = new Sprite(this.fx.tex.shell);
+          sp.anchor.set(0.5);
+          sp.blendMode = 'add';
+          const shd = new Sprite(this.fx.tex.shadow);
+          shd.anchor.set(0.5);
+          this.worldView.objects.addChild(shd, sp);
+          v = { s: sp, shadow: shd, seen: 1 };
+        }
+        v.s.texture = sh.kind === 'heavy' || sh.kind === 'artillery' ? this.fx.tex.shellHeavy : this.fx.tex.shell;
+        v.s.visible = v.shadow.visible = true;
         this.shellViews.set(sh.id, v);
       }
       v.seen = 1;
@@ -723,8 +751,8 @@ export class GameScene {
     }
     for (const [id, v] of this.shellViews) {
       if (!v.seen) {
-        v.s.destroy();
-        v.shadow.destroy();
+        v.s.visible = v.shadow.visible = false;
+        this.shellPool.push(v);
         this.shellViews.delete(id);
       }
     }

@@ -31,7 +31,7 @@ export function MainMenu({ onSolo, onMulti, onSettings }: { onSolo: () => void; 
   );
 }
 
-/** Tek Oyunculu: Hızlı Maç, Kampanya (round 05, D) and Garaj (round 05, E). */
+/** Tek Oyunculu: Hızlı Maç, Görevler (campaign, round 05/06) and Garaj (round 05). */
 export function SoloMenu({ credits, onQuick, onCampaign, onGarage, onBack }: { credits: number; onQuick: () => void; onCampaign: () => void; onGarage: () => void; onBack: () => void }) {
   return (
     <div className="screen menu">

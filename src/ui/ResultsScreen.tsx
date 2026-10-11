@@ -2,6 +2,8 @@ import type { ScoreRow } from '../game/matchSetup';
 import { t } from '../i18n';
 import type { MissionResult } from '../game/campaign';
 import { Stars, fmtTime } from './CampaignScreen';
+import type { SaveData } from '../core/save';
+import { PerkPicker } from './PerkPicker';
 
 /** Full-screen scoreboard (round-01 job 4): most kills first, ties → fewer deaths; player row highlighted. */
 export function ResultsScreen({ rows, localId, record, credits = 0, onAgain, onMenu }: { rows: ScoreRow[]; localId: number; record: { bestKills: number; bestKD: number }; credits?: number; onAgain: () => void; onMenu: () => void }) {
@@ -63,6 +65,9 @@ export function ResultsScreen({ rows, localId, record, credits = 0, onAgain, onM
 export function MissionResults({
   result,
   credits,
+  parts,
+  save,
+  onSave,
   hasNext,
   onNext,
   onRetry,
@@ -70,6 +75,10 @@ export function MissionResults({
 }: {
   result: MissionResult;
   credits: number;
+  /** Upgrade parts this mission paid (round 06). */
+  parts: number;
+  save: SaveData;
+  onSave: (s: SaveData) => void;
   hasNext: boolean;
   onNext: () => void;
   onRetry: () => void;
@@ -103,6 +112,12 @@ export function MissionResults({
             {t('mission.credits', { n: credits })}
           </div>
         )}
+        {parts > 0 && (
+          <div className="credit-gain" data-testid="parts-gain">
+            {t('perk.gain', { n: parts })}
+          </div>
+        )}
+        <PerkPicker save={save} onChange={onSave} />
         <div className="row">
           {result.won && hasNext && (
             <button className="btn btn-primary" data-testid="next-level" onClick={onNext}>

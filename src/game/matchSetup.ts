@@ -28,7 +28,7 @@ export interface MatchOptions {
   /** Bot difficulty for every bot in the match, allies included (owner decision). */
   aiLevel?: AiLevel;
   /** Garage multipliers for the human player's tank (round 05). */
-  playerBoost?: TankBoost;
+  playerBoost?: Partial<TankBoost>;
 }
 
 export interface MatchHandle {

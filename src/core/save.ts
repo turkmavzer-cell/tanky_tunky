@@ -64,9 +64,12 @@ export interface SaveData {
   records: Records;
   campaign: CampaignProgress;
   garage: Partial<Record<CombatClassId, GarageLevels>>;
+  /** Round 06: unspent upgrade parts (won missions) and perk level per class. */
+  parts: number;
+  perks: Partial<Record<CombatClassId, number>>;
 }
 
-export const SCHEMA_VERSION = 5;
+export const SCHEMA_VERSION = 6;
 
 export function defaultSave(): SaveData {
   return {
@@ -94,6 +97,8 @@ export function defaultSave(): SaveData {
     records: { bestKills: 0, bestKD: 0, matches: 0 },
     campaign: { stars: {}, bestTime: {} },
     garage: {},
+    parts: 0,
+    perks: {},
   };
 }
 
@@ -107,6 +112,7 @@ export function migrate(raw: unknown): SaveData {
   // v0 → v1: no structural changes. v1 → v2: settings.edgeHighlight, settings.cooldownMul, records.
   // v2 → v3: settings.difficulty. v3 → v4: settings.mapTheme (defaults filled in from defaultSave).
   // v4 → v5: campaign progress + garage levels (empty for old saves; credits already existed).
+  // v5 → v6: upgrade parts + per-class perk levels (0 / empty).
   return {
     ...def,
     ...r,
@@ -114,6 +120,8 @@ export function migrate(raw: unknown): SaveData {
     records: { ...def.records, ...(r.records ?? {}) },
     campaign: { stars: { ...(r.campaign?.stars ?? {}) }, bestTime: { ...(r.campaign?.bestTime ?? {}) } },
     garage: { ...(r.garage ?? {}) },
+    parts: typeof r.parts === 'number' && r.parts >= 0 ? r.parts : 0,
+    perks: { ...(r.perks ?? {}) },
     credits: typeof r.credits === 'number' && r.credits >= 0 ? r.credits : 0,
     schemaVersion: SCHEMA_VERSION,
   };

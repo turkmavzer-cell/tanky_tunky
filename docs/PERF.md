@@ -28,3 +28,9 @@ Profiling helper: `npm run build && node tools/profile.mjs` (top self-time funct
 
 ## Round 05 (2026-10-11)
 Cloud container: p95 33.4 ms, fps 49, JS work mean 5.9 ms / p95 12.9 ms (96×96, CPU 4x). Same container measured 66.7 ms for the unchanged round-04 baseline earlier, i.e. machine noise dominates; GitHub CI run #43/#44: perf gate passed (p95 < 22 ms; exact value not read from the log). Campaign maps are 96×96 like the perf map; up to 18 tanks/structures on c3 (perf map has 6) — **not measured on a phone**.
+
+## Round 06 (2026-10-11) — spray stress
+New perf spec "spray stress, 6 scouts at CPU 4x" (`e2e/perf.spec.ts`, 40×40, `?roster=scout`, Overdrive). Container numbers:
+before JS work mean 12.5 ms / p95 30.7 ms, 24.6 fps → after 7.0 ms / 14.9 ms, 39.2 fps. Fixes: spray bullets use a 1–2 particle muzzle and
+3-spark impacts (no fireball), damage numbers are BitmapText and summed per target for 0.35 s, particle pool grab is O(1) (ring cursor instead of
+scanning 700 slots per emit), shell sprites pooled, haptics ≤ 1 per 140 ms, sound caps. Frame gates fail in this container (slower than CI). Phone not measured.

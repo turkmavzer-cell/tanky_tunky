@@ -213,3 +213,17 @@ input[type='range'] { width: 200px; accent-color: var(--accent); }
 /* the left HUD block never runs under the centred timer: chips wrap to a second line instead */
 .hud-status { max-width: calc(50% - 64px - var(--safe-l)); flex-wrap: wrap; row-gap: 6px; }
 .hud-status.right { max-width: calc(50% - 64px - var(--safe-r)); }
+
+/* ---- round 06: upgrade parts / perks */
+.perk-row { border-top: 1px dashed #4b5466; padding-top: 4px; }
+.pips.perk i { width: 8px; }
+.pips.perk i.on { background: #7fe0ff; border-color: #bff1ff; }
+.perk-picker { display: flex; flex-direction: column; gap: 6px; align-items: center; margin-top: 2px; }
+.pp-head { font-size: 15px; display: flex; gap: 10px; align-items: baseline; }
+.pp-list { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+.btn.pp-btn { min-height: 0; padding: 6px 10px; display: flex; flex-direction: column; align-items: center; gap: 1px; font-size: 14px; letter-spacing: 0; }
+.btn.pp-btn small { margin: 0; font-size: 11px; color: #bff1ff; }
+.btn.pp-btn small.pp-lvl { color: var(--muted); }
+.garage-row { grid-template-columns: minmax(0, 1fr) auto; }
+.gr-meta { min-width: 0; flex-wrap: wrap; row-gap: 2px; }
+.perk-row .gr-eff { white-space: normal; line-height: 1.15; }
