@@ -1,0 +1,39 @@
+name: Changelog check
+
+# Non-blocking: warns when game code changed but docs/CHANGELOG.md did not.
+# Add the entry with: npm run log -- <kind> "Title" "Details"
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  changelog:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Warn if code changed without a changelog entry
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE_REF: ${{ github.base_ref }}
+          BEFORE: ${{ github.event.before }}
+        run: |
+          if [ "$EVENT" = "pull_request" ]; then
+            CHANGED=$(git diff --name-only "origin/${BASE_REF}...HEAD" 2>/dev/null || git diff --name-only HEAD~1..HEAD)
+          elif [ -n "$BEFORE" ] && [ "$BEFORE" != "0000000000000000000000000000000000000000" ]; then
+            CHANGED=$(git diff --name-only "$BEFORE..HEAD" 2>/dev/null || git diff --name-only HEAD~1..HEAD)
+          else
+            CHANGED=$(git diff --name-only HEAD~1..HEAD 2>/dev/null || true)
+          fi
+          echo "Changed files:"; echo "$CHANGED"
+          CODE=$(echo "$CHANGED" | grep -E '^(src/|android/app/|tools/|tests/|e2e/)' || true)
+          LOG=$(echo "$CHANGED" | grep -x 'docs/CHANGELOG.md' || true)
+          if [ -n "$CODE" ] && [ -z "$LOG" ]; then
+            echo "::warning title=Changelog missing::Code changed but docs/CHANGELOG.md was not updated. Run: npm run log -- <kind> \"Title\" \"Details\""
+            echo "### Changelog entry missing" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Changelog OK"
+          fi
