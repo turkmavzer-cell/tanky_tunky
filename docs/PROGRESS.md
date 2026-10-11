@@ -194,7 +194,7 @@ never on allies, threshold left to Claude (30 % charge), Artillery = fire patch 
 | Tank cards show the charged special | ✅ | e2e round07 01 (card right column scrolls now) |
 
 Balance (200 matches, hard, desert): Scout 52.6 % ✅, Heavy 68.9 %, Standard 57.8 %, Artillery 23.1 % — see BALANCE_REPORT; not tuned (rule 4).
-Gates: lint ✅ typecheck ✅ unit 176 ✅ E2E 44 ✅. Headless browser runs at 3–5 fps, so the 0.25 s laser flash is only sometimes in a screenshot.
+Gates: lint ✅ typecheck ✅ unit 176 ✅ E2E 44 ✅. GitHub CI #51/#52 green (incl. perf gates), PR #7, APK #29. Headless browser runs at 3–5 fps, so the 0.25 s laser flash is only sometimes in a screenshot.
 
 To try on the phone: Ağır hold fire → red laser line, ring around the target, other tanks nearby lose hp; kill one → extra blast;
 Dengeli charged shot through two tanks; Topçu charged shot → dark burning patch for 2 s; Çevik now 6 shots/s.
