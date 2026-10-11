@@ -148,7 +148,7 @@ c2 won in 236 s (13), c3 won in 349 s (15). Quick Match balance unchanged (200 m
 Standard 50.5 %, Artillery 22.7 %).
 
 Gates: lint ✅ typecheck ✅ unit 165 ✅ E2E 36 ✅ (round-04 menu test updated: Kampanya is enabled now). Perf gate in this container:
-p95 33.4 ms ❌ (container is slower than CI — round 04 baseline here was 66.7 ms and CI was green); **CI decides, not verified yet**.
+p95 33.4 ms ❌ (container is slower than CI — round 04 baseline here was 66.7 ms). **GitHub CI #43/#44 green including the perf gate (< 22 ms)**; PR #5, APK run #25.
 Not verified on a phone: everything in this round.
 
 All new numbers (tower/HQ stats, threat costs, level budgets, star limits, rewards, garage costs and %) are Claude's first proposal —

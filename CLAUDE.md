@@ -37,7 +37,7 @@ design is gone with the Trapper, see D-036/D-037 and open decision K3.)
 
 ## 1. Where we are now (update every round)
 
-- **Last finished round:** Round 05 (2026-10-11, branch `fix/round-05-campaign-progression`, PR into the round-04 branch) —
+- **Last finished round:** Round 05 (2026-10-11, branch `fix/round-05-campaign-progression`, **PR #5 into the round-04 branch, CI green incl. perf gate, not merged**) —
   D campaign (3 levels, towers + HQ + guarded outposts) and E progression (stars, credits, garage, save v5). See `docs/PROGRESS.md`.
 - **Previous:** Round 04 (branch `fix/round-04-balance-aim-skills`, **PR #4 open, CI green incl. perf gate, not merged** — waiting for
   the owner's "birleştir") — B1 Artillery +25 %, A aim on screen only, C two abilities per tank + Scout spray, B menu skeleton.
@@ -45,7 +45,7 @@ design is gone with the Trapper, see D-036/D-037 and open decision K3.)
   (owner: "birleştir"; merge head `f94cbf8`). The default branch now holds round 03 + the change log. **Start new work
   from the default branch**: `git checkout -b fix/round-04-<topic> origin/claude/tanky-tunky-setup-dw06hp`.
   From 2026-10-11 the owner continues in the cloud/phone session; the desktop session pulls before working.
-- **Latest debug APK:** Android APK run **#23** (round 04: B1, A, C, B; green). Previous: run #16 (round 03). Signed with the committed debug
+- **Latest debug APK:** Android APK run **#25** (round 05 = round 04 + campaign + garage; 4.5 MB artifact). Previous: #23 (round 04), #16 (round 03). Signed with the committed debug
   key (`keystore/debug.sha256`), CI fails if the signature differs (D-035). The owner must uninstall **once** after
   D-035, then every newer APK installs over the old one — **not yet confirmed on the phone**.
 

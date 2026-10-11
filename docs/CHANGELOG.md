@@ -57,6 +57,8 @@ Tam liste ve öneriler: `CLAUDE.md` §1 "Pending owner decisions" (B1, B2, A, K1
 ## 4. Günlük (en yeni en üstte)
 
 <!-- LOG:START -->
+### 2026-10-11 — [degisiklik] Round 05 PR #5, CI yeşil, APK #25
+PR #5 (round 04 dalına) açıldı; CI (lint, tip, birim, E2E, performans kapısı) yeşil; Android APK #25 üretildi. Telefonda denenmedi.
 ### 2026-10-11 — [duzeltme] Görev çubuğu süreyle çakışıyordu
 Ekran görüntüsünde hedef çubuğu ve ulti çipi sayacın altına giriyordu; hedef çubuğu sayacın altına alındı, sol HUD satırı ortaya taşmadan alt satıra kayıyor.
 ### 2026-10-11 — [yenilik] İlerleme: kredi, yıldız, garaj, kayıt v5
