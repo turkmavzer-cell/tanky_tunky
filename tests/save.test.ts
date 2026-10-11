@@ -56,8 +56,25 @@ describe('save schema v3 (round 02)', () => {
 describe('save schema v4 (round 03)', () => {
   it('migrates a v3 save: adds mapTheme = desert, keeps difficulty', () => {
     const m = migrate({ schemaVersion: 3, settings: { difficulty: 'hard' } });
-    expect(m.schemaVersion).toBe(4);
+    expect(m.schemaVersion).toBe(SCHEMA_VERSION);
     expect(m.settings.mapTheme).toBe('desert');
     expect(m.settings.difficulty).toBe('hard');
+  });
+});
+
+describe('save schema v5 (round 05)', () => {
+  it('migrates a v4 save: keeps credits/settings, adds empty campaign + garage', () => {
+    const m = migrate({ schemaVersion: 4, credits: 70, settings: { mapTheme: 'city' } });
+    expect(m.schemaVersion).toBe(5);
+    expect(m.credits).toBe(70);
+    expect(m.settings.mapTheme).toBe('city');
+    expect(m.campaign).toEqual({ stars: {}, bestTime: {} });
+    expect(m.garage).toEqual({});
+  });
+  it('keeps v5 progress and rejects negative credits', () => {
+    const m = migrate({ schemaVersion: 5, credits: -5, campaign: { stars: { c1: 2 }, bestTime: { c1: 200 } }, garage: { heavy: { armor: 1, engine: 0, gun: 2 } } });
+    expect(m.credits).toBe(0);
+    expect(m.campaign.stars.c1).toBe(2);
+    expect(m.garage.heavy).toEqual({ armor: 1, engine: 0, gun: 2 });
   });
 });

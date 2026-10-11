@@ -67,6 +67,11 @@ export class AiBot {
   private lockId = -1;
   private strafe = 1;
   private retreatGoal: PathPoint | null = null;
+  /**
+   * Campaign outpost guard (round 05): the bot patrols within `r` tiles of (x, y) and only reacts to enemies
+   * closer than `leash` tiles to that point, so outposts are fought one by one. null = roam freely (Quick Match).
+   */
+  guard: { x: number; y: number; r: number; leash: number } | null = null;
 
   constructor(
     readonly id: number,
@@ -146,7 +151,12 @@ export class AiBot {
     this.stateT += dt;
     const def = TANKS[me.cls];
     const now = this.now(s);
-    const seen = this.perceive(s, me);
+    let seen = this.perceive(s, me);
+    const g = this.guard;
+    if (g) {
+      if (seen && dhypot(seen.x - g.x, seen.y - g.y) > g.leash) seen = null;
+      if (this.known && dhypot(this.known.x - g.x, this.known.y - g.y) > g.leash) this.known = null;
+    }
     const fresh = this.known && now - this.known.t < aiJson.suspicionTime ? this.known : null;
 
     // ---- transitions
@@ -349,6 +359,15 @@ export class AiBot {
     if (this.pathGoal >= 0 && this.path.length) {
       const W = s.map.width;
       return { x: this.pathGoal % W, y: Math.floor(this.pathGoal / W) };
+    }
+    const g = this.guard;
+    if (g) {
+      for (let k = 0; k < 6; k++) {
+        const x = Math.floor(g.x + this.rng.range(-g.r, g.r));
+        const y = Math.floor(g.y + this.rng.range(-g.r, g.r));
+        if (isTileOpen(s.map, x, y)) return { x, y };
+      }
+      return { x: Math.floor(g.x), y: Math.floor(g.y) };
     }
     // Short matches need contact: patrol between objective zones and spawn points biased toward the
     // map centre / enemy half (never toward a hidden enemy — no position knowledge is used).

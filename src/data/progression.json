@@ -1,0 +1,13 @@
+{
+  "$comment": "Progression (round 05, stream E; brief §3: three upgrade branches per class, small but noticeable, bought with credits). perLevel = multiplier added per bought level on base max hp (armor), top speed (engine) or damage dealt (gun). cost[i] = credits for level i+1. Applies to the human player's tank only, in every mode. quickMatch: credits per kill and for a won match (your team has more kills). All numbers are a first proposal — owner decides (rule 4).",
+  "garage": {
+    "maxLevel": 3,
+    "cost": [150, 300, 500],
+    "branches": {
+      "armor": { "stat": "hp", "perLevel": 0.04 },
+      "engine": { "stat": "speed", "perLevel": 0.03 },
+      "gun": { "stat": "damage", "perLevel": 0.04 }
+    }
+  },
+  "quickMatch": { "perKill": 5, "win": 25 }
+}

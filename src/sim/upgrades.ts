@@ -7,7 +7,7 @@
  * - A tank that has neither taken nor dealt damage nor fired for `outOfCombat` s heals
  *   `amount` × max hp, then again every `interval` s.
  */
-import { COMBAT, TANKS } from './config';
+import { COMBAT, TANKS, isPve } from './config';
 import type { SimState, Tank } from './state';
 import { Feature } from '../world/terrain';
 import { setFeature } from '../world/map';
@@ -17,12 +17,17 @@ const REGEN = COMBAT.regen;
 
 /** Max hp including collected upgrades. */
 export function maxHp(t: Tank): number {
-  return TANKS[t.cls].hp * (1 + t.upgrades * UP.perPickup);
+  return baseHp(t) * (1 + t.upgrades * UP.perPickup);
+}
+
+/** Max hp without crate upgrades (class hp × garage armor). */
+export function baseHp(t: Tank): number {
+  return TANKS[t.cls].hp * t.boost.hp;
 }
 
 /** Multiplier on all damage this tank deals (shells, abilities, mines). */
 export function damageMul(t: Tank): number {
-  return 1 + t.upgrades * UP.perPickup;
+  return (1 + t.upgrades * UP.perPickup) * t.boost.damage;
 }
 
 /** Combat activity (took/dealt damage or fired): regeneration waits again. */
@@ -34,7 +39,7 @@ export function markCombat(t: Tank): void {
 /** Fresh life: no upgrades, full base hp, regeneration timer reset. */
 export function resetUpgrades(t: Tank): void {
   t.upgrades = 0;
-  t.hp = TANKS[t.cls].hp;
+  t.hp = baseHp(t);
   markCombat(t);
 }
 
@@ -53,11 +58,11 @@ export function updatePickups(s: SimState, dt: number): void {
   for (let i = s.pickups.length - 1; i >= 0; i--) {
     const p = s.pickups[i];
     for (const t of s.tanks) {
-      if (!t.alive || t.upgrades >= UP.max) continue;
+      if (!t.alive || t.upgrades >= UP.max || isPve(t.cls)) continue;
       const rr = r + TANKS[t.cls].radius;
       if ((t.x - p.x) * (t.x - p.x) + (t.y - p.y) * (t.y - p.y) > rr * rr) continue;
       t.upgrades++;
-      t.hp += TANKS[t.cls].hp * UP.perPickup;
+      t.hp += baseHp(t) * UP.perPickup;
       s.pickups.splice(i, 1);
       s.events.push({ type: 'pickup', tank: t.id, x: p.x, y: p.y, level: t.upgrades });
       break;
@@ -82,6 +87,7 @@ export function updatePickups(s: SimState, dt: number): void {
 
 /** Out-of-combat regeneration for one tank (alive, during play). */
 export function updateRegen(s: SimState, t: Tank, dt: number): void {
+  if (isPve(t.cls)) return; // structures do not repair themselves
   t.combatT += dt;
   if (t.combatT < t.regenNext) return;
   t.regenNext += REGEN.interval;

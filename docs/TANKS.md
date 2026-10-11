@@ -66,6 +66,26 @@ Aşırı Yük ile 30 mermi/sn.
 ### Topçu: inişte +%25 (B1, round 04)
 Kavisli mermiler (Topçu atışı ve Yaylım Ateşi) düştükleri yerde patlama hasarının **×1,25**'ini verir (780 → 975 merkez).
 
+## Kampanya yapıları (round 05) — ilk öneri, sen karar verirsin
+
+| Yapı | Can | Zırh | Hasar | Atış arası | Menzil | Not |
+|---|---|---|---|---|---|---|
+| Kule | 3200 | %10 | 340 | 1,8 sn | 7,5 | Hareket etmez, yeniden doğmaz, can yenilemez. İlk atış zorluk gecikmesiyle (Kolay 5 sn … Ekstrem 0). |
+| Karargâh (HQ) | 12000 | %15 | — | — | — | Silahı yok; yıkılınca görev kazanılır. |
+
+Karakol "tehdit bütçesi" (`enemies.json`): Kule 2, Çevik 2, Dengeli 3, Topçu 3, Ağır 4. Düşman tankları karakolunun 3 kare çevresinde
+dolaşır, karakola 9 kareden uzak düşmana tepki vermez.
+
+## Garaj yükseltmeleri (round 05) — ilk öneri
+
+| Dal | Seviye başına | En fazla | Fiyat (1/2/3. seviye) |
+|---|---|---|---|
+| Zırh | +%4 can | 3 (+%12) | 150 / 300 / 500 kredi |
+| Motor | +%3 hız | 3 (+%9) | 150 / 300 / 500 |
+| Top | +%4 hasar | 3 (+%12) | 150 / 300 / 500 |
+
+Sadece senin tankına, her modda uygulanır. Kredi: kampanya bölümü ilk geçiş 120/160/200 + yıldız başına 40/50/60; Hızlı Maç öldürme başına 5, kazanınca +25.
+
 ## ESKİ ÖNERİ (round 04'te büyük bölümü uygulandı; aşağıdaki tablolar tarihsel)
 
 Bu bölüm 2026-10-10 bulut oturumunda konuşulan istek ve önerilerdir. **Hiçbiri uygulanmadı**; sayılar sahibinin onayıyla

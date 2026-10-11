@@ -3,7 +3,7 @@
  * Respawns happen anywhere on the map at a safe spawn point. All timers use simulation time.
  */
 import { resetUpgrades } from './upgrades';
-import { MATCH } from './config';
+import { MATCH, isPve } from './config';
 import type { SimState, Tank } from './state';
 import { resetAbility } from './abilities';
 import type { MapPoint } from '../world/map';
@@ -30,13 +30,41 @@ export function updateMatch(s: SimState, dt: number): boolean {
   const after = Math.ceil(m.timeLeft);
   if (after !== before && after <= MATCH.finalWarning && after > 0) s.events.push({ type: 'matchTick', secondsLeft: after });
   if (m.timeLeft <= 0) {
-    m.phase = 'ended';
-    m.t = 0;
-    for (const t of s.tanks) t.charging = false;
-    s.events.push({ type: 'matchEnd' });
+    endMatch(s, s.rules.mode === 'campaign' ? 1 : -1); // campaign: time out = mission failed
     return false;
   }
   return true;
+}
+
+/** Campaign structures never come back; in a campaign the enemy team (1) does not respawn either. */
+export function canRespawn(s: SimState, t: Tank): boolean {
+  if (isPve(t.cls)) return false;
+  return !(s.rules.mode === 'campaign' && t.team === 1);
+}
+
+/**
+ * Campaign objective (round 05): the mission is won the moment every enemy HQ is destroyed.
+ * Running out of time is a loss (handled in updateMatch).
+ */
+export function checkObjective(s: SimState): void {
+  if (s.rules.mode !== 'campaign' || s.match.phase !== 'playing') return;
+  let hq = 0;
+  let alive = 0;
+  for (const t of s.tanks) {
+    if (t.cls !== 'hq' || t.team === 0) continue;
+    hq++;
+    if (t.alive) alive++;
+  }
+  if (hq > 0 && alive === 0) endMatch(s, 0);
+}
+
+function endMatch(s: SimState, winner: number): void {
+  const m = s.match;
+  m.phase = 'ended';
+  m.t = 0;
+  m.winner = winner;
+  for (const t of s.tanks) t.charging = false;
+  s.events.push({ type: 'matchEnd' });
 }
 
 /**
@@ -46,7 +74,8 @@ export function updateMatch(s: SimState, dt: number): boolean {
  * the nearest enemy) is used. Deterministic: ties broken by index.
  */
 export function chooseSpawn(s: SimState, t: Tank, deathX: number, deathY: number): { point: MapPoint; index: number } {
-  const pts = s.map.spawnPoints;
+  // campaign: the player's team always comes back at its own base (never behind enemy outposts)
+  const pts = s.rules.mode === 'campaign' && s.map.bases[t.team] ? s.map.bases[t.team].spawns : s.map.spawnPoints;
   const W = s.map.width;
   const enemyTeam = t.team === 0 ? 1 : 0;
   const enemies = s.tanks.filter((e) => e.alive && e.team !== t.team);

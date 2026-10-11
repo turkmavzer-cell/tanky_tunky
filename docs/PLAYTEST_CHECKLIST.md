@@ -63,6 +63,15 @@ Measurable items (frame time, input latency proxies, APK size) are automated —
 - [ ] No visible stutter while driving across the map (note FPS counter: target 60, min 45).
 - [ ] Device does not get uncomfortably hot after 10 min.
 
+## Round 05 (telefonda dene)
+- [ ] Tek Oyunculu → Kampanya: Bölüm 1 açık, 2–3 kilitli; Bölüm 1'i geçince 2 açılıyor.
+- [ ] Görevde kırmızı ok karargâhı gösteriyor, mesafe azalıyor; üstte "Karargâhı yok et" + HQ can çubuğu + kalan düşman.
+- [ ] Kuleler yaklaşınca ateş ediyor mu, çok mu güçlü/zayıf? Düşman tankları karakolunda kalıyor mu?
+- [ ] Ölünce kendi üssünde doğuyorsun (düşman hattının arkasında değil).
+- [ ] Görev sonu: yıldızlar, süre, kredi; "Sonraki bölüm" çalışıyor.
+- [ ] Garaj: yükseltme alınca kredi düşüyor; maçta can/hız/hasar farkı hissediliyor mu?
+- [ ] Hızlı Maç sonunda kredi yazıyor.
+
 ## Round 04 (telefonda dene)
 - [ ] ULTİ butonu YETENEK'in sol üstünde; dolunca turuncu parlıyor, sayaç akıyor.
 - [ ] Çevik: ATEŞ'e basılı tut = seri atış (~10/sn); his iyi mi, çok mu hızlı/zayıf? Aşırı Yük (Q) ile 3 katı.

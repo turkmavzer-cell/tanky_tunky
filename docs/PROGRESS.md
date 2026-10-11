@@ -125,6 +125,38 @@ Balance (120 matches, 3v3, 40×40, hard bots, desert; not tuned): Scout 62.0 %, 
 To try on the phone: second (ULT) button above-left of YETENEK; Scout hold-fire spray feel + Aşırı Yük; Ağır Gümbürtü radius 4 and Onarım;
 Dengeli EMP stun; Topçu Hazır Atış then Yaylım Ateşi (45 s); turret ignores enemies off screen; new menu.
 
+## Round 05 (2026-10-11) — campaign (D) + progression (E)
+
+Branch `fix/round-05-campaign-progression` (from round 04, PR #4 not merged yet → this PR targets the round-04 branch).
+Owner: "Oyun ile ilgili tüm planları yapmaya başla" → D + E built with the K2/K4 proposals (96×96 maps, first 3 levels,
+hybrid outposts). F (multiplayer) and G (art) still wait: F needs K1 (INTERNET permission + relay or Wi-Fi), G needs the images.
+
+| Item | State | Evidence |
+|---|---|---|
+| PvE structures: gun tower + HQ (`tanks.json` `pve:true`, immovable, no respawn/regen/pickups) | ✅ | `tests/campaign.test.ts` "structures never move…", tower shoots test; art in `tankArt.ts` |
+| Tower controller (`TowerBot`, difficulty fire delay) + outpost guard mode for enemy tanks (`AiBot.guard`) | ✅ | unit tests; `tools/campaign-sim.ts` |
+| `levels.json` (3 levels: Kum Kalesi/çöl, Beton Orman/şehir, Yeşil Cephe/orman) + `enemies.json` (threat costs, guard, spacing) | ✅ | placement test: every unit open + reachable from the player base, spacing kept |
+| Mission rules: `rules.mode = 'campaign'`, win = HQ destroyed, time out = loss, team 1 no respawn, player respawns at own base | ✅ | unit tests (win / time out / stars) |
+| Stars (1 win, 2 deaths ≤ N, 3 within time) + credits, unlock chain, best time | ✅ | `tests/progression.test.ts` |
+| Garage: armor/engine/gun × 3 levels per tank (`progression.json`), applied to the player's tank in every mode | ✅ | unit test (boost only on tank 0); e2e 04 |
+| Quick Match pays credits (5/kill, +25 for a won match) | ✅ | e2e 07 |
+| Save schema v5 (campaign stars/bestTime, garage; v4 saves migrate) | ✅ | `tests/save.test.ts` |
+| UI: Kampanya + Garaj buttons enabled, level list, mission HUD (objective chip under the timer, HQ hp, enemies left, HQ direction arrow), mission results | ✅ | e2e `round05.spec.ts` (7), screenshots `docs/screens/round-05/` inspected (HUD overlap with the timer found and fixed) |
+
+Headless campaign (`npx tsx tools/campaign-sim.ts standard normal`, a bot plays tank 0): c1 won in 189 s (9 enemies),
+c2 won in 236 s (13), c3 won in 349 s (15). Quick Match balance unchanged (200 matches hard/desert: Scout 63.9 %, Heavy 63.6 %,
+Standard 50.5 %, Artillery 22.7 %).
+
+Gates: lint ✅ typecheck ✅ unit 165 ✅ E2E 36 ✅ (round-04 menu test updated: Kampanya is enabled now). Perf gate in this container:
+p95 33.4 ms ❌ (container is slower than CI — round 04 baseline here was 66.7 ms and CI was green); **CI decides, not verified yet**.
+Not verified on a phone: everything in this round.
+
+All new numbers (tower/HQ stats, threat costs, level budgets, star limits, rewards, garage costs and %) are Claude's first proposal —
+owner decides (rule 4). Assumption: HQ direction arrow on screen (part of open decision K3).
+
+To try on the phone: Tek Oyunculu → Kampanya → Bölüm 1; find and destroy the HQ (red arrow + distance); towers shoot when you come
+close; enemy tanks stay at their outposts; results stars/credits; Garaj: buy an upgrade and feel it in a match.
+
 ## Open questions for the owner
 
 See `CLAUDE.md` §1 "Pending owner decisions" for options and proposals:

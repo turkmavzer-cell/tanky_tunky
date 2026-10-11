@@ -57,6 +57,14 @@ Tam liste ve öneriler: `CLAUDE.md` §1 "Pending owner decisions" (B1, B2, A, K1
 ## 4. Günlük (en yeni en üstte)
 
 <!-- LOG:START -->
+### 2026-10-11 — [duzeltme] Görev çubuğu süreyle çakışıyordu
+Ekran görüntüsünde hedef çubuğu ve ulti çipi sayacın altına giriyordu; hedef çubuğu sayacın altına alındı, sol HUD satırı ortaya taşmadan alt satıra kayıyor.
+### 2026-10-11 — [yenilik] İlerleme: kredi, yıldız, garaj, kayıt v5
+Bölümler sırayla açılır; ilk geçiş + yıldız başına kredi, Hızlı Maç öldürme başına 5 (+25 kazanınca). Garajda her tank için Zırh/Motor/Top 3 seviye (+%4 can, +%3 hız, +%4 hasar; 150/300/500 kredi), sadece senin tankına. Kayıt şeması v5 (eski kayıtlar taşınır). Tüm sayılar ilk öneri, sahibi karar verir.
+### 2026-10-11 — [yenilik] Kampanya: 3 bölüm, kuleler, karargâh
+96x96 temalı haritalarda 3 bölüm (Kum Kalesi, Beton Orman, Yeşil Cephe). Karakolları kuleler ve karakolunu koruyan düşman tankları tutar; karargâhı yıkınca görev kazanılır, süre biterse kaybedilir. Yıldızlar: kazan / az ölüm / hızlı bitir. HUD: hedef çubuğu ve karargâh yön oku. Botlarla başsız simülasyonda 3 bölüm de kazanıldı; telefonda doğrulanmadı.
+### 2026-10-11 — [konusma] Sahip: tüm planlara başla
+Cihan 'Oyun ile ilgili tüm planları yapmaya başla' dedi. K2/K4 önerisiyle kampanya (D) ve ilerleme (E) yapıldı; çok oyunculu (F, K1 + internet izni) ve tank görselleri (G, resimler) hâlâ bekliyor.
 ### 2026-10-11 — [degisiklik] CLAUDE.md güncellendi
 Round 04 durumu: PR #4 açık, CI yeşil (perf kapısı dahil), APK #23; yol haritasında yetenek sistemi (C) tamam; D/E/F/G için sahibinin cevabını bekleyen kararlar listelendi. Kod değişmedi.
 ### 2026-10-11 — [konusma] Round 04 durumu ve performans uyarısı

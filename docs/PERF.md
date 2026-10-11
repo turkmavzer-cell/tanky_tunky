@@ -25,3 +25,6 @@ same world view (fill-rate-normalised). Real-device numbers are recorded below b
 | 2026-10-09 | round 03 (D-041 A* throttling) | same | **p95 16.8 ms ✅**, JS work mean 8.7–9.6 ms (p95 16–19); headless sim p99 per tick on 96² forest 21 → 8 ms |
 
 Profiling helper: `npm run build && node tools/profile.mjs` (top self-time functions of a live match at CPU 4x).
+
+## Round 05 (2026-10-11)
+Cloud container: p95 33.4 ms, fps 49, JS work mean 5.9 ms / p95 12.9 ms (96×96, CPU 4x). Same container measured 66.7 ms for the unchanged round-04 baseline earlier, i.e. machine noise dominates; CI result decides (not verified when written). Campaign maps are 96×96 like the perf map; up to 18 tanks/structures on c3 (perf map has 6) — **not measured on a phone**.

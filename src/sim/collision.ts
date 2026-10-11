@@ -89,8 +89,12 @@ export function collideTanks(state: SimState): void {
       const push = (rr - d) * COMBAT.tankCollision.push;
       const nx = d2 > 0 ? dx / d : 1;
       const ny = d2 > 0 ? dy / d : 0;
-      const wa = rb / rr;
-      const wb = ra / rr;
+      // structures (towers, HQ) are immovable: the other tank takes the whole push
+      const pa = TANKS[a.cls].pve === true;
+      const pb = TANKS[b.cls].pve === true;
+      if (pa && pb) continue;
+      const wa = pa ? 0 : pb ? 1 : rb / rr;
+      const wb = pb ? 0 : pa ? 1 : ra / rr;
       a.x -= nx * push * wa * 2;
       a.y -= ny * push * wa * 2;
       b.x += nx * push * wb * 2;

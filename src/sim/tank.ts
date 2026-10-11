@@ -49,7 +49,7 @@ export function updateTank(s: SimState, t: Tank, inp: PlayerInput | undefined, r
   const stunned = t.stun > 0;
   const pressed = (buttons & BTN_FIRE) !== 0;
   const held = pressed && !stunned;
-  const canFire = abilityAllowsFire(t) && !stunned;
+  const canFire = abilityAllowsFire(t) && !stunned && !def.noFire;
   if (!pressed) t.needRelease = false;
   const instant = held && canFire && t.overheat <= 0 && t.cooldown <= 0 && (t.prevButtons & BTN_FIRE) === 0 ? abilityInstantShot(t) : null;
   if (instant) {
@@ -108,7 +108,7 @@ export function updateTank(s: SimState, t: Tank, inp: PlayerInput | undefined, r
     my /= mag;
   }
   const slow = 1 - def.chargeSlow * chargeLevel(t);
-  const maxSpeed = def.maxSpeed * slow * abilitySpeedMul(t);
+  const maxSpeed = def.maxSpeed * slow * abilitySpeedMul(t) * t.boost.speed;
   const tvx = mx * maxSpeed;
   const tvy = my * maxSpeed;
   const dvx = tvx - t.vx;
@@ -122,7 +122,10 @@ export function updateTank(s: SimState, t: Tank, inp: PlayerInput | undefined, r
     t.vx += (dvx / dv) * maxDv;
     t.vy += (dvy / dv) * maxDv;
   }
-  moveTank(s, t, dt, mx, my);
+  if (def.pve) {
+    // structures never move (no knockback either)
+    t.vx = t.vy = t.kx = t.ky = 0;
+  } else moveTank(s, t, dt, mx, my);
   t.kx *= 0.86;
   t.ky *= 0.86;
   if (mag > 0.05) t.hull = rotateToward(t.hull, datan2(my, mx), def.hullTurn * abilitySpeedMul(t) * dt);

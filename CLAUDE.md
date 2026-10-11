@@ -37,8 +37,10 @@ design is gone with the Trapper, see D-036/D-037 and open decision K3.)
 
 ## 1. Where we are now (update every round)
 
-- **Last finished round:** Round 04 (2026-10-11, branch `fix/round-04-balance-aim-skills`, **PR #4 open, CI green incl. perf gate, not merged** — waiting for the owner's "birleştir") — B1 Artillery +25 %, A aim on screen only,
-  C two abilities per tank + Scout spray, B menu skeleton. See `docs/PROGRESS.md`. Round 03 was merged into the default branch the same day.
+- **Last finished round:** Round 05 (2026-10-11, branch `fix/round-05-campaign-progression`, PR into the round-04 branch) —
+  D campaign (3 levels, towers + HQ + guarded outposts) and E progression (stars, credits, garage, save v5). See `docs/PROGRESS.md`.
+- **Previous:** Round 04 (branch `fix/round-04-balance-aim-skills`, **PR #4 open, CI green incl. perf gate, not merged** — waiting for
+  the owner's "birleştir") — B1 Artillery +25 %, A aim on screen only, C two abilities per tank + Scout spray, B menu skeleton.
 - **Branches / PRs:** PR #1–#3 were merged into the default branch `claude/tanky-tunky-setup-dw06hp` on 2026-10-11
   (owner: "birleştir"; merge head `f94cbf8`). The default branch now holds round 03 + the change log. **Start new work
   from the default branch**: `git checkout -b fix/round-04-<topic> origin/claude/tanky-tunky-setup-dw06hp`.
@@ -54,9 +56,9 @@ design is gone with the Trapper, see D-036/D-037 and open decision K3.)
 | B2 | Heavy strong (≈63–67 %) | lower its hp (5500 = owner's anchor) or weaken Rumble | BALANCE_REPORT |
 | A | ✅ DONE (D-045) **Auto-aim locks off-screen enemies** (owner: "only aim at enemies visible on screen") | since full visibility (D-037) `selectTarget` picks the nearest enemy anywhere: limit to the camera view (+ small margin, grows when zoomed out) and/or gun range | cloud note #2, confirmed in current code |
 | K1 | Multiplayer | online relay vs same Wi-Fi vs postpone; needs the INTERNET permission (currently removed in the manifest) | cloud note |
-| K2 | Campaign map size / level count | 96 → 128 tiles? first 3 or all 12 levels? | cloud note |
-| K3 | Map awareness after Trapper | everyone sees everything now; minimap for all? edge-of-screen objective arrow in campaign? 6-trap design dropped? | cloud note + D-036/37 |
-| K4 | Enemy placement in campaign | hybrid: `levels.json` outposts with threat budget + zone, solver fills them | cloud note |
+| K2 | ✅ proposal used (D-048): 96×96, first 3 levels — 12 levels / 128 tiles later if wanted | 96 → 128 tiles? first 3 or all 12 levels? | cloud note |
+| K3 | Map awareness after Trapper (campaign got an HQ direction arrow — assumption, remove if unwanted) | everyone sees everything now; minimap for all? edge-of-screen objective arrow in campaign? 6-trap design dropped? | cloud note + D-036/37 |
+| K4 | ✅ DONE (D-048) Enemy placement in campaign | hybrid: `levels.json` outposts with threat budget + zone, solver fills them | cloud note |
 | K5 | Spray (machine-gun) fire | assumed Scout only (D-047) — tell me if all tanks | cloud note |
 | K6 | ~~current Hide/Rumble values~~ | **answered**: they exist (§1 table, `docs/TANKS.md`) | report 2026-10-11 |
 | K7 | ✅ DONE (D-046/047) Scout update | faster (4.2 → ~5.0), spray fire ~10 shots/s with low damage per bullet (**needs rescaling to the ×25 numbers**: tap damage is 260 now), skill = Hide (now 5 s / cd 4 s, ends on fire), ult = fire rate ×3 for 5 s / cd 30 s | cloud note §5.1 |
@@ -67,7 +69,7 @@ design is gone with the Trapper, see D-036/D-037 and open decision K3.)
 | T | Ability trees | cards show "Yakında"; owner designs them | round 02 |
 | G | Tank art | owner has 4 Nano Banana images (Çevik, Dengeli, Ağır, Topçu; **not in the repo**). Plan: hull and turret as separate images → image→3D (.glb) → render 16–32 angles → atlas + team colour; procedural art stays as fallback. Fixes noted: Heavy emblem must be a square, Artillery barrel faces the wrong way | this chat + cloud note §5.5 |
 
-### Current game (round 03)
+### Current game (round 05)
 | Topic | State | Data / code |
 |---|---|---|
 | Classes | Scout (Çevik), Heavy (Ağır), Standard (Dengeli), Artillery (Topçu); Trapper disabled (`enabled: false`, data kept) | `src/data/tanks.json`, `docs/TANKS.md` |
@@ -81,8 +83,10 @@ design is gone with the Trapper, see D-036/D-037 and open decision K3.)
 | Bots | FSM AI (patrol/suspicion/chase/attack/retreat); Kolay/Normal/Zor/Ekstrem (first shot 5/3/1/0 s after an enemy is in range), allies use the same level | `src/data/ai.json`, `src/systems/ai/bot.ts` |
 | Auto-aim | nearest visible enemy **inside the camera view** (D-045), 10 % hysteresis; touch manual aim needs a 60 px drag | `targeting.ts`, `touchControls.ts` |
 | Heights | cliffs/ramps from one `isPassable` rule, bump flash + haptic, "Engel vurgusu" setting | `passability.ts`, D-020/021 |
-| UI | main menu Tek Oyunculu (Hızlı Maç; Kampanya/Garaj "Yakında") / Çok Oyunculu ("Yakında") / Ayarlar, swipeable tank cards (skill + ult), map + difficulty selectors, two ability buttons with countdown rings, upgrade chip | `src/ui/` |
-| Save | schema v4 (settings incl. difficulty + mapTheme, records) | `src/core/save.ts` |
+| UI | main menu Tek Oyunculu (Hızlı Maç, Kampanya, Garaj) / Çok Oyunculu ("Yakında") / Ayarlar, swipeable tank cards (skill + ult), map + difficulty selectors, two ability buttons with countdown rings, upgrade chip | `src/ui/` |
+| Campaign (round 05) | 3 levels (`levels.json`), 96×96 themed maps; towers + HQ = `pve` classes in `tanks.json`; outpost solver + guard mode (`enemies.json`); win = HQ destroyed, time out = loss; player respawns at own base; stars/credits | `src/game/campaign.ts`, `src/systems/ai/tower.ts`, `tools/campaign-sim.ts` |
+| Progression (round 05) | credits (campaign rewards, Quick Match 5/kill + 25/win), unlock chain, garage armor/engine/gun × 3 → `Tank.boost` for the player only | `src/game/progression.ts`, `src/data/progression.json` |
+| Save | schema v5 (settings, records, credits, campaign stars/bestTime, garage) | `src/core/save.ts` |
 | Android | no INTERNET permission, explicit debug signing, isometric tank icon | `android/`, D-033, D-035 |
 
 ## 2. Stack
@@ -104,13 +108,14 @@ Vite 8 + TypeScript 5.9 (strict) + React 19 (menus/HUD as DOM overlay only) + **
 | All gates | `npm run check` |
 | **Change log entry** | `npm run log -- <yenilik\|degisiklik\|duzeltme\|geri-alma\|karar\|konusma\|acik-soru> "Başlık" "Ayrıntı"` |
 | Balance sim (headless bots) | `npx tsx tools/balance.ts 300 40 hard desert` (args: matches, size, level, theme) |
+| Campaign sim (bots play every level) | `npx tsx tools/campaign-sim.ts standard normal` |
 | Round screenshots | `npx playwright test e2e/round03.spec.ts --project=mobile-landscape` → `docs/screens/round-03/` |
 | App icon (SVG → all Android sizes) | `npm run icons` |
 | Debug APK | CI only (no Android SDK in the cloud container): push → Actions "Android APK" → artifact |
 | Signed release | push tag `v*` (secrets described in `docs/RELEASE.md`) |
 
 Never run `playwright install` (Chromium is preinstalled; version pinned to 1.56.1).
-Dev URL overrides: `?silent&theme=desert|city|forest&map=40|64|96|debug_heights&seed=5&cls=heavy&diff=hard&bots=idle|enemies&endless&dur=20&renderScale=0.25&view=20,20&zoom=0.4`.
+Dev URL overrides: `?silent&campaign=c1&theme=desert|city|forest&map=40|64|96|debug_heights&seed=5&cls=heavy&diff=hard&bots=idle|enemies&endless&dur=20&renderScale=0.25&view=20,20&zoom=0.4`.
 
 ## 4. Architecture
 
@@ -122,8 +127,10 @@ src/sim      Deterministic, DOM-free simulation core (fixed 60 Hz). Runs in Node
              match.ts (timer, respawn) · upgrades.ts (crate pickups, regen) · abilities/ (data + modules) · collision.ts
 src/world    terrain.ts · map.ts (SoA tile map, theme) · passability.ts (THE movement rule) · generator.ts (forest map +
              validateMap) · themes.ts (desert/city generators) · mapLoader.ts · reach.ts · noise.ts · iso.ts
-src/systems/ai  AiBot: A* nav (throttled) + FSM, difficulty levels, ability habits, pickup seeking (data/ai.json)
+src/systems/ai  AiBot: A* nav (throttled) + FSM, difficulty levels, ability habits, pickup seeking, outpost guard (data/ai.json)
+             tower.ts: TowerBot + the Controller interface (one per tank in MatchHandle.bots)
 src/game     matchSetup.ts: match setup, headless runner, scoreboard (scene, tests, tools/balance.ts)
+             campaign.ts: levels, outpost solver, campaign match, mission result · progression.ts: credits, stars, garage
 src/core     loop.ts · keyboard.ts · save.ts/storage.ts (versioned) · platform.ts (Capacitor) · frameStats.ts
 src/render   worldRenderer.ts (baked ground + culled features) · terrainArt.ts (all procedural tile/feature art)
              tankArt.ts + tankView.ts (sprite-stacked tanks) · overlays.ts · fx.ts · fogLayer.ts (LOS mode only) · camera.ts
@@ -131,10 +138,10 @@ src/audio    Procedural Web Audio
 src/scenes   GameScene.ts = Pixi app + loop + match + fx/audio/haptics wiring
 src/ui       React screens (MainMenu, ClassSelect cards, settings, GameView HUD, results) + touchControls.ts
 src/data     tanks · combat · abilities · ai · match · vision · terrain · traps (.json) — ALL gameplay numbers
-             planned (not created yet): enemies.json (towers/soldiers), levels.json (campaign)
+             enemies.json (threat costs, guard) · levels.json (campaign) · progression.json (garage, credits)
 src/i18n     tr/en/ar JSON + t()
-tests/       Vitest suites     e2e/  Playwright (smoke, controls, visual, round01-03, perf)
-tools/       balance.ts · make-icons.mjs · changelog.mjs (npm run log) · profile.mjs · art/audio previews
+tests/       Vitest suites     e2e/  Playwright (smoke, controls, visual, round01-05, perf)
+tools/       balance.ts · campaign-sim.ts · make-icons.mjs · changelog.mjs (npm run log) · profile.mjs · art/audio previews
 docs/        CHANGELOG.md (Turkish change/conversation log) + the files in §9
 android/     Capacitor project (committed), keystore/ debug key (committed) + debug.sha256
 ```
@@ -175,19 +182,18 @@ android/     Capacitor project (committed), keystore/ debug key (committed) + de
 
 ## 7. Next steps (update every round)
 
-0. Owner: say "birleştir" to merge PR #4 into the default branch (branch `claude/tanky-tunky-setup-dw06hp`).
-1. Owner: install the round-04 APK (Actions → "Android APK" → artifact; first uninstall once if the update error appears), test with
+0. Owner: say "birleştir" to merge PR #4, then the round-05 PR (into the default branch `claude/tanky-tunky-setup-dw06hp`).
+1. Owner: install the round-05 APK (campaign + garage are in it; it also contains round 04) (Actions → "Android APK" → artifact; first uninstall once if the update error appears), test with
    `docs/PLAYTEST_CHECKLIST.md`, report feel of spray / ultimates / menu and whether the update error is gone.
-2. Open owner decisions (§1): K1 multiplayer, K2 campaign size/levels, K3 map awareness, K4 enemy placement, K11 Trapper in code, T ability trees, G images.
-3. Planned work streams not started: **(D)** single-player campaign (bigger asymmetric maps, towers/soldiers/outposts, HQ, `enemies.json`, `levels.json`);
-   **(E)** progression (levels/stars/credits/garage, save schema v5); **(F)** multiplayer (lockstep over relay or Wi-Fi; needs INTERNET permission);
+2. Open owner decisions (§1): K1 multiplayer, K3 map awareness (keep the HQ arrow?), K11 Trapper in code, T ability trees, G images; review the round-05 numbers (tower/HQ, budgets, stars, rewards, garage).
+3. Campaign follow-ups (D): levels 4–12, other objectives (convoy, flag, survive), boss tanks every 4 levels, foot soldiers, hand-made/asymmetric maps.
+   Not started: **(F)** multiplayer (lockstep over relay or Wi-Fi; needs INTERNET permission);
    **(G)** tank art pipeline from the owner's images / 3D models.
 4. Balance: B1 follow-up (Artillery ≈22 % even with +25 %: landing correction), B2 Heavy (≈68 %), Scout ≈62 % after spray.
 5. Perf: the cloud container measured p95 66.7 ms for default branch AND round 04 (machine slower than in round 03); confirm in CI / on a phone.
 
-**Blocked on the owner (nothing below can be built honestly without an answer):** K1 (INTERNET permission + relay vs Wi-Fi) blocks F;
-K2/K4 (map size, level count, enemy placement) block D; the 4 tank images block G; B1 landing correction / B2 Heavy are balance numbers (rule 4).
-E (progression) depends on D (stars/credits need levels to earn them).
+**Blocked on the owner:** K1 (INTERNET permission + relay vs Wi-Fi) blocks F; the 4 tank images block G;
+B1 landing correction / B2 Heavy are balance numbers (rule 4).
 
 ## 8. Roadmap
 
@@ -200,8 +206,8 @@ E (progression) depends on D (stars/credits need levels to earn them).
 | 7 AI | ✅ FSM + A* + difficulty levels (round 01–03) |
 | 8 Headless sim & balance | ✅ tool + reports; auto-tune not done — balance is decided by the owner |
 | Skill system (C) | ✅ two abilities per tank + ult button (round 04, D-046); ability trees (T) later |
-| PvE / campaign (D) | planned: towers, soldiers, outposts, HQ, `enemies.json` / `levels.json` |
-| 9 Modes & progression (E) | partly: Quick Match only; campaign, survival, daily challenge, garage/credits planned |
+| PvE / campaign (D) | ✅ MVP round 05: 3 levels, towers, guarded outposts, HQ (D-048); soldiers, bosses, more objectives later |
+| 9 Modes & progression (E) | partly: Quick Match + campaign, credits/stars/garage (round 05); survival, daily challenge, replays later |
 | Multiplayer (F) | planned, decision K1 |
 | 10 Polish | partly (icon, menus); tutorial, accessibility, weather/day-night later |
 | 11 Release | signed AAB pipeline exists; README screenshots done; v1.0.0 later |
