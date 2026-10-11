@@ -30,7 +30,9 @@ export interface TouchOptions {
 
 const JOY_RADIUS = 64;
 const DEAD_ZONE = 0.14;
-const AIM_DRAG_MIN = 22;
+/** Drag distance (px) from the FIRE button centre before manual aim takes over; large enough that
+ *  a thumb drifting while it holds the button does not steal the auto-aim. */
+export const AIM_DRAG_MIN = 60;
 
 export class TouchControls {
   readonly root: HTMLDivElement;
@@ -41,6 +43,7 @@ export class TouchControls {
   private readonly fireRing: HTMLDivElement;
   private readonly abilityBtn: HTMLDivElement;
   private readonly abilityRing: HTMLDivElement;
+  private readonly abilityCount: HTMLDivElement;
   private joyId = -1;
   private joyCx = 0;
   private joyCy = 0;
@@ -67,12 +70,14 @@ export class TouchControls {
     const fl = el('span', 'act-label');
     fl.textContent = opts.labels.fire;
     this.fireBtn.append(this.fireRing, fl);
-    this.abilityBtn = el('div', 'act-btn ability-btn');
+    this.abilityBtn = el('div', 'act-btn ability-btn ready');
     this.abilityBtn.dataset.testid = 'ability';
     this.abilityRing = el('div', 'cooldown-ring');
     const al = el('span', 'act-label');
     al.textContent = opts.abilityName ?? opts.labels.ability;
-    this.abilityBtn.append(this.abilityRing, al);
+    this.abilityCount = el('span', 'ab-count');
+    this.abilityCount.dataset.testid = 'ability-count';
+    this.abilityBtn.append(this.abilityRing, al, this.abilityCount);
     this.root.append(this.joyBase, this.fireBtn, this.abilityBtn);
     host.appendChild(this.root);
 
@@ -168,6 +173,8 @@ export class TouchControls {
     } else if (e.pointerId === this.fireId) {
       this.fireId = -1;
       this.state.fire = false;
+      // manual aim lasts only while the finger is down; afterwards auto-aim takes over again
+      this.state.aimAngle = null;
       this.fireBtn.classList.remove('pressed', 'aiming');
     } else if (e.pointerId === this.abilityId) {
       this.abilityId = -1;
@@ -184,21 +191,50 @@ export class TouchControls {
     if (this.joyId < 0 && Math.abs(this.state.moveX) + Math.abs(this.state.moveY) < 0.01) this.state.moveX = this.state.moveY = 0;
   }
 
-  /** Visual feedback from the simulation: charge 0..1, flags for perfect window / overheat, ability cooldown 0..1. */
+  /** Visual feedback from the simulation: charge 0..1, flags for perfect window / overheat. */
   private lastFeedback = '';
+  private lastAbility = '';
+  private abilityPhase: 'ready' | 'active' | 'cooling' = 'ready';
 
-  setFeedback(charge: number, perfect: boolean, overheat: number, abilityCooldown: number, abilityActive = false): void {
-    const key = `${Math.round(charge * 90)}|${perfect}|${Math.round(overheat * 60)}|${Math.round(abilityCooldown * 60)}|${abilityActive}`;
+  setFeedback(charge: number, perfect: boolean, overheat: number): void {
+    const key = `${Math.round(charge * 90)}|${perfect}|${Math.round(overheat * 60)}`;
     if (key === this.lastFeedback) return;
     this.lastFeedback = key;
     const deg = Math.round(charge * 360);
     this.fireRing.style.background = overheat > 0 ? `conic-gradient(var(--danger) ${Math.round(overheat * 360)}deg, transparent 0)` : `conic-gradient(${perfect ? '#fff4b0' : 'var(--accent)'} ${deg}deg, transparent 0)`;
     this.fireBtn.classList.toggle('perfect', perfect);
     this.fireBtn.classList.toggle('overheat', overheat > 0);
-    // cooldown ring: dark sweep that shrinks as the ability recharges; glowing border while active
-    this.abilityRing.style.background = abilityCooldown > 0 ? `conic-gradient(#000b ${Math.round(abilityCooldown * 360)}deg, transparent 0)` : 'none';
-    this.abilityBtn.classList.toggle('active', abilityActive);
-    this.abilityBtn.classList.toggle('ready', !abilityActive && abilityCooldown <= 0);
+  }
+
+  /**
+   * Ability button states (seconds of sim time):
+   *  - active: glowing, a cyan ring drains clockwise, remaining seconds in the centre
+   *  - cooling: greyed out, a ring fills clockwise, seconds until ready in the centre
+   *  - ready: coloured with its name; a one-shot flash when it becomes ready again
+   */
+  setAbility(active: number, activeMax: number, cooldown: number, cooldownMax: number): void {
+    const phase = active > 0 ? 'active' : cooldown > 0 ? 'cooling' : 'ready';
+    const frac = phase === 'active' ? (activeMax > 0 ? active / activeMax : 0) : phase === 'cooling' ? (cooldownMax > 0 ? 1 - cooldown / cooldownMax : 1) : 1;
+    const secs = phase === 'active' ? Math.ceil(active) : phase === 'cooling' ? Math.ceil(cooldown) : 0;
+    const key = `${phase}|${Math.round(frac * 120)}|${secs}`;
+    if (key === this.lastAbility) return;
+    this.lastAbility = key;
+    if (phase !== this.abilityPhase) {
+      const b = this.abilityBtn;
+      b.classList.remove('active', 'cooling', 'ready');
+      b.classList.add(phase);
+      if (phase === 'ready' && this.abilityPhase === 'cooling') {
+        // restart the CSS flash animation
+        b.classList.remove('flash');
+        void b.offsetWidth;
+        b.classList.add('flash');
+      }
+      this.abilityPhase = phase;
+    }
+    const deg = Math.round(frac * 360);
+    this.abilityRing.style.background =
+      phase === 'active' ? `conic-gradient(#7fe0ff ${deg}deg, #ffffff18 0)` : phase === 'cooling' ? `conic-gradient(#e8e8e8 ${deg}deg, #ffffff14 0)` : 'none';
+    this.abilityCount.textContent = secs > 0 ? String(secs) : '';
   }
 
   dispose(): void {

@@ -30,7 +30,7 @@ describe('save schema v2 (round 01)', () => {
     const { migrate, recordMatch } = await import('../src/core/save');
     const v1 = { schemaVersion: 1, credits: 5, settings: { lang: 'en', aimAssist: false } };
     const m = migrate(v1);
-    expect(m.schemaVersion).toBe(2);
+    expect(m.schemaVersion).toBe(SCHEMA_VERSION);
     expect(m.settings.edgeHighlight).toBe('normal');
     expect(m.settings.cooldownMul).toBe(1);
     expect(m.settings.aimAssist).toBe(false);
@@ -39,5 +39,16 @@ describe('save schema v2 (round 01)', () => {
     expect(r1.records).toEqual({ bestKills: 4, bestKD: 2, matches: 1 });
     const r2 = recordMatch(r1, 3, 0);
     expect(r2.records).toEqual({ bestKills: 4, bestKD: 3, matches: 2 });
+  });
+});
+
+describe('save schema v3 (round 02)', () => {
+  it('migrates a v2 save: adds difficulty = normal, keeps user values', () => {
+    const v2 = { schemaVersion: 2, credits: 1, settings: { lang: 'tr', cooldownMul: 2 }, records: { bestKills: 3, bestKD: 1.5, matches: 4 } };
+    const m = migrate(v2);
+    expect(m.schemaVersion).toBe(3);
+    expect(m.settings.difficulty).toBe('normal');
+    expect(m.settings.cooldownMul).toBe(2);
+    expect(m.records.matches).toBe(4);
   });
 });

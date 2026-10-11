@@ -15,14 +15,14 @@ describe('ability framework', () => {
     const s = arena([{ team: 0, cls: 'standard', x: 10.5, y: 10.5 }]);
     run(s, 1, [press]);
     const a = s.tanks[0].ability;
-    expect(a.active).toBeGreaterThan(4.9);
+    expect(a.active).toBeGreaterThan(num(ABILITIES.swift.duration) - 0.1);
     expect(a.cooldown).toBe(0);
     run(s, secs(num(ABILITIES.swift.duration)) + 1, [idle]);
     expect(a.active).toBe(0);
     expect(a.cooldown).toBeCloseTo(num(ABILITIES.swift.cooldown), 1);
     const s2 = arena([{ team: 0, cls: 'standard', x: 10.5, y: 10.5 }], { rules: { cooldownMul: 0.5 } });
     run(s2, 1, [press]);
-    run(s2, secs(5) + 1, [idle]);
+    run(s2, secs(num(ABILITIES.swift.duration)) + 1, [idle]);
     expect(s2.tanks[0].ability.cooldown).toBeCloseTo(num(ABILITIES.swift.cooldown) * 0.5, 1);
   });
 
@@ -36,7 +36,7 @@ describe('ability framework', () => {
 });
 
 describe('Scout — Hide', () => {
-  it('invisible for 5 s, then visible; cooldown 5 s after', () => {
+  it('invisible for its duration, then visible; then the cooldown runs', () => {
     const s = arena([
       { team: 0, cls: 'scout', x: 10.5, y: 10.5 },
       { team: 1, cls: 'standard', x: 13.5, y: 10.5 },
@@ -44,9 +44,9 @@ describe('Scout — Hide', () => {
     run(s, 1, [press, idle]);
     updateVision(s);
     expect(canSeeTank(s, 1, s.tanks[0])).toBe(false);
-    run(s, secs(5) + 2, [idle, idle]);
+    run(s, secs(num(ABILITIES.hide.duration)) + 2, [idle, idle]);
     expect(canSeeTank(s, 1, s.tanks[0])).toBe(true);
-    expect(s.tanks[0].ability.cooldown).toBeGreaterThan(4.9);
+    expect(s.tanks[0].ability.cooldown).toBeGreaterThan(num(ABILITIES.hide.cooldown) - 0.1);
   });
 
   it('firing ends invisibility immediately and starts the cooldown', () => {
@@ -55,7 +55,7 @@ describe('Scout — Hide', () => {
     run(s, 2, [{ ...idle, buttons: BTN_FIRE }]);
     run(s, 1, [idle]);
     expect(s.tanks[0].ability.active).toBe(0);
-    expect(s.tanks[0].ability.cooldown).toBeGreaterThan(4.9);
+    expect(s.tanks[0].ability.cooldown).toBeGreaterThan(num(ABILITIES.hide.cooldown) - 0.1);
   });
 
   it('getting hit while invisible shimmers but stays invisible', () => {

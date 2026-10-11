@@ -2,7 +2,8 @@
  * Auto turret targeting (round-01 job 1) — used identically by the player and by bots.
  * Candidates come ONLY from the VisibilitySystem (`canSeeTank`): hidden, fogged or invisible
  * (Hide) enemies are never locked. Hysteresis: a new candidate must be `switchRatio` times
- * closer than the current lock; the lock is kept while the target stays visible.
+ * closer than the current lock; the lock is kept while the target stays visible, unless it is out of
+ * range and another visible enemy is in range.
  */
 import { COMBAT, TANKS, evalCurve } from './config';
 import { datan2 } from './dmath';
@@ -25,7 +26,12 @@ export function selectTarget(s: SimState, t: Tank, currentId: number): number {
     }
   }
   const r = COMBAT.targeting.switchRatio;
-  if (cur && best && best !== cur && Math.sqrt(bestD) < r * Math.sqrt(curD)) return best.id;
+  if (cur && best && best !== cur) {
+    if (Math.sqrt(bestD) < r * Math.sqrt(curD)) return best.id;
+    // a lock that drifted out of range never holds the turret away from an enemy in range
+    const range = TANKS[t.cls].range;
+    if (curD > range * range && bestD <= range * range) return best.id;
+  }
   if (cur) return cur.id;
   return best ? best.id : -1;
 }

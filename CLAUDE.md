@@ -28,7 +28,8 @@ Vite 8 + TypeScript 5.9 (strict) + React 19 (menus/HUD as DOM overlay only) + **
 | Build web (→ `dist/`) | `npm run build` |
 | E2E (Pixel 7 landscape, touch; needs build) | `npm run e2e` → screenshots in `e2e/out/` |
 | All gates | `npm run check` |
-| Balance sim (headless bots) | `npx tsx tools/balance.ts 300 40` |
+| Balance sim (headless bots) | `npx tsx tools/balance.ts 300 40 hard` |
+| App icon (SVG → all Android sizes) | `npm run icons` |
 | Round screenshots | `npx playwright test e2e/round01.spec.ts` → `docs/screens/round-01/` |
 | Engine benchmark | `npx vite build -c bench/vite.config.ts && npm run bench:engines` |
 | Debug APK | CI only (no Android SDK reachable from the cloud container): push → Actions "Android APK" → artifact |
@@ -106,6 +107,11 @@ placeholder bots, perf gate 60 FPS / p95 16.7 ms on 96×96 at CPU 4x. Tank list 
 ### Round 01 (branch `fix/round-01-core-loop`) ✅ — see docs/PROGRESS.md
 VisibilitySystem + fog, auto-aim, unified passability + cliff visuals, fog-fair AI, 60 s matches with respawn/scoreboard,
 5 data-driven abilities, balance report (untuned by request). PR into `claude/tanky-tunky-setup-dw06hp`.
+
+### Round 02 (branch `fix/round-02-feedback`, PR stacked on round 01) ✅ — see docs/PROGRESS.md
+5-minute matches, swipeable tank cards, ability state indicator, bot difficulty (allies too), auto-aim touch fix, app icon,
+balance option B (Heavy/Artillery still outside the band — owner decision pending). Owner rule: **collect requested changes,
+show the plan, start only after the owner says "uygula"**.
 
 ## 7. Next steps
 

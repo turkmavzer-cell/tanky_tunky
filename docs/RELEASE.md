@@ -43,7 +43,18 @@ uploads them as workflow artifacts and attaches them to a GitHub Release.
 
 ## Debug builds
 
-Every push to `main` (and to `claude/**` session branches) produces `tanky-tunky-debug-<run>.apk`
-(Actions → run → Artifacts). Debug builds are signed with the committed `keystore/debug.keystore`, so debug
-APKs update each other without uninstalling. Debug and release keys differ: switching from a debug install to
-a release install requires one uninstall.
+Every push to `main`, `claude/**`, `fix/**` and `phase/**` produces `tanky-tunky-debug-<run>.apk`
+(Actions → run → Artifacts). Debug builds are signed with the committed `keystore/debug.keystore`, referenced
+explicitly in `android/app/build.gradle` (D-035), so debug APKs update each other without uninstalling.
+The CI step "Verify APK signature" compares the APK's certificate with `keystore/debug.sha256`
+(`05278fc8…d228`) and fails the build on any difference; the run summary shows the signer and the versionCode.
+Debug and release keys differ: switching from a debug install to a release install requires one uninstall.
+
+## Update errors on the phone
+
+| Message | Cause | Fix |
+|---|---|---|
+| "Paket, mevcut bir paketle çakıştığından uygulama yüklenemedi" | The installed app was signed with another key (an APK built before D-035, or a release build). | Uninstall the game once, install the newest debug APK. From then on every debug APK updates in place. |
+| "Uygulama yüklenmedi" when installing an *older* artifact | versionCode went down (Android refuses downgrades). | Always install the artifact with the highest run number. |
+| Release ↔ debug | Different keys by design. | One uninstall when switching. |
+

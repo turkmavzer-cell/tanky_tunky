@@ -1,6 +1,6 @@
 {
   "$comment": "Match rules (round-01 job 4). Times in seconds of SIMULATION time.",
-  "duration": 60,
+  "duration": 300,
   "countdown": 3,
   "finalWarning": 10,
   "respawnDelay": 2,
@@ -11,5 +11,6 @@
     "avoidRepeat": true
   },
   "mapSize": 40,
-  "$mapSize": "Quick Match map size (40/64/96). 60 s matches need contact: 40x40 by default."
+  "$mapSize": "Quick Match map size (40/64/96). 60 s matches need contact: 40x40 by default.",
+  "$duration": "Owner decision 2026-10-09 (D-029): 5-minute matches. No extra 1-minute warning; the last finalWarning seconds are emphasised."
 }

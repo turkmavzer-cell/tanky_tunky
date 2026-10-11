@@ -3,8 +3,8 @@ import { createMatch, runHeadless, scoreboard, stepMatch } from '../src/game/mat
 import { MATCH } from '../src/sim/config';
 import { hashState } from '../src/sim/hash';
 
-describe('headless 60 s match (round-01 job 4)', () => {
-  it('runs bots for 60 s, stops, and total kills equal total deaths (no environment deaths)', () => {
+describe('headless match (default duration from match.json)', () => {
+  it('runs bots for the full match duration, stops, and total kills equal total deaths (no environment deaths)', () => {
     const m = runHeadless({ seed: 21, mapSize: 40 });
     expect(m.state.match.phase).toBe('ended');
     expect(m.state.tick).toBeLessThanOrEqual(60 * (MATCH.countdown + MATCH.duration) + 2);

@@ -27,10 +27,11 @@ type DebugParams = Partial<{
   noFog: boolean;
   duration: number;
   edgeHighlight: 'normal' | 'strong';
+  aiLevel: 'easy' | 'normal' | 'hard' | 'extreme';
   debugView: { x: number; y: number; zoom: number };
 }>;
 
-/** Dev/test URL overrides: ?silent&map=96|debug_heights&seed=5&renderScale=0.25&cls=heavy&view=32,32&zoom=0.4&bots=idle&endless&nofog&dur=10 */
+/** Dev/test URL overrides: ?silent&map=96|debug_heights&seed=5&renderScale=0.25&cls=heavy&view=32,32&zoom=0.4&bots=idle&endless&nofog&dur=10&diff=hard */
 function debugParams(): DebugParams {
   const q = new URLSearchParams(location.search);
   const out: DebugParams = { silent: q.has('silent') };
@@ -46,6 +47,8 @@ function debugParams(): DebugParams {
   if (q.has('endless')) out.endless = true;
   if (q.has('nofog')) out.noFog = true;
   if (q.has('dur')) out.duration = Number(q.get('dur'));
+  const diff = q.get('diff');
+  if (diff === 'easy' || diff === 'normal' || diff === 'hard' || diff === 'extreme') out.aiLevel = diff;
   if (q.get('edges') === 'strong') out.edgeHighlight = 'strong';
   const view = q.get('view')?.split(',').map(Number);
   if (view && view.length >= 2) out.debugView = { x: view[0], y: view[1], zoom: Number(q.get('zoom') ?? 0.5) };
@@ -84,6 +87,7 @@ export function GameView({ settings, playerClass, seed, record, onQuit, onAgain,
       reduceShake: settings.reduceShake,
       autoAim: settings.aimAssist,
       edgeHighlight: settings.edgeHighlight,
+      aiLevel: settings.difficulty,
       cooldownMul: settings.cooldownMul,
       volume: { master: settings.sound, sfx: 1, music: settings.music },
       playerClass,
@@ -131,7 +135,7 @@ export function GameView({ settings, playerClass, seed, record, onQuit, onAgain,
       sceneRef.current = null;
       delete window.__tanky;
     };
-  }, [settings.quality, settings.fpsCap, settings.reduceShake, settings.aimAssist, settings.edgeHighlight, settings.cooldownMul, settings.sound, settings.music, settings.leftHanded, settings.joystickSensitivity, playerClass, seed]);
+  }, [settings.quality, settings.fpsCap, settings.reduceShake, settings.aimAssist, settings.edgeHighlight, settings.cooldownMul, settings.difficulty, settings.sound, settings.music, settings.leftHanded, settings.joystickSensitivity, playerClass, seed]);
 
   const togglePause = (p: boolean): void => {
     sceneRef.current?.setPaused(p);
@@ -155,6 +159,13 @@ export function GameView({ settings, playerClass, seed, record, onQuit, onAgain,
               <span>
                 {hud.hp} / {hud.maxHp}
               </span>
+            </div>
+            <div
+              className={'ab-chip ' + (hud.abilityActive > 0 ? 'active' : hud.abilityCooldown > 0 ? 'cooling' : 'ready')}
+              data-testid="ability-chip"
+            >
+              {hud.abilityName}{' '}
+              <b>{hud.abilityActive > 0 ? `${Math.ceil(hud.abilityActive)} ${t('hud.sec')}` : hud.abilityCooldown > 0 ? `${Math.ceil(hud.abilityCooldown)} ${t('hud.sec')}` : t('hud.ready')}</b>
             </div>
             <div className="kd" data-testid="kd">
               {t('hud.kd')} <b>{hud.kills}</b>/<b>{hud.deaths}</b>

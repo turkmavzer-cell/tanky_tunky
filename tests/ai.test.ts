@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { arena, idle, wall } from './helpers';
-import { AiBot } from '../src/systems/ai/bot';
+import { AI, AiBot, type AiLevel } from '../src/systems/ai/bot';
 import { step } from '../src/sim/sim';
 import { updateVision } from '../src/sim/visibility';
 import { setFeature } from '../src/world/map';
@@ -75,16 +75,121 @@ describe('AI FSM (round-01 job 3)', () => {
     expect(bot.known).not.toBeNull();
   });
 
-  it('retreats when badly hurt', () => {
+  it('retreats when badly hurt (strategic levels)', () => {
     const s = arena([
       { team: 0, cls: 'standard', x: 5.5, y: 15.5 },
       { team: 1, cls: 'standard', x: 9.5, y: 15.5 },
     ]);
-    const bot = new AiBot(1, 3);
+    const bot = new AiBot(1, 3, 'hard');
     tickBot(s, bot, 5);
     s.tanks[1].hp = 20;
     tickBot(s, bot, 3);
     expect(bot.state).toBe('retreat');
+  });
+});
+
+describe('difficulty levels (round-02)', () => {
+  /** Seconds from the enemy entering range+sight until the bot's first shot. */
+  function firstShotDelay(level: AiLevel): number {
+    const s = arena([
+      { team: 0, cls: 'standard', x: 5.5, y: 15.5 }, // player, idle, 4 tiles away (in range + sight)
+      { team: 1, cls: 'standard', x: 9.5, y: 15.5 },
+    ]);
+    updateVision(s);
+    const bot = new AiBot(1, 3, level);
+    for (let tick = 1; tick <= 60 * 8; tick++) {
+      tickBot(s, bot, 1);
+      if (s.events.some((e) => e.type === 'fire' && e.tank === 1)) return tick / 60;
+    }
+    return Infinity;
+  }
+
+  it.each([
+    ['easy', 5],
+    ['normal', 3],
+    ['hard', 1],
+    ['extreme', 0],
+  ] as const)('%s: first shot %d s after the enemy enters range (data/ai.json fireDelay)', (level, delay) => {
+    expect(AI.levels[level].fireDelay).toBe(delay);
+    const t = firstShotDelay(level);
+    expect(t).toBeGreaterThanOrEqual(delay);
+    // + turret turn and the charge the bot chooses (up to a full charge) — but never much later
+    expect(t).toBeLessThan(delay + 2.6);
+  });
+
+  it('the delay restarts when the enemy has left range/sight and comes back', () => {
+    const s = arena([
+      { team: 0, cls: 'standard', x: 5.5, y: 15.5 },
+      { team: 1, cls: 'standard', x: 9.5, y: 15.5 },
+    ]);
+    updateVision(s);
+    const bot = new AiBot(1, 3, 'hard');
+    tickBot(s, bot, 90);
+    expect(bot.engageT).toBeGreaterThan(1);
+    s.tanks[0].x = 25.5; // out of range and sight
+    s.tanks[0].y = 25.5;
+    updateVision(s);
+    tickBot(s, bot, 60);
+    expect(bot.engageT).toBe(0);
+  });
+
+  it('normal/easy bots do not retreat to cover; hard bots do', () => {
+    for (const [level, retreats] of [
+      ['easy', false],
+      ['normal', false],
+      ['hard', true],
+      ['extreme', true],
+    ] as const) {
+      const s = arena([
+        { team: 0, cls: 'standard', x: 5.5, y: 15.5 },
+        { team: 1, cls: 'standard', x: 9.5, y: 15.5 },
+      ]);
+      const bot = new AiBot(1, 3, level);
+      tickBot(s, bot, 5);
+      s.tanks[1].hp = s.tanks[1].hp * 0.1;
+      tickBot(s, bot, 3);
+      expect(bot.state === 'retreat').toBe(retreats);
+    }
+  });
+
+  it('extreme focuses the weakest visible enemy in range; hard keeps the nearest', () => {
+    const mk = () =>
+      arena([
+        { team: 0, cls: 'standard', x: 5.5, y: 15.5 }, // nearest, full hp
+        { team: 0, cls: 'standard', x: 9.5, y: 10.5 }, // farther, almost dead
+        { team: 1, cls: 'standard', x: 9.5, y: 15.5 },
+      ]);
+    for (const [level, want] of [
+      ['hard', 0],
+      ['extreme', 1],
+    ] as const) {
+      const s = mk();
+      s.tanks[1].hp = 100;
+      updateVision(s);
+      const bot = new AiBot(2, 3, level);
+      for (let i = 0; i < 5; i++) step(s, s.tanks.map((_, k) => (k === 2 ? bot.input(s) : idle)));
+      expect(bot.known?.id).toBe(want);
+    }
+  });
+
+  it('easy bots drive clumsily: same goal, a wandering path', () => {
+    const run = (level: AiLevel): number => {
+      const s = arena([
+        { team: 0, cls: 'standard', x: 3.5, y: 3.5 },
+        { team: 1, cls: 'standard', x: 25.5, y: 25.5 },
+      ]);
+      const bot = new AiBot(1, 3, level);
+      let turn = 0;
+      let prev = s.tanks[1].hull;
+      for (let i = 0; i < 600; i++) {
+        bot.known = { id: 0, x: 3.5, y: 3.5, t: s.tick / 60 }; // keeps investigating the same spot
+        tickBot(s, bot, 1);
+        turn += Math.abs(s.tanks[1].hull - prev);
+        prev = s.tanks[1].hull;
+      }
+      return turn;
+    };
+    expect(run('easy')).toBeGreaterThan(run('normal') * 1.5);
   });
 });
 

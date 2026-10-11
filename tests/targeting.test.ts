@@ -4,6 +4,7 @@ import { AIM_AUTO } from '../src/sim/input';
 import { updateVision } from '../src/sim/visibility';
 import { updateTarget, leadPoint } from '../src/sim/targeting';
 import { angleDiff } from '../src/sim/dmath';
+import { TANKS } from '../src/sim/config';
 
 const auto = { ...idle, aim: AIM_AUTO };
 
@@ -32,7 +33,7 @@ describe('auto targeting (round-01 job 1)', () => {
     expect(s.tanks[0].target).toBe(-1);
   });
 
-  it('hysteresis: keeps the lock unless a candidate is ≥15 % closer', () => {
+  it('hysteresis: keeps the lock unless a candidate is ≥10 % closer (switchRatio)', () => {
     const s = arena([
       { team: 0, cls: 'standard', x: 10.5, y: 10.5 },
       { team: 1, cls: 'standard', x: 15.5, y: 10.5 }, // d = 5
@@ -40,12 +41,27 @@ describe('auto targeting (round-01 job 1)', () => {
     ]);
     updateTarget(s, s.tanks[0]);
     expect(s.tanks[0].target).toBe(1);
-    s.tanks[2].y = 15.0; // d = 4.5 → only 10 % closer: keep
+    s.tanks[2].y = 15.2; // d = 4.7 → only 6 % closer: keep
     updateVision(s);
     updateTarget(s, s.tanks[0]);
     expect(s.tanks[0].target).toBe(1);
-    s.tanks[2].y = 14.4; // d = 3.9 → 22 % closer: switch
+    s.tanks[2].y = 14.8; // d = 4.3 → 14 % closer: switch
     updateVision(s);
+    updateTarget(s, s.tanks[0]);
+    expect(s.tanks[0].target).toBe(2);
+  });
+
+  it('drops an out-of-range lock for a visible enemy inside the range, even if barely closer', () => {
+    const range = TANKS.standard.range; // 7
+    const s = arena([
+      { team: 0, cls: 'standard', x: 10.5, y: 10.5 },
+      { team: 1, cls: 'standard', x: 10.5 + range - 1, y: 10.5 }, // in range, locked first
+      { team: 1, cls: 'standard', x: 10.5, y: 10.5 + range - 0.1 }, // in range, a bit farther
+    ]);
+    s.vision[0].visible.fill(1); // make both visible regardless of the vision radius
+    updateTarget(s, s.tanks[0]);
+    expect(s.tanks[0].target).toBe(1);
+    s.tanks[1].x = 10.5 + range + 0.3; // locked one leaves the range; the other is only ~5 % closer (no ratio switch)
     updateTarget(s, s.tanks[0]);
     expect(s.tanks[0].target).toBe(2);
   });
