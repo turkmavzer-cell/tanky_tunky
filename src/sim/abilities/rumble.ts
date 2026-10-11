@@ -10,10 +10,10 @@ import { abilityParam, curveAt } from './params';
 import type { AbilityModule } from './types';
 
 export const rumble: AbilityModule = {
-  activate: ({ s, t }) => {
-    const radius = abilityParam(t, 'radius');
-    const damage = abilityParam(t, 'damage');
-    const kb = abilityParam(t, 'knockback');
+  activate: ({ s, t, a }) => {
+    const radius = abilityParam(a, 'radius');
+    const damage = abilityParam(a, 'damage');
+    const kb = abilityParam(a, 'knockback');
     s.events.push({ type: 'explode', x: t.x, y: t.y, radius, charge: 0.5, kind: 'rumble', owner: t.id });
     for (const e of s.tanks) {
       if (!e.alive || e.team === t.team) continue;
@@ -29,7 +29,7 @@ export const rumble: AbilityModule = {
         e.ky += (dy / d) * kb * f;
       }
     }
-    damageTerrainDisc(s, t.x, t.y, radius, abilityParam(t, 'terrainDamage'));
+    damageTerrainDisc(s, t.x, t.y, radius, abilityParam(a, 'terrainDamage'));
     return true;
   },
 };

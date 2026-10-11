@@ -66,6 +66,10 @@ export interface Tank {
   target: number;
   // --- ability (round-01 job 5)
   ability: AbilityState;
+  /** Ultimate slot (second button) or null for classes without one. */
+  ult: AbilityState | null;
+  /** Seconds left of an EMP stun (cannot move or fire). */
+  stun: number;
   /** Seconds left of the "hit while invisible" shimmer cue. */
   shimmer: number;
   /** Seconds until the next "bumped into an impassable edge" event may fire. */
@@ -188,7 +192,7 @@ export type SimEvent =
   | { type: 'chargeFull'; tank: number }
   | { type: 'overheat'; tank: number }
   | { type: 'bounce'; x: number; y: number }
-  | { type: 'explode'; x: number; y: number; radius: number; charge: number; kind: ShellKind | 'mine' | 'rumble'; owner: number }
+  | { type: 'explode'; x: number; y: number; radius: number; charge: number; kind: ShellKind | 'mine' | 'rumble' | 'emp'; owner: number }
   | { type: 'hit'; target: number; by: number; damage: number; x: number; y: number }
   | { type: 'graze'; target: number; x: number; y: number }
   | { type: 'destroyed'; tank: number; by: number; x: number; y: number; cause: DamageCause }

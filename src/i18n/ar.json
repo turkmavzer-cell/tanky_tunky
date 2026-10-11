@@ -92,5 +92,12 @@
   "diff.extreme": "متطرف",
   "map.desert": "صحراء",
   "map.city": "مدينة",
-  "map.forest": "غابة"
+  "map.forest": "غابة",
+  "hud.ult": "القدرة القصوى",
+  "card.ult": "القدرة القصوى",
+  "card.skill": "مهارة",
+  "ability.overdrive.desc": "يتضاعف معدل إطلاق النار ثلاث مرات لخمس ثوانٍ.",
+  "ability.repair.desc": "يعيد الصحة كاملة فوراً.",
+  "ability.emp.desc": "يشل الأعداء القريبين لمدة 2.5 ثانية.",
+  "ability.readyshot.desc": "الطلقة التالية تنطلق فوراً بأقصى مدى."
 }

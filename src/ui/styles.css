@@ -66,6 +66,8 @@ input[type='range'] { width: 200px; accent-color: var(--accent); }
 .act-btn.pressed { transform: scale(0.94); border-color: var(--accent); }
 .fire-btn { width: 104px; height: 104px; right: calc(28px + var(--safe-r)); bottom: calc(28px + var(--safe-b)); }
 .ability-btn { width: 72px; height: 72px; right: calc(150px + var(--safe-r)); bottom: calc(36px + var(--safe-b)); }
+.ult-btn { width: 64px; height: 64px; right: calc(104px + var(--safe-r)); bottom: calc(138px + var(--safe-b)); }
+.left-handed .ult-btn { right: auto; left: calc(104px + var(--safe-l)); }
 .left-handed .fire-btn { right: auto; left: calc(28px + var(--safe-l)); }
 .left-handed .ability-btn { right: auto; left: calc(150px + var(--safe-l)); }
 .charge-ring, .cooldown-ring { position: absolute; inset: -3px; border-radius: 50%; pointer-events: none;
@@ -134,6 +136,7 @@ input[type='range'] { width: 200px; accent-color: var(--accent); }
 .minimap { display: block; border: 2px solid #ffffff55; border-radius: 8px; background: #0009; box-shadow: 0 2px 8px #000a; }
 .ability-btn.active { border-color: #7fe0ff; box-shadow: 0 0 18px 4px #7fe0ff88; }
 .ability-btn.ready { border-color: var(--accent); box-shadow: 0 0 10px 1px #ffb34755; }
+.ult-btn.ready { border-color: #ff7a45; box-shadow: 0 0 12px 2px #ff7a4577; }
 .ability-btn.cooling { background: #000b; border-color: #ffffff33; }
 .ability-btn.cooling .act-label, .ability-btn.active .act-label { opacity: 0; }
 .ab-count { position: absolute; inset: 0; display: grid; place-items: center; z-index: 3; pointer-events: none;

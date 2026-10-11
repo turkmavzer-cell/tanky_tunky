@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ABILITIES, COMBAT, TANKS, TANK_CLASSES, evalCurve, type TankClassId } from '../sim/config';
+import { ABILITIES, COMBAT, TANKS, TANK_CLASSES, evalCurve, type AbilityId, type TankClassId } from '../sim/config';
 import { TEAM_PALETTES, drawTankSlices } from '../render/tankArt';
 import type { Difficulty, MapThemeId } from '../core/save';
 import { t } from '../i18n';
@@ -49,19 +49,38 @@ function TankPreview({ cls, spin }: { cls: TankClassId; spin: boolean }) {
   return <canvas ref={ref} className="tank-preview" width={240} height={180} />;
 }
 
-/** Card content: every number is read from the data files (tanks.json, combat.json, abilities.json). */
-function Card({ cls, on, onPick }: { cls: TankClassId; on: boolean; onPick: () => void }) {
-  const d = TANKS[cls];
-  const ab = ABILITIES[d.ability];
-  const full = evalCurve(COMBAT.scaling.damage, 1);
+/** One ability on a tank card (skill or ultimate); numbers come from abilities.json. */
+function AbilityBlock({ id, kind }: { id: AbilityId; kind: 'skill' | 'ult' }) {
+  const ab = ABILITIES[id];
   const abDmg = Number(ab.damage ?? 0);
   const abShots = Number(ab.shots ?? 1);
   const abDur = Number(ab.duration);
+  return (
+    <div className={'tc-ability' + (kind === 'ult' ? ' ult' : '')}>
+      <div className="tc-ab-head">
+        <b>
+          {t(kind === 'ult' ? 'card.ult' : 'card.skill')}: {String(ab.name)}
+        </b>
+        <span>
+          {abDur > 0 ? `${fmt(abDur)} ${t('hud.sec')} · ` : ''}
+          {t('card.cooldown')} {fmt(Number(ab.cooldown))} {t('hud.sec')}
+          {abDmg > 0 ? ` · ${t('card.damage')} ${abShots > 1 ? `${abShots}×` : ''}${fmt(abDmg)}` : ''}
+        </span>
+      </div>
+      <p>{t(`ability.${id}.desc`)}</p>
+    </div>
+  );
+}
+
+/** Card content: every number is read from the data files (tanks.json, combat.json, abilities.json). */
+function Card({ cls, on, onPick }: { cls: TankClassId; on: boolean; onPick: () => void }) {
+  const d = TANKS[cls];
+  const full = evalCurve(COMBAT.scaling.damage, 1);
   const rows: [string, string][] = [
     [t('card.hp'), fmt(d.hp)],
     [t('card.armor'), `%${Math.round(d.armor * 100)}`],
-    [t('card.damage'), `${fmt(d.damage)} / ${fmt(d.damage * full)}`],
-    [t('card.fireRate'), `${fmt(d.fireCooldown)} ${t('hud.sec')}`],
+    [t('card.damage'), d.spray ? `${fmt(d.spray.damage)} × ${fmt(d.spray.rate)}/${t('hud.sec')}` : `${fmt(d.damage)} / ${fmt(d.damage * full)}`],
+    [t('card.fireRate'), d.spray ? `${fmt(d.spray.rate)}/${t('hud.sec')}` : `${fmt(d.fireCooldown)} ${t('hud.sec')}`],
     [t('card.speed'), fmt(d.maxSpeed)],
     [t('card.range'), d.minRange > 0 ? `${fmt(d.minRange)}–${fmt(d.range)}` : fmt(d.range)],
   ];
@@ -82,17 +101,8 @@ function Card({ cls, on, onPick }: { cls: TankClassId; on: boolean; onPick: () =
             </div>
           ))}
         </dl>
-        <div className="tc-ability">
-          <div className="tc-ab-head">
-            <b>{String(ab.name)}</b>
-            <span>
-              {abDur > 0 ? `${fmt(abDur)} ${t('hud.sec')} · ` : ''}
-              {t('card.cooldown')} {fmt(Number(ab.cooldown))} {t('hud.sec')}
-              {abDmg > 0 ? ` · ${t('card.damage')} ${abShots > 1 ? `${abShots}×` : ''}${fmt(abDmg)}` : ''}
-            </span>
-          </div>
-          <p>{t(`ability.${d.ability}.desc`)}</p>
-        </div>
+        <AbilityBlock id={d.ability} kind="skill" />
+        {d.ult && <AbilityBlock id={d.ult} kind="ult" />}
         <div className="tc-tree">
           <b>{t('card.tree')}</b> <span>{t('card.soon')}</span>
         </div>

@@ -1,4 +1,4 @@
-/** Development keyboard/mouse controls (brief §4): WASD/arrows move, mouse aims, Space/LMB charges+fires, E/Shift = ability. */
+/** Development keyboard/mouse controls (brief §4): WASD/arrows move, mouse aims, Space/LMB charges+fires, E/Shift = ability, Q = ultimate. */
 export class KeyboardMouse {
   private keys = new Set<string>();
   mouseX = 0;
@@ -71,6 +71,10 @@ export class KeyboardMouse {
 
   abilityHeld(): boolean {
     return this.down('KeyE') || this.down('ShiftLeft');
+  }
+
+  ultHeld(): boolean {
+    return this.down('KeyQ') || this.down('ShiftRight');
   }
 
   /** Forget held keys/buttons (e.g. when pausing, so nothing stays "stuck"). */

@@ -5,7 +5,7 @@
  *    dead zone, analog magnitude, exponential smoothing, sensitivity.
  *  - FIRE button: hold = charge (ring fills, driven by sim charge level), drag away from the
  *    button = manual turret aim (twin-stick style), release = shoot.
- *  - ABILITY button.
+ *  - ABILITY button (skill, fast recharge) and ULT button (ultimate, long recharge).
  * Each control tracks its own pointerId, so joystick + fire + ability work simultaneously.
  */
 export interface TouchState {
@@ -14,6 +14,7 @@ export interface TouchState {
   moveY: number;
   fire: boolean;
   ability: boolean;
+  ult: boolean;
   /** Screen-space aim angle while dragging the fire button, else null. */
   aimAngle: number | null;
   /** True once any touch happened (switches the scene from keyboard to touch input). */
@@ -23,9 +24,11 @@ export interface TouchState {
 export interface TouchOptions {
   leftHanded: boolean;
   sensitivity: number;
-  labels: { fire: string; ability: string };
+  labels: { fire: string; ability: string; ult?: string };
   /** Ability name shown on the button. */
   abilityName?: string;
+  /** Ultimate name; the ULT button is hidden when the class has none. */
+  ultName?: string;
 }
 
 const JOY_RADIUS = 64;
@@ -36,14 +39,13 @@ export const AIM_DRAG_MIN = 60;
 
 export class TouchControls {
   readonly root: HTMLDivElement;
-  readonly state: TouchState = { moveX: 0, moveY: 0, fire: false, ability: false, aimAngle: null, active: false };
+  readonly state: TouchState = { moveX: 0, moveY: 0, fire: false, ability: false, ult: false, aimAngle: null, active: false };
   private readonly joyBase: HTMLDivElement;
   private readonly joyKnob: HTMLDivElement;
   private readonly fireBtn: HTMLDivElement;
   private readonly fireRing: HTMLDivElement;
-  private readonly abilityBtn: HTMLDivElement;
-  private readonly abilityRing: HTMLDivElement;
-  private readonly abilityCount: HTMLDivElement;
+  private readonly skill: Slot;
+  private readonly ultSlot: Slot;
   private joyId = -1;
   private joyCx = 0;
   private joyCy = 0;
@@ -53,6 +55,7 @@ export class TouchControls {
   private fireCx = 0;
   private fireCy = 0;
   private abilityId = -1;
+  private ultId = -1;
   private readonly offs: (() => void)[] = [];
 
   constructor(
@@ -70,15 +73,9 @@ export class TouchControls {
     const fl = el('span', 'act-label');
     fl.textContent = opts.labels.fire;
     this.fireBtn.append(this.fireRing, fl);
-    this.abilityBtn = el('div', 'act-btn ability-btn ready');
-    this.abilityBtn.dataset.testid = 'ability';
-    this.abilityRing = el('div', 'cooldown-ring');
-    const al = el('span', 'act-label');
-    al.textContent = opts.abilityName ?? opts.labels.ability;
-    this.abilityCount = el('span', 'ab-count');
-    this.abilityCount.dataset.testid = 'ability-count';
-    this.abilityBtn.append(this.abilityRing, al, this.abilityCount);
-    this.root.append(this.joyBase, this.fireBtn, this.abilityBtn);
+    this.skill = makeSlot('ability-btn', 'ability', 'ability-count', opts.abilityName ?? opts.labels.ability);
+    this.ultSlot = makeSlot('ability-btn ult-btn', 'ult', 'ult-count', opts.ultName ?? opts.labels.ult ?? 'ULT');
+    this.root.append(this.joyBase, this.fireBtn, this.skill.btn, this.ultSlot.btn);
     host.appendChild(this.root);
 
     const on = <K extends keyof HTMLElementEventMap>(t: HTMLElement | Window, type: K, fn: (e: HTMLElementEventMap[K]) => void): void => {
@@ -112,11 +109,18 @@ export class TouchControls {
       this.fireBtn.classList.add('pressed');
       return;
     }
-    if (this.abilityId < 0 && this.abilityBtn.contains(target)) {
+    if (this.abilityId < 0 && this.skill.btn.contains(target)) {
       e.preventDefault();
       this.abilityId = e.pointerId;
       this.state.ability = true;
-      this.abilityBtn.classList.add('pressed');
+      this.skill.btn.classList.add('pressed');
+      return;
+    }
+    if (this.ultId < 0 && this.ultSlot.btn.contains(target)) {
+      e.preventDefault();
+      this.ultId = e.pointerId;
+      this.state.ult = true;
+      this.ultSlot.btn.classList.add('pressed');
       return;
     }
     const rr = this.root.getBoundingClientRect();
@@ -179,7 +183,11 @@ export class TouchControls {
     } else if (e.pointerId === this.abilityId) {
       this.abilityId = -1;
       this.state.ability = false;
-      this.abilityBtn.classList.remove('pressed');
+      this.skill.btn.classList.remove('pressed');
+    } else if (e.pointerId === this.ultId) {
+      this.ultId = -1;
+      this.state.ult = false;
+      this.ultSlot.btn.classList.remove('pressed');
     }
   }
 
@@ -193,8 +201,6 @@ export class TouchControls {
 
   /** Visual feedback from the simulation: charge 0..1, flags for perfect window / overheat. */
   private lastFeedback = '';
-  private lastAbility = '';
-  private abilityPhase: 'ready' | 'active' | 'cooling' = 'ready';
 
   setFeedback(charge: number, perfect: boolean, overheat: number): void {
     const key = `${Math.round(charge * 90)}|${perfect}|${Math.round(overheat * 60)}`;
@@ -213,28 +219,12 @@ export class TouchControls {
    *  - ready: coloured with its name; a one-shot flash when it becomes ready again
    */
   setAbility(active: number, activeMax: number, cooldown: number, cooldownMax: number): void {
-    const phase = active > 0 ? 'active' : cooldown > 0 ? 'cooling' : 'ready';
-    const frac = phase === 'active' ? (activeMax > 0 ? active / activeMax : 0) : phase === 'cooling' ? (cooldownMax > 0 ? 1 - cooldown / cooldownMax : 1) : 1;
-    const secs = phase === 'active' ? Math.ceil(active) : phase === 'cooling' ? Math.ceil(cooldown) : 0;
-    const key = `${phase}|${Math.round(frac * 120)}|${secs}`;
-    if (key === this.lastAbility) return;
-    this.lastAbility = key;
-    if (phase !== this.abilityPhase) {
-      const b = this.abilityBtn;
-      b.classList.remove('active', 'cooling', 'ready');
-      b.classList.add(phase);
-      if (phase === 'ready' && this.abilityPhase === 'cooling') {
-        // restart the CSS flash animation
-        b.classList.remove('flash');
-        void b.offsetWidth;
-        b.classList.add('flash');
-      }
-      this.abilityPhase = phase;
-    }
-    const deg = Math.round(frac * 360);
-    this.abilityRing.style.background =
-      phase === 'active' ? `conic-gradient(#7fe0ff ${deg}deg, #ffffff18 0)` : phase === 'cooling' ? `conic-gradient(#e8e8e8 ${deg}deg, #ffffff14 0)` : 'none';
-    this.abilityCount.textContent = secs > 0 ? String(secs) : '';
+    renderSlot(this.skill, active, activeMax, cooldown, cooldownMax);
+  }
+
+  /** Same as setAbility for the ultimate button. */
+  setUlt(active: number, activeMax: number, cooldown: number, cooldownMax: number): void {
+    renderSlot(this.ultSlot, active, activeMax, cooldown, cooldownMax);
   }
 
   dispose(): void {
@@ -247,4 +237,49 @@ function el(tag: 'div' | 'span', cls: string): HTMLDivElement {
   const e = document.createElement(tag) as HTMLDivElement;
   e.className = cls;
   return e;
+}
+
+/** One ability button: ring, countdown and the state machine of its CSS classes. */
+interface Slot {
+  btn: HTMLDivElement;
+  ring: HTMLDivElement;
+  count: HTMLDivElement;
+  last: string;
+  phase: 'ready' | 'active' | 'cooling';
+}
+
+function makeSlot(cls: string, testid: string, countTestid: string, label: string): Slot {
+  const btn = el('div', `act-btn ${cls} ready`);
+  btn.dataset.testid = testid;
+  const ring = el('div', 'cooldown-ring');
+  const l = el('span', 'act-label');
+  l.textContent = label;
+  const count = el('span', 'ab-count');
+  count.dataset.testid = countTestid;
+  btn.append(ring, l, count);
+  return { btn, ring, count, last: '', phase: 'ready' };
+}
+
+function renderSlot(sl: Slot, active: number, activeMax: number, cooldown: number, cooldownMax: number): void {
+  const phase = active > 0 ? 'active' : cooldown > 0 ? 'cooling' : 'ready';
+  const frac = phase === 'active' ? (activeMax > 0 ? active / activeMax : 0) : phase === 'cooling' ? (cooldownMax > 0 ? 1 - cooldown / cooldownMax : 1) : 1;
+  const secs = phase === 'active' ? Math.ceil(active) : phase === 'cooling' ? Math.ceil(cooldown) : 0;
+  const key = `${phase}|${Math.round(frac * 120)}|${secs}`;
+  if (key === sl.last) return;
+  sl.last = key;
+  if (phase !== sl.phase) {
+    const b = sl.btn;
+    b.classList.remove('active', 'cooling', 'ready');
+    b.classList.add(phase);
+    if (phase === 'ready' && sl.phase === 'cooling') {
+      // restart the CSS flash animation
+      b.classList.remove('flash');
+      void b.offsetWidth;
+      b.classList.add('flash');
+    }
+    sl.phase = phase;
+  }
+  const deg = Math.round(frac * 360);
+  sl.ring.style.background = phase === 'active' ? `conic-gradient(#7fe0ff ${deg}deg, #ffffff18 0)` : phase === 'cooling' ? `conic-gradient(#e8e8e8 ${deg}deg, #ffffff14 0)` : 'none';
+  sl.count.textContent = secs > 0 ? String(secs) : '';
 }

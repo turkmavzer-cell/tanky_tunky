@@ -92,5 +92,12 @@
   "diff.extreme": "Ekstrem",
   "map.desert": "Çöl",
   "map.city": "Şehir",
-  "map.forest": "Orman"
+  "map.forest": "Orman",
+  "hud.ult": "ULTİ",
+  "card.ult": "Ulti",
+  "card.skill": "Yetenek",
+  "ability.overdrive.desc": "Beş saniye boyunca atış hızı üç katına çıkar.",
+  "ability.repair.desc": "Canını anında tamamen doldurur. Can zaten doluysa kullanılmaz.",
+  "ability.emp.desc": "Çevresindeki düşmanları 2,5 saniye sersemletir: hareket edemez, ateş edemez.",
+  "ability.readyshot.desc": "Sonraki atış şarj beklemeden, tam menzille anında çıkar."
 }

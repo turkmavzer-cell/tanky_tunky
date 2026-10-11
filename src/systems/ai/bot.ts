@@ -16,9 +16,9 @@
 import aiJson from '../../data/ai.json';
 import { ABILITIES, COMBAT, TANKS } from '../../sim/config';
 import { clamp, datan2, dcos, dhypot, dsin } from '../../sim/dmath';
-import { BTN_ABILITY, BTN_FIRE, EMPTY_INPUT, quantizeAim, quantizeMove, type PlayerInput } from '../../sim/input';
+import { BTN_ABILITY, BTN_FIRE, BTN_ULT, EMPTY_INPUT, quantizeAim, quantizeMove, type PlayerInput } from '../../sim/input';
 import { Rng } from '../../sim/rng';
-import type { SimState, Tank } from '../../sim/state';
+import type { AbilityState, SimState, Tank } from '../../sim/state';
 import { leadPoint, selectTarget } from '../../sim/targeting';
 import { canNoticeTank, canSeeTank, isInvisible } from '../../sim/visibility';
 import { chargeTimeOf } from '../../sim/tank';
@@ -252,7 +252,8 @@ export class AiBot {
     }
 
     // ---- ability
-    if (this.wantsAbility(s, me, seen, fresh)) buttons |= BTN_ABILITY;
+    if (this.wantsAbility(s, me, me.ability, seen, fresh)) buttons |= BTN_ABILITY;
+    if (me.ult && this.wantsAbility(s, me, me.ult, seen, fresh)) buttons |= BTN_ULT;
 
     return { moveX: quantizeMove(mv.x * moveScale), moveY: quantizeMove(mv.y * moveScale), aim, buttons };
   }
@@ -275,13 +276,13 @@ export class AiBot {
   }
 
   /** Class-specific ability habits (data/ai.json → ability). */
-  private wantsAbility(s: SimState, me: Tank, seen: Tank | null, fresh: Known | null): boolean {
-    const a = me.ability;
+  private wantsAbility(s: SimState, me: Tank, a: AbilityState, seen: Tank | null, fresh: Known | null): boolean {
     if (a.active > 0 || a.cooldown > 0) return false;
     if (this.lv.clumsy) return this.rng.next() < 0.004; // novice: presses it at random moments
     if (this.rng.next() > this.lv.abilityUse * 0.2) return false; // spread decisions over time
     const cfg = aiJson.ability;
     const dSeen = seen ? dhypot(seen.x - me.x, seen.y - me.y) : Infinity;
+    if (a.id === 'repair') return me.hp < maxHp(me) * (this.lv.strategic ? cfg.repair.hpBelow : 0.6); // heal-only ability
     // no tactics: simply use the ability when an enemy is in sight (mines: when one is near)
     if (!this.lv.strategic) return a.id === 'mine' ? fresh !== null && dhypot(fresh.x - me.x, fresh.y - me.y) < cfg.mine.enemyWithin : seen !== null;
     switch (a.id) {
@@ -297,6 +298,15 @@ export class AiBot {
         return dSeen < cfg.swift.enemyWithin && this.state === 'attack';
       case 'barrage':
         return seen !== null && dSeen >= cfg.barrage.minDistance;
+      case 'overdrive':
+        return dSeen < cfg.overdrive.enemyWithin && this.state === 'attack';
+      case 'emp': {
+        let n = 0;
+        for (const e of s.tanks) if (e.alive && e.team !== me.team && canNoticeTank(s, me.team, e) && dhypot(e.x - me.x, e.y - me.y) < cfg.emp.enemiesWithin) n++;
+        return n >= cfg.emp.minEnemies;
+      }
+      case 'readyshot':
+        return seen !== null && dSeen >= cfg.readyshot.minDistance;
       case 'mine': {
         const moving = dhypot(me.vx, me.vy) > 0.5;
         const corridor = this.isCorridor(s, Math.floor(me.x), Math.floor(me.y));

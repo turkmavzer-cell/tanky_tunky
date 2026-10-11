@@ -103,7 +103,7 @@ export function GameView({ settings, playerClass, seed, record, onQuit, onAgain,
     const touch = new TouchControls(controlsHost.current!, {
       leftHanded: settings.leftHanded,
       sensitivity: settings.joystickSensitivity,
-      labels: { fire: t('hud.fire'), ability: t('hud.ability') },
+      labels: { fire: t('hud.fire'), ability: t('hud.ability'), ult: t('hud.ult') },
     });
     scene.touch = touch;
     scene.onMatchEnd = (rows) => {
@@ -116,6 +116,11 @@ export function GameView({ settings, playerClass, seed, record, onQuit, onAgain,
       window.__tanky = { scene };
       const label = touch.root.querySelector('.ability-btn .act-label');
       if (label) label.textContent = scene.hud().abilityName.toUpperCase();
+      const ultLabel = touch.root.querySelector('.ult-btn .act-label');
+      const h0 = scene.hud();
+      if (ultLabel) ultLabel.textContent = h0.ultName.toUpperCase();
+      const ultBtn = touch.root.querySelector<HTMLElement>('.ult-btn');
+      if (ultBtn) ultBtn.style.display = h0.hasUlt ? '' : 'none';
       if (scene.minimap && minimapHost.current) minimapHost.current.appendChild(scene.minimap.canvas);
     });
     const off = onAppPause(
@@ -176,6 +181,15 @@ export function GameView({ settings, playerClass, seed, record, onQuit, onAgain,
               {hud.abilityName}{' '}
               <b>{hud.abilityActive > 0 ? `${Math.ceil(hud.abilityActive)} ${t('hud.sec')}` : hud.abilityCooldown > 0 ? `${Math.ceil(hud.abilityCooldown)} ${t('hud.sec')}` : t('hud.ready')}</b>
             </div>
+            {hud.hasUlt && (
+              <div
+                className={'ab-chip ult ' + (hud.ultActive > 0 ? 'active' : hud.ultCooldown > 0 ? 'cooling' : 'ready')}
+                data-testid="ult-chip"
+              >
+                {hud.ultName}{' '}
+                <b>{hud.ultActive > 0 ? `${Math.ceil(hud.ultActive)} ${t('hud.sec')}` : hud.ultCooldown > 0 ? `${Math.ceil(hud.ultCooldown)} ${t('hud.sec')}` : t('hud.ready')}</b>
+              </div>
+            )}
             <div className="kd" data-testid="kd">
               {t('hud.kd')} <b>{hud.kills}</b>/<b>{hud.deaths}</b>
             </div>

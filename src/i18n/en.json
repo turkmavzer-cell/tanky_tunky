@@ -92,5 +92,12 @@
   "diff.extreme": "Extreme",
   "map.desert": "Desert",
   "map.city": "City",
-  "map.forest": "Forest"
+  "map.forest": "Forest",
+  "hud.ult": "ULT",
+  "card.ult": "Ultimate",
+  "card.skill": "Skill",
+  "ability.overdrive.desc": "Fire rate triples for five seconds.",
+  "ability.repair.desc": "Instantly restores full health. Not usable at full health.",
+  "ability.emp.desc": "Stuns nearby enemies for 2.5 seconds: they cannot move or fire.",
+  "ability.readyshot.desc": "The next shot fires at once at full range, no charge-up."
 }

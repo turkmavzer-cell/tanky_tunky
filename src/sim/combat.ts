@@ -57,7 +57,7 @@ export interface ExplosionSpec {
   /** Tank directly hit (full damage) or -1. */
   direct: number;
   charge: number;
-  kind: ShellKind | 'mine' | 'rumble';
+  kind: ShellKind | 'mine' | 'rumble' | 'emp';
   cause: DamageCause;
   terrainDamage: number;
 }

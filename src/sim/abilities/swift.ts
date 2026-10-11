@@ -4,7 +4,7 @@ import type { AbilityModule } from './types';
 
 export const swift: AbilityModule = {
   activate: () => true,
-  speedMul: (t) => abilityParam(t, 'speedMul'),
-  fireRateMul: (t) => abilityParam(t, 'fireRateMul'),
-  chargeTimeMul: (t) => abilityParam(t, 'chargeTimeMul'),
+  speedMul: (a) => abilityParam(a, 'speedMul'),
+  fireRateMul: (a) => abilityParam(a, 'fireRateMul'),
+  chargeTimeMul: (a) => abilityParam(a, 'chargeTimeMul'),
 };

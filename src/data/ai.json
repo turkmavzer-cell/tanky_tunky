@@ -73,6 +73,19 @@
     "mine": {
       "onPath": true,
       "enemyWithin": 10
+    },
+    "overdrive": {
+      "enemyWithin": 6
+    },
+    "repair": {
+      "hpBelow": 0.4
+    },
+    "emp": {
+      "enemiesWithin": 3.5,
+      "minEnemies": 1
+    },
+    "readyshot": {
+      "minDistance": 4
     }
   },
   "patrolObjectiveChance": 0.5,

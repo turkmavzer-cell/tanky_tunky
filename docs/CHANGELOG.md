@@ -57,6 +57,10 @@ Tam liste ve öneriler: `CLAUDE.md` §1 "Pending owner decisions" (B1, B2, A, K1
 ## 4. Günlük (en yeni en üstte)
 
 <!-- LOG:START -->
+### 2026-10-11 — [acik-soru] Denge ölçümü (round 04, 120 maç, zor bot, çöl 40x40)
+Çevik %62,0 · Ağır %67,8 · Dengeli %49,0 · Topçu %21,9 (B1 +%25'ten sonra de neredeyse değişmedi). Sayılar bu turda elle ayarlanmadı (kural 4). Öneri: Topçu mermileri patlamanın kenarına düşüyor (merkez hasarı ~%25'e iniyor) — iniş düzeltmesi; Ağır B2; Çevik taramalı ateş sonrası yine yüksek. Sahibin kararı bekleniyor.
+### 2026-10-11 — [yenilik] C: her tanka yetenek + ulti, Çevik taramalı ateş
+İkinci yetenek yuvası (Tank.ult, BTN_ULT, ikinci buton + HUD çipi, klavye Q). Yeni yetenekler: Aşırı Yük (Çevik ulti), Onarım (Ağır ulti), EMP (Dengeli ulti, sersemletme Tank.stun), Hazır Atış (Topçu yetenek), Yaylım Ateşi artık Topçu ultisi (45 sn). Gümbürtü: yarıçap 4, sabit 1000 hasar, bekleme 10 sn; Saklan bekleme 5 sn. Çevik: hız 5,0, basılı tut = saniyede 10 mermi (80 hasar, ±2° sapma), şarj yok. Botlar iki yuvayı da kullanır. Sayılar TANKS.md ÖNERİ tablosundan (sahip 'başla' dedi) — doğrulanmadı: telefonda his, denge ölçümü ayrı.
 ### 2026-10-11 — [duzeltme] A: Otomatik nişan sadece ekrandaki düşmana
 Tam görünürlükten (D-037) beri taret ekran dışındaki en yakın düşmana kilitleniyordu. SimState.view (kamera dikdörtgeni, iso ekran px) GameScene.updateView() ile her tick yenilenir; targeting.onScreen() yalnız yerel oyuncuyu sınırlar, botlar sınırsız. Kilitlenen hedef ekrandan çıkarsa bırakılır. Test: tests/targeting.test.ts (2 yeni). Gerçek cihazda doğrulanmadı.
 ### 2026-10-11 — [degisiklik] B1: Topçu inişte +%25 hasar

@@ -7,7 +7,7 @@ import { FrameStats } from '../core/frameStats';
 import { KeyboardMouse } from '../core/keyboard';
 import { haptic } from '../core/platform';
 import { ABILITIES, COMBAT, MATCH, SIM_DT, TANKS, VISION, type AbilityId, type TankClassId } from '../sim/config';
-import { AIM_AUTO, BTN_ABILITY, BTN_FIRE, EMPTY_INPUT, quantizeAim, quantizeMove, type PlayerInput } from '../sim/input';
+import { AIM_AUTO, BTN_ABILITY, BTN_FIRE, BTN_ULT, EMPTY_INPUT, quantizeAim, quantizeMove, type PlayerInput } from '../sim/input';
 import { chargeLevel } from '../sim/sim';
 import type { SimEvent, SimState } from '../sim/state';
 import { lerp, lerpAngle } from '../sim/dmath';
@@ -86,6 +86,12 @@ export interface HudSnapshot {
   abilityActive: number;
   abilityCooldown: number;
   abilityCooldownMax: number;
+  /** Ultimate (second slot); hasUlt false for classes without one. */
+  hasUlt: boolean;
+  ultName: string;
+  ultActive: number;
+  ultCooldown: number;
+  ultCooldownMax: number;
   protect: number;
   cls: TankClassId;
   endless: boolean;
@@ -137,6 +143,9 @@ export class GameScene {
   private abPrevActive = 0;
   private abPrevCooldown = 0;
   private abActiveMax = 1;
+  private ultPrevActive = 0;
+  private ultPrevCooldown = 0;
+  private ultActiveMax = 1;
   private readonly inputs: PlayerInput[] = [];
   touch: TouchControls | null = null;
   minimap: Minimap | null = null;
@@ -249,7 +258,7 @@ export class GameScene {
       if (touch.aimAngle !== null) aim = quantizeAim(screenAngleToWorld(touch.aimAngle));
       else if (this.opts.autoAim) aim = AIM_AUTO;
       else aim = Math.abs(w.x) + Math.abs(w.y) > 0.1 ? quantizeAim(Math.atan2(w.y, w.x)) : quantizeAim(me.turret);
-      return { moveX: quantizeMove(w.x), moveY: quantizeMove(w.y), aim, buttons: (touch.fire ? BTN_FIRE : 0) | (touch.ability ? BTN_ABILITY : 0) };
+      return { moveX: quantizeMove(w.x), moveY: quantizeMove(w.y), aim, buttons: (touch.fire ? BTN_FIRE : 0) | (touch.ability ? BTN_ABILITY : 0) | (touch.ult ? BTN_ULT : 0) };
     }
     const mv = this.kb.moveVector();
     const w = screenDirToWorld(mv.x, mv.y);
@@ -266,7 +275,7 @@ export class GameScene {
       aim = quantizeAim(Math.atan2(m.y - me.y, m.x - me.x));
     } else if (this.opts.autoAim) aim = AIM_AUTO;
     else aim = mv.x || mv.y ? quantizeAim(Math.atan2(w.y, w.x)) : quantizeAim(me.turret);
-    return { moveX: quantizeMove(w.x), moveY: quantizeMove(w.y), aim, buttons: (this.kb.fireHeld() ? BTN_FIRE : 0) | (this.kb.abilityHeld() ? BTN_ABILITY : 0) };
+    return { moveX: quantizeMove(w.x), moveY: quantizeMove(w.y), aim, buttons: (this.kb.fireHeld() ? BTN_FIRE : 0) | (this.kb.abilityHeld() ? BTN_ABILITY : 0) | (this.kb.ultHeld() ? BTN_ULT : 0) };
   }
 
   /** Refresh the camera rectangle the sim uses to limit the local player's auto-aim (A). */
@@ -370,6 +379,11 @@ export class GameScene {
             this.play('siege_on', e.x, e.y);
             this.play('explosion_big', e.x, e.y, 0.6);
             if (e.owner === this.localId) haptic('heavy');
+          } else if (e.kind === 'emp') {
+            this.overlays.ring(e.x, e.y, e.radius);
+            if (seen) this.fx.sparks(px, py - 10, 24);
+            this.play('alarm', e.x, e.y);
+            if (e.owner === this.localId) haptic('heavy');
           } else {
             if (seen) this.fx.explosion(px, py - 6, e.radius * 90, e.charge);
             this.play(e.kind === 'mine' ? 'mine_explode' : e.radius > 0.8 || e.charge > 0.6 ? 'explosion_big' : 'explosion_small', e.x, e.y, e.charge);
@@ -455,13 +469,15 @@ export class GameScene {
           const mine = t.team === this.myTeam;
           if (e.phase === 'start') {
             if (e.id === 'hide') this.play('hologram', t.x, t.y);
-            if (e.id === 'swift') this.play('dash', t.x, t.y);
+            if (e.id === 'swift' || e.id === 'overdrive') this.play('dash', t.x, t.y);
+            if (e.id === 'repair') this.play('shield_up', t.x, t.y);
+            if (e.id === 'readyshot') this.play('reload_ready', t.x, t.y);
             if (e.id === 'barrage' && mine) this.play('alarm');
           } else {
             if (e.id === 'hide') this.play('shield_hit', t.x, t.y);
             if (e.id === 'mine' && mine) this.play('trap_place', t.x, t.y);
           }
-          if (e.tank === this.localId && e.phase === 'start') haptic(e.id === 'rumble' ? 'heavy' : 'medium');
+          if (e.tank === this.localId && e.phase === 'start') haptic(e.id === 'rumble' || e.id === 'emp' ? 'heavy' : 'medium');
           break;
         }
         case 'matchStart':
@@ -511,7 +527,7 @@ export class GameScene {
       if (shimmer) a = 0.12 + 0.18 * Math.abs(Math.sin(time * 40));
       if (t.protect > 0) a *= 0.55 + 0.45 * Math.abs(Math.sin(time * 14));
       v.root.alpha = a;
-      v.setGlow(t.ability.id === 'swift' && t.ability.active > 0 ? 0xfff0d6 : null);
+      v.setGlow(t.ability.id === 'swift' && t.ability.active > 0 ? 0xfff0d6 : t.ult && t.ult.id === 'overdrive' && t.ult.active > 0 ? 0xffb090 : null);
       const x = lerp(p.x, t.x, alpha);
       const y = lerp(p.y, t.y, alpha);
       const sx = this.sx(x, y);
@@ -585,6 +601,18 @@ export class GameScene {
     }
     this.abPrevActive = ab.active;
     this.abPrevCooldown = ab.cooldown;
+    const ut = me.ult;
+    if (ut) {
+      const ucd = Number(ABILITIES[ut.id].cooldown) * Math.max(0.1, s.rules.cooldownMul);
+      if (ut.active > 0 && this.ultPrevActive <= 0) this.ultActiveMax = ut.active;
+      this.touch?.setUlt(ut.active, this.ultActiveMax, ut.cooldown, ucd);
+      if (me.alive && ut.active <= 0 && ut.cooldown <= 0 && this.ultPrevCooldown > 0) {
+        this.play('perfect_charge');
+        haptic('medium');
+      }
+      this.ultPrevActive = ut.active;
+      this.ultPrevCooldown = ut.cooldown;
+    }
     this.fx.update(dt);
     this.overlays.end(dt);
     this.worldView.updateOverlays(dt);
@@ -715,6 +743,11 @@ export class GameScene {
       abilityActive: ab.active,
       abilityCooldown: ab.cooldown,
       abilityCooldownMax: Number(ABILITIES[ab.id].cooldown) * Math.max(0.1, s.rules.cooldownMul),
+      hasUlt: me.ult !== null,
+      ultName: me.ult ? String(ABILITIES[me.ult.id].name) : '',
+      ultActive: me.ult ? me.ult.active : 0,
+      ultCooldown: me.ult ? me.ult.cooldown : 0,
+      ultCooldownMax: me.ult ? Number(ABILITIES[me.ult.id].cooldown) * Math.max(0.1, s.rules.cooldownMul) : 0,
       protect: me.protect,
       cls: me.cls,
       endless: s.rules.endless,
