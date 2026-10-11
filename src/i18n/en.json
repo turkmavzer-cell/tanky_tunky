@@ -157,5 +157,9 @@
   "perk.chargeTime": "-{p}% charge time",
   "perk.splash": "+{p}% blast radius",
   "perk.applied": "{c} upgraded!",
-  "garage.partsNote": "Win missions to collect upgrade parts."
+  "garage.partsNote": "Win missions to collect upgrade parts.",
+  "card.charged": "Hold ({p}%+):",
+  "charged.heavy": "laser-fast shell, {s}% shock wave around, +{w}% wreck blast on a kill",
+  "charged.standard": "piercing shell, {r}% damage to the tank behind",
+  "charged.artillery": "{d} s fire patch, {r}% damage per second"
 }

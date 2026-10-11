@@ -227,3 +227,12 @@ input[type='range'] { width: 200px; accent-color: var(--accent); }
 .garage-row { grid-template-columns: minmax(0, 1fr) auto; }
 .gr-meta { min-width: 0; flex-wrap: wrap; row-gap: 2px; }
 .perk-row .gr-eff { white-space: normal; line-height: 1.15; }
+
+/* round 07: charged-shot special on the tank card */
+.tc-charged { font-size: 12px; line-height: 1.25; color: #c9d1de; background: #ff6a1a14; border-left: 3px solid #ff8a3a; padding: 3px 6px; border-radius: 4px; }
+.tc-charged b { color: #ffb070; }
+/* round 07: the extra charged row must not push the abilities off the card — the right column scrolls */
+.tc-right { gap: 4px; overflow-y: auto; max-height: 100%; scrollbar-width: none; }
+.tc-right::-webkit-scrollbar { display: none; }
+.tank-card { overflow: hidden; }
+.tc-ability { padding: 4px 8px; }

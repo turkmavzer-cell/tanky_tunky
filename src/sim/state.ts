@@ -141,6 +141,28 @@ export interface Shell {
   warn: boolean;
   /** What caused this shell (kill attribution). */
   cause: DamageCause;
+  /** Round 07 charged-shot special ('none' for normal shells). */
+  special: ShellSpecial;
+  /** Pierce: already went through one tank. */
+  pierced: boolean;
+}
+
+export type ShellSpecial = 'none' | 'shock' | 'pierce' | 'fire';
+
+/** Artillery charged shot: burning patch (fixed size, does not spread). */
+export interface FireZone {
+  id: number;
+  x: number;
+  y: number;
+  r: number;
+  /** Seconds left. */
+  t: number;
+  /** Seconds until the next damage chunk. */
+  next: number;
+  /** Damage per chunk (raw, before the owner's damage multiplier and the target's armor). */
+  chunk: number;
+  owner: number;
+  team: number;
 }
 
 export interface Mine {
@@ -153,7 +175,7 @@ export interface Mine {
   arm: number;
 }
 
-export type DamageCause = 'shell' | 'rumble' | 'barrage' | 'mine' | 'environment';
+export type DamageCause = 'shell' | 'rumble' | 'barrage' | 'mine' | 'environment' | 'shock' | 'wreck' | 'fire';
 
 export interface KillRecord {
   /** Match time (s). */
@@ -208,8 +230,8 @@ export type SimEvent =
   | { type: 'fire'; tank: number; x: number; y: number; angle: number; charge: number; perfect: boolean; kind: ShellKind }
   | { type: 'chargeFull'; tank: number }
   | { type: 'overheat'; tank: number }
-  | { type: 'bounce'; x: number; y: number }
-  | { type: 'explode'; x: number; y: number; radius: number; charge: number; kind: ShellKind | 'mine' | 'rumble' | 'emp'; owner: number }
+  | { type: 'bounce'; x: number; y: number; owner: number }
+  | { type: 'explode'; x: number; y: number; radius: number; charge: number; kind: ShellKind | 'mine' | 'rumble' | 'emp' | 'shock' | 'wreck'; owner: number }
   | { type: 'hit'; target: number; by: number; damage: number; x: number; y: number }
   | { type: 'graze'; target: number; x: number; y: number }
   | { type: 'destroyed'; tank: number; by: number; x: number; y: number; cause: DamageCause }
@@ -245,6 +267,8 @@ export interface SimState {
   tanks: Tank[];
   shells: Shell[];
   mines: Mine[];
+  /** Round 07: burning patches from charged Artillery shells. */
+  fires: FireZone[];
   pickups: Pickup[];
   crateRespawns: CrateRespawn[];
   nextId: number;

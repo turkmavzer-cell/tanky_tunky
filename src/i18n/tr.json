@@ -157,5 +157,9 @@
   "perk.chargeTime": "-%{p} şarj süresi",
   "perk.splash": "+%{p} patlama alanı",
   "perk.applied": "{c} güçlendirildi!",
-  "garage.partsNote": "Güçlendirme parçalarını görevleri kazanarak toplarsın."
+  "garage.partsNote": "Güçlendirme parçalarını görevleri kazanarak toplarsın.",
+  "card.charged": "Basılı tut (%{p}+):",
+  "charged.heavy": "lazer hızında mermi, çevreye %{s} şok dalgası, patlatırsa +%{w} enkaz",
+  "charged.standard": "delici mermi, arkadaki tanka %{r} hasar",
+  "charged.artillery": "{d} sn ateş alanı, saniyede %{r} hasar"
 }

@@ -99,3 +99,17 @@ Observations
 - Much more fighting: ~52 kills per 5-minute match (bots see everyone now; regen + upgrades keep tanks in the fight).
 - **Artillery 22 %** remains the outlier (same blast-edge cause as in round 02). **Heavy 63–67 %**. Scout rose to 57–59 % with 2200 hp and full visibility (no ambush penalty).
 - Both maps give nearly identical class results, so the maps themselves are fair.
+
+## Round 07 — Scout 6/s, charged specials (not tuned)
+
+`npx tsx tools/balance.ts 200 40 hard desert` (3v3, 40×40, 300 s, random rosters, hard bots):
+
+| Class | Round 06 | Round 07 | Band 45–55 % |
+|---|---|---|---|
+| Scout | 63.9 % | **52.6 %** | ✅ |
+| Heavy | 63.6 % | **68.9 %** | ❌ (stronger: laser + shock + wreck) |
+| Standard | 50.5 % | **57.8 %** | ❌ (pierce) |
+| Artillery | 22.7 % | **23.1 %** | ❌ (fire patch barely helps; the landing problem B1 remains) |
+
+Owner decides the next step (rule 4); options: Heavy shock ratio/radius or hp (B2), pierce ratio, Artillery landing correction (B1).
+

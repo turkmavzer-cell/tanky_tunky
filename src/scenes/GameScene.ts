@@ -147,6 +147,14 @@ export class GameScene {
   private tankViews: TankView[] = [];
   private shellViews = new Map<number, ShellView>();
   private shellPool: ShellView[] = [];
+  private fireG = new Graphics();
+  /**
+   * Heavy laser beams (round 07), keyed by the firing tank: created by the fire event, stretched to the shell while it
+   * flies and to the impact by the explode event, then fading. Event-driven because a 45 tiles/s shell can be born and
+   * explode between two rendered frames.
+   */
+  private beams = new Map<number, { pts: number[]; x1: number; y1: number; life: number; flying: boolean }>();
+  private beamG = new Graphics();
   private lastRender = 0;
   private raf = 0;
   private disposed = false;
@@ -236,9 +244,10 @@ export class GameScene {
     // darkening overlay only in line-of-sight mode; the default is full visibility (D-037)
     if (!this.opts.noFog && !this.state.rules.fullVisibility) this.fog = new FogLayer(map.width, map.height);
     this.worldView.attach(this.app.renderer);
-    this.world.addChild(this.worldView.ground, this.fx.under, this.overlays.ground, this.worldView.objects, this.fx.over, this.overlays.air, this.worldView.bumpLayer);
+    this.world.addChild(this.worldView.ground, this.fx.under, this.fireG, this.overlays.ground, this.worldView.objects, this.fx.over, this.overlays.air, this.worldView.bumpLayer);
     if (this.fog) this.world.addChild(this.fog.container);
-    this.world.addChild(this.chargeG, this.bars);
+    this.beamG.blendMode = 'add';
+    this.world.addChild(this.beamG, this.chargeG, this.bars);
     this.app.stage.addChild(this.world);
     for (const t of this.state.tanks) {
       const v = new TankView(t.cls, t.team);
@@ -382,6 +391,12 @@ export class GameScene {
           const t = s.tanks[e.tank];
           const visible = t.team === this.myTeam || this.seenAt(e.x, e.y);
           const spray = TANKS[t.cls].spray !== undefined;
+          const ch = TANKS[t.cls].charged;
+          if (ch?.shock && e.charge >= ch.minCharge) {
+            const bx = this.sx(e.x, e.y);
+            const by = this.sy(e.x, e.y) - 16;
+            this.beams.set(e.tank, { pts: [bx, by], x1: bx, y1: by, life: 0.25, flying: true });
+          }
           if (visible) {
             if (spray) {
               // spray bullets (10–30/s): tiny muzzle, small kick — the full effect per bullet caused stutter (round 06)
@@ -413,15 +428,37 @@ export class GameScene {
             haptic('medium');
           }
           break;
-        case 'bounce':
+        case 'bounce': {
+          const bm = this.beams.get(e.owner);
+          if (bm && bm.flying) bm.pts.push(this.sx(e.x, e.y), this.sy(e.x, e.y) - 16); // laser bends at the ricochet
           if (this.seenAt(e.x, e.y)) this.fx.sparks(this.sx(e.x, e.y), this.sy(e.x, e.y) - 10, 10);
           this.play('ricochet', e.x, e.y);
           break;
+        }
         case 'explode': {
+          const beam = e.kind === 'heavy' ? this.beams.get(e.owner) : undefined;
+          if (beam && beam.flying) {
+            beam.x1 = this.sx(e.x, e.y);
+            beam.y1 = this.sy(e.x, e.y) - 16;
+            beam.flying = false;
+          }
           const seen = this.seenAt(e.x, e.y) || s.tanks[e.owner]?.team === this.myTeam;
           const px = this.sx(e.x, e.y);
           const py = this.sy(e.x, e.y);
-          if (e.kind === 'rumble') {
+          if (e.kind === 'shock') {
+            // Heavy charged hit: expanding shock ring + dust around the hit tank (round 07)
+            this.overlays.ring(e.x, e.y, e.radius);
+            if (seen) for (let k = 0; k < 10; k++) this.fx.dust(px + (Math.random() - 0.5) * e.radius * 110, py + (Math.random() - 0.5) * e.radius * 55, 0xc8b090);
+            this.play('siege_on', e.x, e.y, 0.8);
+            if (e.owner === this.localId) haptic('heavy');
+          } else if (e.kind === 'wreck') {
+            // destroyed tank bursts: fireball + flying debris
+            if (seen) {
+              this.fx.explosion(px, py - 8, e.radius * 100, 1);
+              this.fx.sparks(px, py - 14, 22);
+            }
+            this.play('explosion_big', e.x, e.y, 1);
+          } else if (e.kind === 'rumble') {
             this.overlays.ring(e.x, e.y, e.radius);
             if (seen) for (let k = 0; k < 14; k++) this.fx.dust(px + (Math.random() - 0.5) * e.radius * 120, py + (Math.random() - 0.5) * e.radius * 60, 0xb8a080);
             this.play('siege_on', e.x, e.y);
@@ -642,7 +679,9 @@ export class GameScene {
       if (m.team === this.myTeam) this.overlays.mine(m.x, m.y, true, m.arm <= 0);
       else if (me.alive && Math.hypot(m.x - me.x, m.y - me.y) <= glimmer && this.seenAt(m.x, m.y)) this.overlays.mine(m.x, m.y, false, true);
     }
+    this.renderFires(dtMs);
     this.renderShells(alpha);
+    this.renderBeams(dtMs);
     this.renderCharge(me);
     this.touch?.update(dt);
     const ab = me.ability;
@@ -700,6 +739,53 @@ export class GameScene {
     this.app.render();
   }
 
+  /** Laser beams: full brightness while the shell flies, then fade out over `life` s. */
+  private renderBeams(dtMs: number): void {
+    const g = this.beamG;
+    g.clear();
+    for (const [id, b] of this.beams) {
+      if (!b.flying || !this.state.shells.some((s) => s.owner === id && s.special === 'shock')) {
+        b.flying = false;
+        b.life -= dtMs / 1000;
+      }
+      if (b.life <= 0) {
+        this.beams.delete(id);
+        continue;
+      }
+      const a = Math.min(1, b.life / 0.25);
+      for (const [w, color, al] of [[10, 0xff3a2a, 0.28], [3, 0xfff0e0, 0.95]] as const) {
+        g.moveTo(b.pts[0], b.pts[1]);
+        for (let k = 2; k < b.pts.length; k += 2) g.lineTo(b.pts[k], b.pts[k + 1]);
+        g.lineTo(b.x1, b.y1).stroke({ width: w, color, alpha: al * a, cap: 'round', join: 'round' });
+      }
+    }
+  }
+
+  /** Artillery fire patches (round 07): dark scorched ground with flickering embers; fixed size, never spreads. */
+  private renderFires(dtMs: number): void {
+    const g = this.fireG;
+    g.clear();
+    const s = this.state;
+    for (const z of s.fires) {
+      if (!this.seenAt(z.x, z.y) && s.tanks[z.owner]?.team !== this.myTeam) continue;
+      const cx = this.sx(z.x, z.y);
+      const cy = this.sy(z.x, z.y);
+      const rx = z.r * 64;
+      const ry = z.r * 32;
+      const fade = Math.min(1, z.t / 0.4);
+      g.ellipse(cx, cy, rx, ry).fill({ color: 0x140a06, alpha: 0.62 * fade });
+      g.ellipse(cx, cy, rx * 0.8, ry * 0.8).fill({ color: 0x2a1208, alpha: 0.5 * fade });
+      g.ellipse(cx, cy, rx, ry).stroke({ width: 3, color: 0xff6a1a, alpha: (0.35 + 0.25 * Math.random()) * fade });
+      // embers / small flames inside the patch (render-only randomness)
+      const n = Math.random() < (dtMs / 1000) * 14 * z.r ? 1 : 0;
+      for (let k = 0; k < n; k++) {
+        const a = Math.random() * Math.PI * 2;
+        const rr = Math.sqrt(Math.random());
+        this.fx.emit(this.fx.tex.dot, cx + Math.cos(a) * rx * rr, cy + Math.sin(a) * ry * rr, { vy: -38, drag: 1, life: 0.55, s0: 0.9, s1: 0.2, a0: 0.9, a1: 0, add: true, tint: Math.random() < 0.5 ? 0xff8a2a : 0xffc04a });
+      }
+    }
+  }
+
   private renderShells(alpha: number): void {
     const s = this.state;
     for (const v of this.shellViews.values()) v.seen = 0;
@@ -743,6 +829,18 @@ export class GameScene {
       v.s.position.set(gx, gy - 16 - lift);
       v.s.rotation = worldAngleToScreen(Math.atan2(sh.vy, sh.vx));
       v.s.scale.set(1 + sh.charge * 0.6);
+      // charged specials (round 07): Heavy laser streak, Standard piercing (cyan), Artillery incendiary (orange)
+      if (sh.special === 'shock') {
+        v.s.scale.set(5.5, 1.1);
+        v.s.tint = 0xff6050;
+        const b = this.beams.get(sh.owner);
+        if (b && b.flying) {
+          b.x1 = gx;
+          b.y1 = gy - 16 - lift;
+        }
+      } else if (sh.special === 'pierce') v.s.tint = 0x7fe8ff;
+      else if (sh.special === 'fire') v.s.tint = 0xff9a3a;
+      else v.s.tint = 0xffffff;
       v.s.zIndex = x + y + 0.2;
       v.shadow.position.set(gx, gy);
       v.shadow.zIndex = x + y - 0.3;

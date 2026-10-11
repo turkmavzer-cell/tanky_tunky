@@ -57,6 +57,14 @@ Tam liste ve öneriler: `CLAUDE.md` §1 "Pending owner decisions" (B1, B2, A, K1
 ## 4. Günlük (en yeni en üstte)
 
 <!-- LOG:START -->
+### 2026-10-11 — [degisiklik] Round 07 PR #7, CI yeşil, APK #29
+CI (performans kapıları dahil) yeşil. Telefonda denenmedi.
+### 2026-10-11 — [yenilik] Basılı tutma özellikleri
+Şarj %30+: Ağır lazer (45 kare/sn), şok dalgası %30 r2, öldürürse enkaz %15 r1,5, sekmede bükülen lazer çizgisi; Dengeli delici (arkadakine %50); Topçu 2 sn koyu ateş alanı (saniyede %10). Kartlarda yazıyor. Denge (200 maç): Çevik %52,6, Ağır %68,9, Dengeli %57,8, Topçu %23,1 — ayar sahibinde. Telefonda doğrulanmadı.
+### 2026-10-11 — [degisiklik] Çevik 6 mermi/sn
+Taramalı ateş 10 → 6 mermi/sn; Aşırı Yük x3 = 18/sn (kesirli aralık taşınıyor, x3 tam çıkıyor).
+### 2026-10-11 — [konusma] Sahip: Çevik 6/sn, basılı tutma özellikleri
+Cihan: Çevik saniyede 10 yerine 6 atış (ulti yine x3). Ağır basılı tutunca lazer hızında atsın, isabette hedefin çevresine %30 şok dalgası (hedefe değil, kendi takımına değil), patlatırsa +%15 enkaz. Dengeli ve Topçu için öneri istedi; Topçu'da ateş alanını seçti (koyu, yayılmayan). Sınır Claude'a bırakıldı (%30).
 ### 2026-10-11 — [degisiklik] Round 06 PR #6, CI yeşil, APK #27
 CI'da iki performans kapısı da (normal + 6 Çevikli taramalı ateş stresi) geçti. Telefonda denenmedi.
 ### 2026-10-11 — [yenilik] Güçlendirme parçaları

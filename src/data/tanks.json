@@ -24,7 +24,7 @@
       "ability": "hide",
       "ult": "overdrive",
       "spray": {
-        "rate": 10,
+        "rate": 6,
         "damage": 80,
         "spread": 0.035
       }
@@ -50,7 +50,19 @@
       "minRange": 0,
       "arcHeight": 0,
       "ability": "rumble",
-      "ult": "repair"
+      "ult": "repair",
+      "charged": {
+        "minCharge": 0.3,
+        "speedAtFull": 45,
+        "shock": {
+          "ratio": 0.3,
+          "radius": 2.0
+        },
+        "wreck": {
+          "ratio": 0.15,
+          "radius": 1.5
+        }
+      }
     },
     "standard": {
       "maxSpeed": 2.7,
@@ -73,7 +85,13 @@
       "minRange": 0,
       "arcHeight": 0,
       "ability": "swift",
-      "ult": "emp"
+      "ult": "emp",
+      "charged": {
+        "minCharge": 0.3,
+        "pierce": {
+          "ratio": 0.5
+        }
+      }
     },
     "artillery": {
       "maxSpeed": 1.9,
@@ -96,7 +114,15 @@
       "minRange": 2,
       "arcHeight": 2.5,
       "ability": "readyshot",
-      "ult": "barrage"
+      "ult": "barrage",
+      "charged": {
+        "minCharge": 0.3,
+        "fire": {
+          "duration": 2.0,
+          "ratioPerSec": 0.1,
+          "tick": 0.25
+        }
+      }
     },
     "trapper": {
       "maxSpeed": 2.2,
@@ -172,5 +198,6 @@
     }
   },
   "$enabled": "enabled:false keeps a class's data (and its ability) in the game files but out of class select, bots and balance runs (owner 2026-10-09: Trapper removed for now, D-036).",
-  "$pve": "Round 05 (stream D, campaign): tower = stationary gun turret, hq = enemy headquarters (mission target, no gun). pve:true = never moves/respawns/regenerates; their 'ability' entry is a required placeholder that is never used. Numbers are Claude's first proposal — owner decides (rule 4)."
+  "$pve": "Round 05 (stream D, campaign): tower = stationary gun turret, hq = enemy headquarters (mission target, no gun). pve:true = never moves/respawns/regenerates; their 'ability' entry is a required placeholder that is never used. Numbers are Claude's first proposal — owner decides (rule 4).",
+  "$charged": "Round 07 (owner 2026-10-11): shots charged to >= minCharge get a class special. Heavy: shell speed rises with charge up to speedAtFull tiles/s (laser), a direct hit sends a shock wave = ratio x shell damage to the hit tank's nearby enemies (not the hit tank, never allies) within radius tiles; if the hit destroys the tank, its wreck explodes for ratio x shell damage within radius. Standard: pierce = passes through the first tank and hits the next one for ratio x damage. Artillery: fire = a burning patch the size of the blast for duration s, enemies inside take ratioPerSec x landing damage per second (in tick-second chunks); fixed size, does not spread. minCharge 0.3 chosen by Claude (owner left it open)."
 }
