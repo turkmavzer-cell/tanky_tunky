@@ -201,6 +201,8 @@ Dengeli charged shot through two tanks; Topçu charged shot → dark burning pat
 
 ## Round 08 (2026-10-11) — maze mission, upgrades only in missions
 
+**Update (same day, D-056):** the maze was replaced by a lane map after the owner's reference picture (LoL map for WC3): `maps/moba_1.json` (96×96, built by `tools/make-moba-map.py`, preview `docs/screens/round-08/00-map-plan.png`), new impassable `thicket` terrain (darker forest art), level "Üç Yol" with 9 lane towers, base guard, 2 jungle camps. Evidence: unit tests (point symmetry, no sealed pockets, 40–85 % open), campaign sim: bot Standard/normal won in 321 s (8 deaths), bot Heavy/easy won in 415 s; e2e round05/06/08 pass, screenshots 01–03 inspected. Not verified: phone feel and FPS with the many tree sprites (CI perf gate covers Quick Match only). Text below describes the first (maze) version.
+
 - **Done:** 3 generated levels removed; one hand-made maze level "Labirent" (`maps/maze_1.json`, 21×21 characters × 3 tiles = 64×64, seeded recursive-backtracker layout with 4 loops, authored once and stored). Loader `src/world/mazeMap.ts`; levels use `outposts[].cell`. 5 enemy outposts (6 towers + 5 tanks) + HQ. Route arrow follows the walking distance field (`descend`). `playerBoost` only in missions (`App.tsx`). Old save data stays valid (stars of removed ids are ignored).
 - **Evidence:** unit tests 177/177 (maze test: walking distance to the HQ > 2.2× straight line, no sealed pockets, <60 % open); `tools/campaign-sim.ts`: bot Heavy/easy wins in 334 s, bot Standard/normal loses to the last outpost; e2e round05/06/08 pass; screenshots in `docs/screens/round-08/` inspected.
 - **Not verified:** feel on the phone; perf gate on the maze (CI decides).

@@ -1,12 +1,12 @@
 {
-  "$comment": "Mission levels (round 08). One hand-made maze level; more will copy its pattern. map = maps/<name>.json (maze, see world/mazeMap.ts); outposts: cell = [column,row] in the map's character grid (anchor), budget = threat points (enemies.json threatCost), pool = unit types the solver may pick (seeded). Older generated-map levels still work with at/side. duration s; stars: 1 = win, 2 = win with deaths <= maxDeaths, 3 = also within time s. reward credits = base + perStar x stars.",
+  "$comment": "Mission levels (round 08). One hand-made lane map (owner's reference: LoL map for Warcraft 3 — 3 lanes, diagonal river with 2 lakes, jungle of wood clumps, bases in the corners); built by tools/make-moba-map.py → maps/moba_1.json (see world/mazeMap.ts). outposts: cell = [x, y] tile anchor (unit 1), budget = threat points (enemies.json threatCost), pool = unit types the solver may pick (seeded). Older generated-map levels still work with at/side. duration s; stars: 1 = win, 2 = win with deaths <= maxDeaths, 3 = also within time s. reward credits = base + perStar x stars.",
   "levels": [
     {
       "id": "m1",
-      "map": "maze_1",
+      "map": "moba_1",
       "theme": "forest",
-      "size": 64,
-      "seed": 61001,
+      "size": 96,
+      "seed": 62001,
       "duration": 600,
       "allies": [
         "standard"
@@ -14,19 +14,18 @@
       "outposts": [
         {
           "cell": [
-            3,
-            7
+            48,
+            8
           ],
-          "budget": 4,
+          "budget": 2,
           "pool": [
-            "tower",
-            "scout"
+            "tower"
           ]
         },
         {
           "cell": [
-            5,
-            3
+            66,
+            8
           ],
           "budget": 5,
           "pool": [
@@ -36,44 +35,84 @@
         },
         {
           "cell": [
-            10,
-            8
+            56,
+            38
           ],
-          "budget": 6,
+          "budget": 2,
+          "pool": [
+            "tower"
+          ]
+        },
+        {
+          "cell": [
+            66,
+            27
+          ],
+          "budget": 5,
           "pool": [
             "tower",
+            "scout"
+          ]
+        },
+        {
+          "cell": [
+            87,
+            47
+          ],
+          "budget": 2,
+          "pool": [
+            "tower"
+          ]
+        },
+        {
+          "cell": [
+            87,
+            29
+          ],
+          "budget": 5,
+          "pool": [
+            "tower",
+            "standard"
+          ]
+        },
+        {
+          "cell": [
+            45,
+            22
+          ],
+          "budget": 4,
+          "pool": [
             "scout",
             "standard"
           ]
         },
         {
           "cell": [
-            15,
-            17
+            72,
+            50
           ],
-          "budget": 6,
+          "budget": 4,
           "pool": [
-            "tower",
-            "artillery",
-            "standard"
+            "scout",
+            "artillery"
           ]
         },
         {
           "cell": [
-            19,
-            11
+            74,
+            21
           ],
           "budget": 8,
           "pool": [
             "tower",
-            "standard",
-            "heavy"
+            "heavy",
+            "standard"
           ]
         }
       ],
       "stars": {
         "maxDeaths": 3,
-        "time": 330
+        "time": 360
       },
       "reward": {
         "base": 150,

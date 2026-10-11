@@ -15,7 +15,7 @@ import type { MapSize } from '../world/generator';
 import type { GameMap, MapPoint, MapTheme } from '../world/map';
 import { generateThemed } from '../world/themes';
 import { loadMazeMap, type MazeSrc } from '../world/mazeMap';
-import maze1 from '../../maps/maze_1.json';
+import moba1 from '../../maps/moba_1.json';
 import { isTileOpen } from '../world/passability';
 import { floodFill } from '../world/reach';
 import { AiBot, type AiLevel } from '../systems/ai/bot';
@@ -56,7 +56,7 @@ export const ENEMIES = enemiesJson as unknown as {
   minSpacing: number;
 };
 
-const MAZES: Record<string, MazeSrc> = { maze_1: maze1 as MazeSrc };
+const MAZES: Record<string, MazeSrc> = { moba_1: moba1 as MazeSrc };
 
 /** Builds the map of a level (deterministic). */
 export function buildLevelMap(lv: CampaignLevel): GameMap {

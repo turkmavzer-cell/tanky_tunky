@@ -3,8 +3,9 @@
  * every character becomes a `unit` × `unit` block of tiles. Walls are solid rock (block movement AND shots), so a
  * tank has to follow the corridors: no cutting across the map.
  *
- *   #  wall      .  open floor      f  forest (cover)      =  bridge over a river
- *   S  player start (3×3 block)     H  enemy headquarters block
+ *   #  rock wall   T  dense wood (impassable, blocks shots)   .  grass   p  stone path (lane)   d  dirt
+ *   f  bush/forest (passable cover)   ~  shallow water (slow)   w  deep water   =  bridge
+ *   S  player start     H  enemy headquarters
  */
 import { createMap, setFeature, type GameMap } from './map';
 import { Feature, Ground } from './terrain';
@@ -16,36 +17,32 @@ export interface MazeSrc {
   /** Map width/height in tiles (≥ layout size × unit; the rest becomes wall). */
   size: number;
   layout: string[];
+  /** Character for tiles outside the layout (default '#'). */
+  fill?: string;
+}
+
+const GROUND_OF: Record<string, number> = { p: Ground.Pavement, d: Ground.Dirt, '~': Ground.Shallow, w: Ground.Deep, '=': Ground.Deep };
+const FEATURE_OF: Record<string, number> = { '#': Feature.Rock, T: Feature.Thicket, f: Feature.Forest, '=': Feature.Bridge };
+
+function paint(m: GameMap, x: number, y: number, ch: string): void {
+  m.ground[y * m.width + x] = GROUND_OF[ch] ?? Ground.Grass;
+  setFeature(m, x, y, FEATURE_OF[ch] ?? Feature.None);
 }
 
 export function loadMazeMap(src: MazeSrc, seed = 1): GameMap {
   const u = src.unit;
   const m = createMap(src.size, src.size, seed);
   m.theme = 'forest';
-  // everything outside the layout is wall
-  m.feature.fill(Feature.Rock);
+  // everything outside the layout is the fill character (default wall)
+  const fill = src.fill ?? '#';
+  for (let y = 0; y < m.height; y++) for (let x = 0; x < m.width; x++) paint(m, x, y, fill);
   let start = null as { x: number; y: number } | null;
   let hq = null as { x: number; y: number } | null;
   for (let cy = 0; cy < src.layout.length; cy++) {
     const row = src.layout[cy];
     for (let cx = 0; cx < row.length; cx++) {
       const ch = row[cx];
-      for (let dy = 0; dy < u; dy++) {
-        for (let dx = 0; dx < u; dx++) {
-          const x = cx * u + dx;
-          const y = cy * u + dy;
-          if (x >= m.width || y >= m.height) continue;
-          const i = y * m.width + x;
-          if (ch === '#') {
-            setFeature(m, x, y, Feature.Rock);
-            continue;
-          }
-          setFeature(m, x, y, Feature.None);
-          m.ground[i] = ch === '=' ? Ground.Deep : Ground.Grass;
-          if (ch === '=') setFeature(m, x, y, Feature.Bridge);
-          else if (ch === 'f') setFeature(m, x, y, Feature.Forest);
-        }
-      }
+      for (let dy = 0; dy < u; dy++) for (let dx = 0; dx < u; dx++) if (cx * u + dx < m.width && cy * u + dy < m.height) paint(m, cx * u + dx, cy * u + dy, ch);
       const cxy = { x: cx * u + (u >> 1), y: cy * u + (u >> 1) };
       if (ch === 'S') start = cxy;
       if (ch === 'H') hq = cxy;

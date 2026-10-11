@@ -78,7 +78,7 @@ Measurable items (frame time, input latency proxies, APK size) are automated —
 - [ ] Garaj: "Güçlendirme" satırı, parça varsa "1 parça" butonu çalışıyor.
 
 ## Round 08 (telefonda dene)
-- [ ] Görevler → Labirent: duvarlar koridor oluşturuyor mu, haritada kısa yoldan karargâha gidilemiyor mu?
+- [ ] Görevler → Üç Yol: üst / orta / alt koridor ve nehir görseldeki haritaya benziyor mu? Sık orman (koyu ağaçlar) geçilmiyor, çalılar (açık yeşil) geçiliyor — ayırt edilebiliyor mu?
 - [ ] Ok yönü duvarı değil gidilecek yolu gösteriyor mu?
 - [ ] Koridorlardaki kuleler/karakollar, orman siperi, köprü: zorluk ve his
 - [ ] Hızlı Maç'ta Garaj güçlendirmesi etkisiz (tüm tanklar eşit), Görevler'de etkili

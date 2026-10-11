@@ -12,11 +12,11 @@ import { TowerBot } from '../src/systems/ai/tower';
 import { TANKS } from '../src/sim/config';
 
 describe('campaign levels (round 05, D)', () => {
-  it('has the maze level: 64x64 hand-made map with valid outposts', () => {
+  it('has the lane-map level: 96x96 hand-made map with valid outposts', () => {
     expect(LEVELS.length).toBeGreaterThanOrEqual(1);
     for (const lv of LEVELS) {
       expect(lv.map).toBeTruthy();
-      expect(lv.size).toBe(64);
+      expect(lv.size).toBe(96);
       for (const o of lv.outposts) {
         expect(o.cell).toBeTruthy();
         for (const u of o.pool) expect(ENEMIES.threatCost[u]).toBeGreaterThan(0);
@@ -24,21 +24,26 @@ describe('campaign levels (round 05, D)', () => {
     }
   });
 
-  it('is a real maze: the way to the HQ is far longer than the straight line and has no shortcut', () => {
+  it('lane map: corridors and wood walls, point-symmetric, no sealed pockets', () => {
     for (const lv of LEVELS) {
       const map = buildLevelMap(lv);
       const s0 = map.bases[0];
       const hq = map.bases[1];
       const dist = distanceField(map, s0.x, s0.y);
-      const way = dist[hq.y * map.width + hq.x];
-      const straight = Math.hypot(hq.x - s0.x, hq.y - s0.y);
-      expect(Number.isFinite(way)).toBe(true);
-      expect(way).toBeGreaterThan(straight * 2.2);
-      // most of the map is wall: the open area is a network of corridors, not a field
+      expect(Number.isFinite(dist[hq.y * map.width + hq.x])).toBe(true);
       let open = 0;
       for (let y = 0; y < map.height; y++) for (let x = 0; x < map.width; x++) if (isTileOpen(map, x, y)) open++;
-      expect(open / (map.width * map.height)).toBeLessThan(0.6);
-      // every open tile is connected to the start (no sealed pockets)
+      const ratio = open / (map.width * map.height);
+      expect(ratio).toBeGreaterThan(0.4);
+      expect(ratio).toBeLessThan(0.85);
+      // multiplayer-ready: (x, y) and (W-1-x, H-1-y) have the same terrain
+      for (let y = 0; y < map.height; y++)
+        for (let x = 0; x < map.width; x++) {
+          const i = y * map.width + x;
+          const j = (map.height - 1 - y) * map.width + (map.width - 1 - x);
+          expect(map.feature[i]).toBe(map.feature[j]);
+          expect(map.ground[i]).toBe(map.ground[j]);
+        }
       const reach = floodFill(map, s0.x, s0.y);
       for (let y = 0; y < map.height; y++) for (let x = 0; x < map.width; x++) if (isTileOpen(map, x, y)) expect(reach[y * map.width + x]).toBe(1);
     }

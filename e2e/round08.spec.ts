@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { mkdirSync } from 'node:fs';
 
-/** Round-08 screenshots → docs/screens/round-08/: maze mission map, route arrow, upgrades only in missions. */
+/** Round-08 screenshots → docs/screens/round-08/: lane mission map (owner reference), route arrow, upgrades only in missions. */
 const OUT = 'docs/screens/round-08';
 mkdirSync(OUT, { recursive: true });
 
@@ -29,11 +29,11 @@ const startMission = async (page: Page, qs: string, cls: string): Promise<void> 
 
 test.describe.configure({ mode: 'serial' });
 
-test('01 maze mission: start corridor + overview of the whole labyrinth', async ({ page }) => {
+test('01 lane mission: start base + overview of the map', async ({ page }) => {
   await page.goto('/?silent');
   await page.getByTestId('solo').click();
   await page.getByTestId('campaign').click();
-  await expect(page.getByTestId('level-m1')).toContainText('Labirent');
+  await expect(page.getByTestId('level-m1')).toContainText('Üç Yol');
   await page.getByTestId('play-m1').click();
   await page.getByTestId('class-standard').click();
   await page.getByTestId('start').click();
@@ -41,21 +41,21 @@ test('01 maze mission: start corridor + overview of the whole labyrinth', async 
   await expect(page.getByTestId('hq-arrow')).toBeVisible();
   await shot(page, '01-start');
   // the whole maze from above (camera override through the debug hook is not exposed: use a wide zoom page load)
-  await startMission(page, '&view=32,32&zoom=0.22&bots=idle', 'standard');
+  await startMission(page, '&view=48,48&zoom=0.2&bots=idle', 'standard');
   await page.waitForTimeout(1200);
-  await shot(page, '02-maze-overview');
+  await shot(page, '02-mid-river');
 });
 
-test('02 corridor view: walls frame the way, shots stop at them', async ({ page }) => {
+test('02 top lane view: wood walls with jungle openings', async ({ page }) => {
   await startMission(page, '&bots=idle', 'heavy');
   await page.evaluate(() => {
     const me = (window as unknown as W).__tanky.scene.state.tanks[0];
-    me.x = 10.5; // first corridor, north of the start room
-    me.y = 30.5;
+    me.x = 8.5; // top lane, then the jungle entrance
+    me.y = 50.5;
     me.protect = 99;
   });
   await page.waitForTimeout(1200);
-  await shot(page, '03-corridor');
+  await shot(page, '03-lane');
 });
 
 test('03 upgrades apply in missions only; Quick Match tanks are equal', async ({ page }) => {

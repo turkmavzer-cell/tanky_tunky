@@ -3,7 +3,7 @@ import terrain from '../data/terrain.json';
 
 export const Ground = { Grass: 0, Dirt: 1, Sand: 2, Mud: 3, Shallow: 4, Deep: 5, Asphalt: 6, Pavement: 7 } as const;
 export type GroundId = (typeof Ground)[keyof typeof Ground];
-export const Feature = { None: 0, Forest: 1, Rock: 2, Wall: 3, Crate: 4, Ruins: 5, Gate: 6, Bridge: 7, Building: 8, Adobe: 9, Car: 10, Palm: 11 } as const;
+export const Feature = { None: 0, Forest: 1, Rock: 2, Wall: 3, Crate: 4, Ruins: 5, Gate: 6, Bridge: 7, Building: 8, Adobe: 9, Car: 10, Palm: 11, Thicket: 12 } as const;
 export type FeatureId = (typeof Feature)[keyof typeof Feature];
 
 export interface GroundDef {

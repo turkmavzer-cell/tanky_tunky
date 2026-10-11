@@ -57,6 +57,10 @@ Tam liste ve öneriler: `CLAUDE.md` §1 "Pending owner decisions" (B1, B2, A, K1
 ## 4. Günlük (en yeni en üstte)
 
 <!-- LOG:START -->
+### 2026-10-11 — [konusma] Görsel harita isteği
+Sahibi bir LoL (Warcraft 3) harita görseli gönderdi: 'Bu tarz bir harita istiyorum, labirent haritayı kaldır ve görseldeki haritayı uygula.'
+### 2026-10-11 — [degisiklik] Görev haritası: labirent yerine Üç Yol (LoL/WC3 tarzı)
+Sahibinin gönderdiği LoL WC3 haritası örnek alındı: 96×96, köşelerde üsler, üst/orta/alt taş koridor, iki gölü olan çapraz nehir, C şeklinde sık orman kümeleri (yeni geçilmez 'sık orman' arazisi, mermi de durur), koridor kenarında açıklıklı orman duvarları. 9 kule + üs muhafızı + 2 orman kampı + karargâh. Harita simetrik (ileride çok oyunculu). Labirent (maze_1) kaldırıldı. Telefonda ve FPS doğrulanmadı.
 ### 2026-10-11 — [konusma] Labirent görev isteği
 Sahibi: 3 bölümü kaldır, tek labirent bölüm, LoL/Warcraft gibi dolaşma zorunlu, düşmanlar bölgelerde, puanla tank güçlendirme sadece görevlerde, multiplayer'da eşit. Detaylar Claude'a bırakıldı, 'uygula' dendi.
 ### 2026-10-11 — [degisiklik] Güçlendirmeler sadece Görevler'de
