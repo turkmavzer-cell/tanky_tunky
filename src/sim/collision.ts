@@ -3,18 +3,20 @@
  * contact normal (gives natural sliding along walls). A tile is solid for a tank if it is not
  * walkable or if the elevation change from the tank's current tile is not a legal ramp step.
  */
-import { canStep, isWalkable, type GameMap } from '../world/map';
+import type { GameMap } from '../world/map';
+import type { SimState } from './state';
+import { COMBAT, TANKS } from './config';
+import { isPassable, isTileOpen } from '../world/passability';
 
 export function isSolidFor(m: GameMap, curX: number, curY: number, tx: number, ty: number): boolean {
-  if (tx < 0 || ty < 0 || tx >= m.width || ty >= m.height) return true;
-  if (!isWalkable(m, tx, ty)) return true;
+  if (!isTileOpen(m, tx, ty)) return true;
   if (tx === curX && ty === curY) return false;
   const ci = curY * m.width + curX;
   const ti = ty * m.width + tx;
   if (m.elev[ci] === m.elev[ti]) return false;
-  // elevation differs: only an orthogonal, legal ramp step is open
+  // elevation differs: only an orthogonal, legal step (ramp / free step) is open
   if (tx !== curX && ty !== curY) return true;
-  return !canStep(m, curX, curY, tx, ty);
+  return !isPassable(m, curX, curY, tx, ty);
 }
 
 const out = { x: 0, y: 0 };
@@ -65,4 +67,39 @@ export function resolveTerrain(m: GameMap, x: number, y: number, r: number, curX
   out.x = x;
   out.y = y;
   return out;
+}
+
+/** Circle–circle separation between living tanks, then terrain re-resolution. */
+export function collideTanks(state: SimState): void {
+  const ts = state.tanks;
+  for (let i = 0; i < ts.length; i++) {
+    const a = ts[i];
+    if (!a.alive) continue;
+    for (let j = i + 1; j < ts.length; j++) {
+      const b = ts[j];
+      if (!b.alive) continue;
+      const ra = TANKS[a.cls].radius;
+      const rb = TANKS[b.cls].radius;
+      const dx = b.x - a.x;
+      const dy = b.y - a.y;
+      const d2 = dx * dx + dy * dy;
+      const rr = ra + rb;
+      if (d2 >= rr * rr) continue;
+      const d = Math.sqrt(d2) || 1e-6;
+      const push = (rr - d) * COMBAT.tankCollision.push;
+      const nx = d2 > 0 ? dx / d : 1;
+      const ny = d2 > 0 ? dy / d : 0;
+      const wa = rb / rr;
+      const wb = ra / rr;
+      a.x -= nx * push * wa * 2;
+      a.y -= ny * push * wa * 2;
+      b.x += nx * push * wb * 2;
+      b.y += ny * push * wb * 2;
+      for (const t of [a, b]) {
+        const r = resolveTerrain(state.map, t.x, t.y, TANKS[t.cls].radius, Math.floor(t.x), Math.floor(t.y));
+        t.x = r.x;
+        t.y = r.y;
+      }
+    }
+  }
 }

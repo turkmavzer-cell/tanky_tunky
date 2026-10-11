@@ -5,6 +5,9 @@ import { onAppPause } from '../core/platform';
 import { t } from '../i18n';
 import { TouchControls } from './touchControls';
 import { TANK_CLASSES, type TankClassId } from '../sim/config';
+import type { ScoreRow } from '../game/matchSetup';
+import { ResultsScreen } from './ResultsScreen';
+import { MATCH } from '../sim/config';
 
 declare global {
   interface Window {
@@ -12,39 +15,80 @@ declare global {
   }
 }
 
-/** Dev/test URL overrides: ?silent&map=96&seed=5&renderScale=0.25&cls=heavy&view=32,32&zoom=0.4&bots=idle */
-function debugParams(): { silent: boolean; mapSize?: 40 | 64 | 96; seed?: number; renderScale?: number; playerClass?: TankClassId; idleBots?: boolean; debugView?: { x: number; y: number; zoom: number } } {
+type DebugParams = Partial<{
+  silent: boolean;
+  mapSize: 40 | 64 | 96;
+  mapName: string;
+  seed: number;
+  renderScale: number;
+  playerClass: TankClassId;
+  idleBots: boolean | 'allies';
+  endless: boolean;
+  noFog: boolean;
+  duration: number;
+  edgeHighlight: 'normal' | 'strong';
+  debugView: { x: number; y: number; zoom: number };
+}>;
+
+/** Dev/test URL overrides: ?silent&map=96|debug_heights&seed=5&renderScale=0.25&cls=heavy&view=32,32&zoom=0.4&bots=idle&endless&nofog&dur=10 */
+function debugParams(): DebugParams {
   const q = new URLSearchParams(location.search);
-  const map = Number(q.get('map'));
-  const cls = q.get('cls') as TankClassId | null;
-  const out: ReturnType<typeof debugParams> = { silent: q.has('silent') };
-  if (map === 40 || map === 64 || map === 96) out.mapSize = map;
+  const out: DebugParams = { silent: q.has('silent') };
+  const map = q.get('map');
+  if (map === '40' || map === '64' || map === '96') out.mapSize = Number(map) as 40 | 64 | 96;
+  else if (map) out.mapName = map;
   if (q.has('seed')) out.seed = Number(q.get('seed'));
   if (q.has('renderScale')) out.renderScale = Number(q.get('renderScale'));
+  const cls = q.get('cls') as TankClassId | null;
   if (cls && TANK_CLASSES.includes(cls)) out.playerClass = cls;
   if (q.get('bots') === 'idle') out.idleBots = true;
+  if (q.get('bots') === 'enemies') out.idleBots = 'allies';
+  if (q.has('endless')) out.endless = true;
+  if (q.has('nofog')) out.noFog = true;
+  if (q.has('dur')) out.duration = Number(q.get('dur'));
+  if (q.get('edges') === 'strong') out.edgeHighlight = 'strong';
   const view = q.get('view')?.split(',').map(Number);
   if (view && view.length >= 2) out.debugView = { x: view[0], y: view[1], zoom: Number(q.get('zoom') ?? 0.5) };
   return out;
 }
 
-export function GameView({ settings, playerClass, onQuit }: { settings: Settings; playerClass: TankClassId; onQuit: () => void }) {
+export interface GameViewProps {
+  settings: Settings;
+  playerClass: TankClassId;
+  seed: number;
+  record: { bestKills: number; bestKD: number };
+  onQuit: () => void;
+  onAgain: () => void;
+  onMatchEnd: (kills: number, deaths: number) => void;
+}
+
+export function GameView({ settings, playerClass, seed, record, onQuit, onAgain, onMatchEnd }: GameViewProps) {
   const host = useRef<HTMLDivElement>(null);
   const controlsHost = useRef<HTMLDivElement>(null);
+  const minimapHost = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<GameScene | null>(null);
   const [paused, setPaused] = useState(false);
   const [fps, setFps] = useState(0);
   const [hud, setHud] = useState<HudSnapshot | null>(null);
+  const [results, setResults] = useState<ScoreRow[] | null>(null);
+  const endRef = useRef(onMatchEnd);
+  useEffect(() => {
+    endRef.current = onMatchEnd;
+  }, [onMatchEnd]);
 
   useEffect(() => {
+    const dbg = debugParams();
     const scene = new GameScene({
       quality: settings.quality,
       fpsCap: settings.fpsCap,
       reduceShake: settings.reduceShake,
-      aimAssist: settings.aimAssist,
+      autoAim: settings.aimAssist,
+      edgeHighlight: settings.edgeHighlight,
+      cooldownMul: settings.cooldownMul,
       volume: { master: settings.sound, sfx: 1, music: settings.music },
       playerClass,
-      ...debugParams(),
+      seed,
+      ...dbg,
     });
     sceneRef.current = scene;
     let cancelled = false;
@@ -54,9 +98,17 @@ export function GameView({ settings, playerClass, onQuit }: { settings: Settings
       labels: { fire: t('hud.fire'), ability: t('hud.ability') },
     });
     scene.touch = touch;
+    scene.onMatchEnd = (rows) => {
+      setResults(rows);
+      const me = rows.find((r) => r.id === scene.localId);
+      if (me) endRef.current(me.kills, me.deaths);
+    };
     void scene.init(host.current!).then(() => {
       if (cancelled) return;
       window.__tanky = { scene };
+      const label = touch.root.querySelector('.ability-btn .act-label');
+      if (label) label.textContent = scene.hud().abilityName.toUpperCase();
+      if (scene.minimap && minimapHost.current) minimapHost.current.appendChild(scene.minimap.canvas);
     });
     const off = onAppPause(
       () => {
@@ -66,7 +118,7 @@ export function GameView({ settings, playerClass, onQuit }: { settings: Settings
       () => undefined,
     );
     const hudTimer = window.setInterval(() => {
-      if (scene.state) setHud(scene.hud());
+      if (scene.match) setHud(scene.hud());
     }, 100);
     const fpsTimer = window.setInterval(() => setFps(Math.round(scene.stats.summary().fps)), 1000);
     return () => {
@@ -79,12 +131,17 @@ export function GameView({ settings, playerClass, onQuit }: { settings: Settings
       sceneRef.current = null;
       delete window.__tanky;
     };
-  }, [settings.quality, settings.fpsCap, settings.reduceShake, settings.aimAssist, settings.sound, settings.music, settings.leftHanded, settings.joystickSensitivity, playerClass]);
+  }, [settings.quality, settings.fpsCap, settings.reduceShake, settings.aimAssist, settings.edgeHighlight, settings.cooldownMul, settings.sound, settings.music, settings.leftHanded, settings.joystickSensitivity, playerClass, seed]);
 
   const togglePause = (p: boolean): void => {
     sceneRef.current?.setPaused(p);
     setPaused(p);
   };
+
+  const secs = hud ? Math.ceil(hud.timeLeft) : MATCH.duration;
+  const mm = Math.floor(secs / 60);
+  const ss = String(secs % 60).padStart(2, '0');
+  const finalWarn = hud?.phase === 'playing' && secs <= MATCH.finalWarning;
 
   return (
     <div className="game-root">
@@ -99,9 +156,20 @@ export function GameView({ settings, playerClass, onQuit }: { settings: Settings
                 {hud.hp} / {hud.maxHp}
               </span>
             </div>
-            <div className="score">
-              <span className="blue">{hud.teamScore[0]}</span> : <span className="red">{hud.teamScore[1]}</span>
+            <div className="kd" data-testid="kd">
+              {t('hud.kd')} <b>{hud.kills}</b>/<b>{hud.deaths}</b>
             </div>
+          </div>
+        )}
+        <div ref={minimapHost} className={'minimap-host' + (settings.leftHanded ? ' right' : '')} />
+        {hud && hud.phase !== 'ended' && !hud.endless && (
+          <div className={'match-timer' + (finalWarn ? ' warn' : '')} data-testid="timer">
+            {mm}:{ss}
+          </div>
+        )}
+        {hud?.phase === 'countdown' && (
+          <div className="countdown" data-testid="countdown" key={hud.countdown}>
+            {hud.countdown > 0 ? hud.countdown : t('game.go')}
           </div>
         )}
         <div className="fps" data-testid="fps">
@@ -110,13 +178,13 @@ export function GameView({ settings, playerClass, onQuit }: { settings: Settings
         <button className="pause-btn" data-testid="pause" aria-label={t('game.paused')} onClick={() => togglePause(true)}>
           ❚❚
         </button>
-        {hud && !hud.alive && (
+        {hud && !hud.alive && hud.phase === 'playing' && (
           <div className="respawn" data-testid="respawn">
             {t('game.respawn', { s: Math.ceil(hud.respawn) })}
           </div>
         )}
       </div>
-      {paused && (
+      {paused && !results && (
         <div className="overlay">
           <div className="panel">
             <h2>{t('game.paused')}</h2>
@@ -129,6 +197,7 @@ export function GameView({ settings, playerClass, onQuit }: { settings: Settings
           </div>
         </div>
       )}
+      {results && <ResultsScreen rows={results} localId={0} record={record} onAgain={onAgain} onMenu={onQuit} />}
     </div>
   );
 }

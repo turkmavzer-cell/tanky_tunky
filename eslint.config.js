@@ -17,7 +17,7 @@ export default tseslint.config(
   },
   {
     // Determinism guard for the simulation core (DECISIONS D-004).
-    files: ['src/sim/**/*.ts', 'src/world/**/*.ts', 'src/ai/**/*.ts'],
+    files: ['src/sim/**/*.ts', 'src/world/**/*.ts', 'src/ai/**/*.ts', 'src/systems/**/*.ts'],
     ignores: ['src/world/iso.ts'],
     rules: {
       'no-restricted-properties': [

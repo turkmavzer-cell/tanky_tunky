@@ -8,12 +8,14 @@ export const BTN_ABILITY = 2;
 /** Angle quantization: 4096 steps per turn. */
 export const AIM_STEPS = 4096;
 export const AIM_NONE = -1;
+/** Auto-aim: the simulation turns the turret toward the nearest visible enemy (round-01 job 1). */
+export const AIM_AUTO = -2;
 
 export interface PlayerInput {
   /** World-space (tile axes) move vector, each component in [-127, 127]. */
   moveX: number;
   moveY: number;
-  /** Turret aim angle in AIM_STEPS units [0, 4095] or AIM_NONE to keep current. */
+  /** Turret aim angle in AIM_STEPS units [0, 4095], AIM_NONE to keep current, or AIM_AUTO. */
   aim: number;
   /** Bitmask of BTN_* flags currently held. */
   buttons: number;
@@ -38,7 +40,7 @@ export function aimToRad(aim: number): number {
 
 /** Packs an input into a single 32-bit integer (8 bits x, 8 bits y, 13 bits aim, 3 bits buttons). */
 export function packInput(i: PlayerInput): number {
-  const aim = i.aim === AIM_NONE ? 0x1fff : i.aim & 0x1fff;
+  const aim = i.aim === AIM_NONE ? 0x1fff : i.aim === AIM_AUTO ? 0x1ffe : i.aim & 0x1fff;
   return ((i.moveX & 0xff) | ((i.moveY & 0xff) << 8) | (aim << 16) | ((i.buttons & 0x7) << 29)) >>> 0;
 }
 
@@ -49,7 +51,7 @@ export function unpackInput(p: number): PlayerInput {
   return {
     moveX: sx > 127 ? sx - 256 : sx,
     moveY: sy > 127 ? sy - 256 : sy,
-    aim: aim === 0x1fff ? AIM_NONE : aim,
+    aim: aim === 0x1fff ? AIM_NONE : aim === 0x1ffe ? AIM_AUTO : aim,
     buttons: (p >>> 29) & 0x7,
   };
 }

@@ -94,3 +94,8 @@ export function rotateToward(from: number, to: number, maxStep: number): number 
 export function lerpAngle(a: number, b: number, t: number): number {
   return wrapAngle(a + angleDiff(a, b) * t);
 }
+
+/** Deterministic hypot (sqrt of sum of squares; Math.hypot is not bit-exact across engines). */
+export function dhypot(x: number, y: number): number {
+  return Math.sqrt(x * x + y * y);
+}

@@ -1,0 +1,60 @@
+{
+  "$comment": "Bot AI tuning (round-01 job 3). Times in seconds of simulation time, distances in tiles. AI sees only what the VisibilitySystem gives its team (no cheating).",
+  "difficulty": "normal",
+  "levels": {
+    "easy": {
+      "reactionTime": 0.7,
+      "aimError": 0.22,
+      "fullChargeChance": 0.15,
+      "shortChargeChance": 0.35,
+      "abilityUse": 0.5
+    },
+    "normal": {
+      "reactionTime": 0.4,
+      "aimError": 0.12,
+      "fullChargeChance": 0.3,
+      "shortChargeChance": 0.45,
+      "abilityUse": 0.8
+    },
+    "hard": {
+      "reactionTime": 0.2,
+      "aimError": 0.05,
+      "fullChargeChance": 0.45,
+      "shortChargeChance": 0.45,
+      "abilityUse": 1.0
+    }
+  },
+  "hearingRadius": 9,
+  "suspicionTime": 4,
+  "searchTime": 5,
+  "loseSightGrace": 1.2,
+  "retreatHp": 0.3,
+  "retreatTime": 3.5,
+  "closeRange": 3,
+  "preferredRangeFactor": 0.75,
+  "patrolRadius": 12,
+  "repathInterval": 0.75,
+  "stuckTime": 1.2,
+  "ability": {
+    "hide": {
+      "enemyWithin": 7,
+      "ambush": true
+    },
+    "rumble": {
+      "enemiesWithin": 2.2,
+      "minEnemies": 1
+    },
+    "swift": {
+      "enemyWithin": 8
+    },
+    "barrage": {
+      "minDistance": 5
+    },
+    "mine": {
+      "onPath": true,
+      "enemyWithin": 10
+    }
+  },
+  "patrolObjectiveChance": 0.5,
+  "fireAlignment": 0.1
+}

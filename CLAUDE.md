@@ -28,6 +28,8 @@ Vite 8 + TypeScript 5.9 (strict) + React 19 (menus/HUD as DOM overlay only) + **
 | Build web (→ `dist/`) | `npm run build` |
 | E2E (Pixel 7 landscape, touch; needs build) | `npm run e2e` → screenshots in `e2e/out/` |
 | All gates | `npm run check` |
+| Balance sim (headless bots) | `npx tsx tools/balance.ts 300 40` |
+| Round screenshots | `npx playwright test e2e/round01.spec.ts` → `docs/screens/round-01/` |
 | Engine benchmark | `npx vite build -c bench/vite.config.ts && npm run bench:engines` |
 | Debug APK | CI only (no Android SDK reachable from the cloud container): push → Actions "Android APK" → artifact |
 | Signed release | push tag `v*` (secrets described in `docs/RELEASE.md`) |
@@ -40,10 +42,12 @@ Dev URL overrides: `?silent&map=96&seed=5&renderScale=0.25&cls=heavy`.
 ```
 src/sim      Deterministic, DOM-free simulation core (fixed 60 Hz). Runs in Node (headless tests/balance).
              rng.ts (sfc32, serializable) · dmath.ts (polynomial sin/cos/atan2) · input.ts (quantized/packed input)
-             sim.ts (movement, charge state machine, shells, splash, respawn, events) · collision.ts · hash.ts
-src/world    iso.ts (2:1 projection, joystick screen→world) · terrain.ts · map.ts (SoA tile map, ramps, cliffs)
+             sim.ts (step orchestration) · tank.ts (fire/move) · combat.ts (shells, explosions, kill log) · visibility.ts (fog/LOS)
+             targeting.ts (auto-aim) · match.ts (60 s match, respawn) · abilities/ (data + modules) · collision.ts · hash.ts
+src/world    iso.ts · terrain.ts · map.ts (SoA tile map) · passability.ts (THE movement rule + edge visuals) · mapLoader.ts (maps/*.json)
              noise.ts (seeded simplex) · generator.ts (procedural maps + validateMap) · reach.ts (flood fill, Dijkstra)
-src/ai       dummyBot.ts (placeholder bots for phase 3; real AI in phase 7)
+src/systems/ai  AiBot (A* nav + FSM, fog-fair perception, ability habits; data/ai.json)
+src/game     matchSetup.ts: shared match setup, headless runner, scoreboard (scene, tests, tools/balance.ts)
 src/core     loop.ts (fixed step + interpolation) · keyboard.ts · save.ts/storage.ts (versioned schema)
              platform.ts (Capacitor App/Haptics/Splash) · errorlog.ts · frameStats.ts
 src/render   worldRenderer.ts (painter-ordered iso ground, cliffs, ramps, fringes, features) · terrainArt.ts
@@ -98,6 +102,10 @@ painted art (sub-agent), visual QA screenshots in `docs/img/`. See `docs/PROGRES
 ### Phase 3 — Tank & controls ✅ (headless-verified) — **waiting for the owner's on-device feel test**
 Multi-touch joystick/charge/ability (3-finger CDP test), charged combat (16 sim tests), fx/audio/haptics, class select,
 placeholder bots, perf gate 60 FPS / p95 16.7 ms on 96×96 at CPU 4x. Tank list + empty ability table: `docs/TANKS.md`.
+
+### Round 01 (branch `fix/round-01-core-loop`) ✅ — see docs/PROGRESS.md
+VisibilitySystem + fog, auto-aim, unified passability + cliff visuals, fog-fair AI, 60 s matches with respawn/scoreboard,
+5 data-driven abilities, balance report (untuned by request). PR into `claude/tanky-tunky-setup-dw06hp`.
 
 ## 7. Next steps
 

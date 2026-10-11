@@ -60,7 +60,7 @@ describe('deterministic simulation', () => {
   });
 
   it('tanks stay inside the map bounds', () => {
-    const s = createState({ seed: 1, map: createMap(10, 10), players: [{ team: 0, cls: 'scout', x: 5, y: 5 }] });
+    const s = createState({ seed: 1, rules: { endless: true }, map: createMap(10, 10), players: [{ team: 0, cls: 'scout', x: 5, y: 5 }] });
     for (let i = 0; i < 2000; i++) step(s, [{ moveX: 127, moveY: -127, aim: -1, buttons: 0 }]);
     expect(s.tanks[0].x).toBeLessThanOrEqual(10);
     expect(s.tanks[0].y).toBeGreaterThanOrEqual(0);
@@ -72,7 +72,7 @@ describe('terrain collision', () => {
     const { isWalkable } = await import('../src/world/map');
     for (const seed of [3, 17, 99]) {
       const map = generateMap({ seed, size: 40 });
-      const s = createState({ seed, map, players: [{ team: 0, cls: 'scout', x: 4.5, y: 4.5 }] });
+      const s = createState({ seed, map, rules: { endless: true }, players: [{ team: 0, cls: 'scout', x: 4.5, y: 4.5 }] });
       const r = new Rng(seed);
       let mx = 127;
       let my = 0;
@@ -91,7 +91,7 @@ describe('terrain collision', () => {
   it('a tank driving into a wall slides along it instead of stopping dead', () => {
     const map = createMap(10, 10);
     for (let y = 0; y < 10; y++) map.feature[y * 10 + 6] = 2; // rock column at x = 6
-    const s = createState({ seed: 1, map, players: [{ team: 0, cls: 'standard', x: 5, y: 2 }] });
+    const s = createState({ seed: 1, map, rules: { endless: true }, players: [{ team: 0, cls: 'standard', x: 5, y: 2 }] });
     for (let i = 0; i < 120; i++) step(s, [{ moveX: 127, moveY: 60, aim: -1, buttons: 0 }]);
     const t = s.tanks[0];
     expect(t.x).toBeLessThanOrEqual(6 - 0.42 + 1e-3);

@@ -1,0 +1,40 @@
+{
+  "$comment": "Brief \u00a76 trap catalogue. Only the mine is active this round (Trapper ability 'mine' in abilities.json); the others stay as data, disabled, to be unlocked by the ability tree later.",
+  "traps": {
+    "mine": {
+      "enabled": true,
+      "note": "see abilities.json mine"
+    },
+    "mudNet": {
+      "enabled": false,
+      "duration": 4,
+      "slow": 0.7,
+      "radius": 1.2
+    },
+    "spikeBarrier": {
+      "enabled": false,
+      "hp": 60,
+      "duration": 12,
+      "length": 3
+    },
+    "alarmBeacon": {
+      "enabled": false,
+      "revealDuration": 6,
+      "radius": 2.5
+    },
+    "hologram": {
+      "enabled": false,
+      "duration": 8
+    },
+    "smokeBomb": {
+      "enabled": false,
+      "duration": 6,
+      "radius": 2.5
+    }
+  },
+  "rules": {
+    "maxActive": 6,
+    "placeTime": 0.8,
+    "glimmerRange": 1.5
+  }
+}

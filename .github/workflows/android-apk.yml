@@ -2,7 +2,7 @@ name: Android APK
 
 on:
   push:
-    branches: [main, 'claude/**']
+    branches: [main, 'claude/**', 'fix/**', 'phase/**']
   workflow_dispatch:
 
 concurrency:
