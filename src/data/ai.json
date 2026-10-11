@@ -83,5 +83,7 @@
     "wobbleEvery": 0.7,
     "pauseChance": 0.25,
     "pauseTime": 0.8
-  }
+  },
+  "pickupSeekRange": 10,
+  "$pickupSeekRange": "Round 03: a patrolling bot drives to the nearest crate upgrade within this many tiles (and breaks crates it sees when nothing else is going on)."
 }

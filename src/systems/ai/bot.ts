@@ -23,6 +23,7 @@ import { leadPoint, selectTarget } from '../../sim/targeting';
 import { canNoticeTank, canSeeTank, isInvisible } from '../../sim/visibility';
 import { chargeTimeOf } from '../../sim/tank';
 import { clearGroundPath } from '../../sim/combat';
+import { maxHp } from '../../sim/upgrades';
 import { findPath, type PathPoint } from './nav';
 import { isTileOpen } from '../../world/passability';
 
@@ -40,6 +41,9 @@ interface Known {
   /** Sim time (s) when last perceived. */
   t: number;
 }
+
+/** Sim tick of the last A* search by any bot of a match (deterministic: bots run in tank order). */
+const lastSearch = new WeakMap<SimState, number>();
 
 export class AiBot {
   state: AiState = 'patrol';
@@ -146,7 +150,7 @@ export class AiBot {
     const fresh = this.known && now - this.known.t < aiJson.suspicionTime ? this.known : null;
 
     // ---- transitions
-    const hpFrac = me.hp / def.hp;
+    const hpFrac = me.hp / maxHp(me);
     if (this.lv.strategic && hpFrac < aiJson.retreatHp && fresh && this.state !== 'retreat') {
       this.setState('retreat');
       this.retreatGoal = this.findCover(s, me, fresh.x, fresh.y);
@@ -178,7 +182,7 @@ export class AiBot {
     let moveScale = 1;
     switch (this.state) {
       case 'patrol':
-        goal = this.patrolGoal(s, me);
+        goal = this.pickupGoal(s, me) ?? this.patrolGoal(s, me);
         moveScale = 0.7;
         break;
       case 'suspicion':
@@ -283,7 +287,7 @@ export class AiBot {
     switch (a.id) {
       case 'hide':
         // ambush: vanish when an enemy is around but has not engaged yet, or when hurt
-        return dSeen < cfg.hide.enemyWithin || me.hp < TANKS[me.cls].hp * 0.5;
+        return dSeen < cfg.hide.enemyWithin || me.hp < maxHp(me) * 0.5;
       case 'rumble': {
         let n = 0;
         for (const e of s.tanks) if (e.alive && e.team !== me.team && canNoticeTank(s, me.team, e) && dhypot(e.x - me.x, e.y - me.y) < cfg.rumble.enemiesWithin) n++;
@@ -314,6 +318,21 @@ export class AiBot {
     ])
       if (isTileOpen(s.map, x + dx, y + dy)) open++;
     return open <= 2;
+  }
+
+  /** Nearest crate upgrade within pickupSeekRange (not when already maxed). */
+  private pickupGoal(s: SimState, me: Tank): PathPoint | null {
+    if (me.upgrades >= COMBAT.upgrades.max) return null;
+    let best: PathPoint | null = null;
+    let bestD = aiJson.pickupSeekRange;
+    for (const p of s.pickups) {
+      const d = dhypot(p.x - me.x, p.y - me.y);
+      if (d < bestD) {
+        bestD = d;
+        best = { x: Math.floor(p.x), y: Math.floor(p.y) };
+      }
+    }
+    return best;
   }
 
   private patrolGoal(s: SimState, me: Tank): PathPoint {
@@ -375,11 +394,18 @@ export class AiBot {
     if (dhypot(me.x - this.lastPos.x, me.y - this.lastPos.y) < 0.01) this.stuckT += 1 / 60;
     else this.stuckT = 0;
     this.lastPos = { x: me.x, y: me.y };
-    if (gi !== this.pathGoal || this.repath <= 0 || this.stuckT > aiJson.stuckTime) {
+    // a moving goal (chasing a tank) only forces a new A* search once it drifted away from the
+    // current path's end; far goals are refreshed less often (full visibility: long chases)
+    const pg = this.pathGoal;
+    const drifted = pg < 0 || dhypot((pg % W) - goal.x, Math.floor(pg / W) - goal.y) > 1.5;
+    const wants = drifted || this.repath <= 0 || this.stuckT > aiJson.stuckTime;
+    // spread A* searches over ticks: one per tick, except for a bot that has no path at all
+    if (wants && (this.path.length === 0 || lastSearch.get(s) !== s.tick)) {
+      lastSearch.set(s, s.tick);
       const p = findPath(s.map, Math.floor(me.x), Math.floor(me.y), goal.x, goal.y);
       this.path = p ?? [];
       this.pathGoal = p ? gi : -1;
-      this.repath = aiJson.repathInterval + this.rng.range(0, 0.3);
+      this.repath = aiJson.repathInterval * (1 + dhypot(goal.x - me.x, goal.y - me.y) / 12) + this.rng.range(0, 0.3);
       if (this.stuckT > aiJson.stuckTime) this.stuckT = 0;
     }
     while (this.path.length && dhypot(this.path[0].x + 0.5 - me.x, this.path[0].y + 0.5 - me.y) < 0.45) this.path.shift();

@@ -8,7 +8,8 @@ import { Rng } from '../sim/rng';
 import { createState, step, type PlayerSpec } from '../sim/sim';
 import type { MatchRules, SimState } from '../sim/state';
 import { generateMap, type MapSize } from '../world/generator';
-import type { GameMap } from '../world/map';
+import type { GameMap, MapTheme } from '../world/map';
+import { generateThemed } from '../world/themes';
 import { AiBot, type AiLevel } from '../systems/ai/bot';
 
 export interface MatchOptions {
@@ -21,6 +22,8 @@ export interface MatchOptions {
   humanPlayer?: boolean;
   playerName?: string;
   rules?: Partial<MatchRules>;
+  /** Map theme when no `map` is given (default: the original forest generator). */
+  theme?: MapTheme;
   /** Bot difficulty for every bot in the match, allies included (owner decision). */
   aiLevel?: AiLevel;
 }
@@ -43,7 +46,7 @@ export function defaultTeams(seed: number, playerClass: TankClassId): [TankClass
 const BOT_NAMES = ['Kurt', 'Şahin', 'Kaplan', 'Atmaca', 'Bozkurt', 'Pars', 'Karakuş', 'Doğan', 'Aslan', 'Toros'];
 
 export function createMatch(o: MatchOptions): MatchHandle {
-  const map = o.map ?? generateMap({ seed: o.seed, size: o.mapSize ?? 64 });
+  const map = o.map ?? (o.theme ? generateThemed(o.theme, o.seed, o.mapSize ?? 40) : generateMap({ seed: o.seed, size: o.mapSize ?? 64 }));
   const teams = o.teams ?? defaultTeams(o.seed, 'standard');
   const players: PlayerSpec[] = [];
   let nameIdx = o.seed % BOT_NAMES.length;

@@ -46,6 +46,8 @@ export interface TeamBase {
   spawns: MapPoint[];
 }
 
+export type MapTheme = 'forest' | 'desert' | 'city';
+
 export interface GameMap {
   width: number;
   height: number;
@@ -64,6 +66,8 @@ export interface GameMap {
   lights: MapPoint[];
   /** Respawn candidates spread over the map (tile coords), all walkable and connected to the main region. */
   spawnPoints: MapPoint[];
+  /** Visual/generation theme: original forest/river map, desert ruins, modern city (round 03). */
+  theme: MapTheme;
   /** Incremented whenever terrain changes at runtime (destruction) so caches (LOS, paths, render) can refresh. */
   version: number;
 }
@@ -83,6 +87,7 @@ export function createMap(width: number, height: number, seed = 0): GameMap {
     objectives: [],
     lights: [],
     spawnPoints: [],
+    theme: 'forest',
     version: 0,
   };
 }
@@ -119,7 +124,8 @@ export function damageFeature(m: GameMap, x: number, y: number, dmg: number): bo
   if (def.hp <= 0 || m.hp[i] === 0) return false;
   m.hp[i] = Math.max(0, m.hp[i] - Math.ceil(dmg));
   if (m.hp[i] > 0) return false;
-  m.feature[i] = m.feature[i] === Feature.Gate || m.feature[i] === Feature.Wall ? Feature.Ruins : Feature.None;
+  const f = m.feature[i];
+  m.feature[i] = f === Feature.Gate || f === Feature.Wall || f === Feature.Adobe ? Feature.Ruins : Feature.None;
   m.version++;
   return true;
 }

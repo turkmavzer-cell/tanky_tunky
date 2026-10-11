@@ -6,12 +6,13 @@ import { FixedStepLoop } from '../core/loop';
 import { FrameStats } from '../core/frameStats';
 import { KeyboardMouse } from '../core/keyboard';
 import { haptic } from '../core/platform';
-import { ABILITIES, COMBAT, MATCH, SIM_DT, TANKS, type AbilityId, type TankClassId } from '../sim/config';
+import { ABILITIES, COMBAT, MATCH, SIM_DT, TANKS, VISION, type AbilityId, type TankClassId } from '../sim/config';
 import { AIM_AUTO, BTN_ABILITY, BTN_FIRE, EMPTY_INPUT, quantizeAim, quantizeMove, type PlayerInput } from '../sim/input';
 import { chargeLevel } from '../sim/sim';
 import type { SimEvent, SimState } from '../sim/state';
 import { lerp, lerpAngle } from '../sim/dmath';
-import { canSeeTank, isInvisible, tileVisible } from '../sim/visibility';
+import { maxHp } from '../sim/upgrades';
+import { canSeeTank, inForest, isInvisible, tileVisible } from '../sim/visibility';
 import { Camera } from '../render/camera';
 import { WorldRenderer } from '../render/worldRenderer';
 import { TankView } from '../render/tankView';
@@ -19,7 +20,7 @@ import { Fx } from '../render/fx';
 import { FogLayer } from '../render/fogLayer';
 import { Overlays } from '../render/overlays';
 import { LEVEL_PX } from '../render/terrainArt';
-import { generateMap, type MapSize } from '../world/generator';
+import type { MapSize } from '../world/generator';
 import { loadAsciiMap, type AsciiMap } from '../world/mapLoader';
 import { Ground } from '../world/terrain';
 import { screenAngleToWorld, screenDirToWorld, screenToWorld, worldAngleToScreen, worldToScreenX, worldToScreenY } from '../world/iso';
@@ -27,6 +28,8 @@ import type { Quality } from '../core/save';
 import type { TouchControls } from '../ui/touchControls';
 import { Minimap } from '../ui/minimap';
 import type { AiLevel } from '../systems/ai/bot';
+import { generateThemed } from '../world/themes';
+import type { MapTheme } from '../world/map';
 import { createMatch, defaultTeams, scoreboard, stepMatch, type MatchHandle, type ScoreRow } from '../game/matchSetup';
 import { createAudioSystem, createSilentAudio, type AudioSystem, type EngineHandle, type SfxName } from '../audio';
 import debugHeights from '../../maps/debug_heights.json';
@@ -39,6 +42,8 @@ export interface GameSceneOptions {
   autoAim: boolean;
   /** Obstacle highlight (settings): normal | strong. */
   edgeHighlight: 'normal' | 'strong';
+  /** Map theme (round 03): desert ruins, modern city or the original forest/river map. */
+  mapTheme?: MapTheme;
   /** Bot difficulty for all bots (allies and enemies). */
   aiLevel?: AiLevel;
   /** Dev: ability cooldown multiplier 0.1x–3x. */
@@ -65,6 +70,8 @@ export interface GameSceneOptions {
 export interface HudSnapshot {
   hp: number;
   maxHp: number;
+  /** Crate upgrades collected this life. */
+  upgrades: number;
   alive: boolean;
   respawn: number;
   kills: number;
@@ -158,7 +165,8 @@ export class GameScene {
     this.audio.setVolumes(this.opts.volume);
 
     const seed = this.opts.seed ?? ((Date.now() / 1000) | 0);
-    const map = this.opts.mapName === 'debug_heights' ? loadAsciiMap(debugHeights as AsciiMap, seed) : generateMap({ seed, size: this.opts.mapSize ?? (MATCH as { mapSize?: MapSize }).mapSize ?? 40 });
+    const size = this.opts.mapSize ?? (MATCH as { mapSize?: MapSize }).mapSize ?? 40;
+    const map = this.opts.mapName === 'debug_heights' ? loadAsciiMap(debugHeights as AsciiMap, seed) : generateThemed(this.opts.mapTheme ?? 'desert', seed, size);
     this.match = createMatch({
       seed,
       map,
@@ -176,7 +184,8 @@ export class GameScene {
     this.fx = new Fx(this.opts.quality === 'low' ? 350 : 700);
     this.fx.quality = this.opts.quality === 'low' ? 0.5 : 1;
     this.overlays = new Overlays((x, y) => this.worldView.heightPx(x, y));
-    if (!this.opts.noFog) this.fog = new FogLayer(map.width, map.height);
+    // darkening overlay only in line-of-sight mode; the default is full visibility (D-037)
+    if (!this.opts.noFog && !this.state.rules.fullVisibility) this.fog = new FogLayer(map.width, map.height);
     this.worldView.attach(this.app.renderer);
     this.world.addChild(this.worldView.ground, this.fx.under, this.overlays.ground, this.worldView.objects, this.fx.over, this.overlays.air, this.worldView.bumpLayer);
     if (this.fog) this.world.addChild(this.fog.container);
@@ -392,6 +401,24 @@ export class GameScene {
             this.play('hit_wall', e.x + 0.5, e.y + 0.5);
           }
           break;
+        case 'pickup': {
+          const t = s.tanks[e.tank];
+          this.fx.sparks(this.sx(e.x, e.y), this.sy(e.x, e.y) - 16, 14, 0xffd84a);
+          this.fx.floatText(this.sx(t.x, t.y), this.sy(t.x, t.y) - 70, `+%${Math.round(e.level * COMBAT.upgrades.perPickup * 100)}`, '#ffd84a', 1.2);
+          this.play('perfect_charge', e.x, e.y);
+          if (e.tank === this.localId) haptic('light');
+          break;
+        }
+        case 'regen': {
+          const t = s.tanks[e.tank];
+          if (canSeeTank(s, this.myTeam, t)) {
+            this.fx.sparks(this.sx(t.x, t.y), this.sy(t.x, t.y) - 20, 8, 0x8aff8a);
+            this.fx.floatText(this.sx(t.x, t.y), this.sy(t.x, t.y) - 56, `+${Math.round(e.amount)}`, '#8aff8a');
+          }
+          break;
+        }
+        case 'crateRespawn':
+          break;
         case 'respawn':
           this.prev[e.tank].x = s.tanks[e.tank].x;
           this.prev[e.tank].y = s.tanks[e.tank].y;
@@ -455,13 +482,14 @@ export class GameScene {
       const p = this.prev[i];
       const v = this.tankViews[i];
       const own = t.team === this.myTeam;
-      const seen = !this.fog || canSeeTank(s, this.myTeam, t);
+      const seen = canSeeTank(s, this.myTeam, t);
       const invisible = isInvisible(t);
       // enemy hit while invisible: brief shimmer cue in visible tiles
       const shimmer = !own && invisible && t.shimmer > 0 && tileVisible(s, this.myTeam, t.x, t.y);
       v.root.visible = t.alive && (seen || shimmer);
       let a = 1;
       if (own && invisible) a = 0.42;
+      else if (inForest(s, t)) a = own ? 0.75 : VISION.forestAlpha; // concealed in the trees
       if (shimmer) a = 0.12 + 0.18 * Math.abs(Math.sin(time * 40));
       if (t.protect > 0) a *= 0.55 + 0.45 * Math.abs(Math.sin(time * 14));
       v.root.alpha = a;
@@ -500,10 +528,12 @@ export class GameScene {
       }
       // health bar
       const w = 44;
-      const hpF = t.hp / def.hp;
+      const hpF = t.hp / maxHp(t);
       const by = sy - 62;
       this.bars.rect(sx - w / 2 - 1, by - 1, w + 2, 7).fill({ color: 0x000000, alpha: 0.6 });
-      this.bars.rect(sx - w / 2, by, w * hpF, 5).fill(own ? (i === this.localId ? 0x7ee07e : 0x6aa9ff) : 0xff5a4a);
+      this.bars.rect(sx - w / 2, by, w * Math.min(1, hpF), 5).fill(own ? (i === this.localId ? 0x7ee07e : 0x6aa9ff) : 0xff5a4a);
+      // crate upgrades: one gold pip each under the bar (round 03)
+      for (let k = 0; k < t.upgrades; k++) this.bars.rect(sx - w / 2 + k * 3.7, by + 7, 3, 3).fill(0xffd84a);
       if (!own) {
         // enemy marker: red triangle above the bar (colour-blind friendly shape + colour)
         this.bars.poly([sx - 6, by - 12, sx + 6, by - 12, sx, by - 4]).fill(0xff3b30);
@@ -514,6 +544,7 @@ export class GameScene {
       const tg = tanks[me.target];
       if (tg.alive) this.overlays.reticle(tg.x, tg.y);
     }
+    for (const p of s.pickups) this.overlays.pickup(p.x, p.y);
     // mines (job 5): own team clearly, enemy mines only as a faint glimmer up close & in sight
     const glimmer = Number(ABILITIES.mine.glimmerRange);
     for (const m of s.mines) {
@@ -650,7 +681,8 @@ export class GameScene {
     const ab = me.ability;
     return {
       hp: Math.ceil(me.hp),
-      maxHp: TANKS[me.cls].hp,
+      maxHp: Math.round(maxHp(me)),
+      upgrades: me.upgrades,
       alive: me.alive,
       respawn: Math.max(0, me.respawn),
       kills: me.kills,

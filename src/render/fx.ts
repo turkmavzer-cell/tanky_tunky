@@ -168,15 +168,20 @@ export class Fx {
   }
 
   damageNumber(x: number, y: number, value: number, crit: boolean): void {
+    this.floatText(x, y, String(Math.round(value)), crit ? '#ffe066' : '#ffffff', crit ? 1.35 : 1);
+  }
+
+  /** Rising text (damage numbers, "+120" heals, "+5 %" upgrades). */
+  floatText(x: number, y: number, text: string, color: string, scale = 1): void {
     let n = this.nums.find((q) => !q.live);
     if (!n) n = this.nums.reduce((a, b) => (a.life < b.life ? a : b));
     n.live = true;
     n.x = x + (this.rand() - 0.5) * 16;
     n.y = y;
     n.life = 0.9;
-    n.t.text = String(Math.round(value));
-    n.t.style.fill = crit ? '#ffe066' : '#ffffff';
-    n.t.scale.set(crit ? 1.35 : 1);
+    n.t.text = text;
+    n.t.style.fill = color;
+    n.t.scale.set(scale);
     n.t.visible = true;
   }
 

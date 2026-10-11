@@ -2,7 +2,8 @@
  * Match flow (round-01 job 4): 3-2-1 countdown → `duration` s of play → ended.
  * Respawns happen anywhere on the map at a safe spawn point. All timers use simulation time.
  */
-import { MATCH, TANKS } from './config';
+import { resetUpgrades } from './upgrades';
+import { MATCH } from './config';
 import type { SimState, Tank } from './state';
 import { resetAbility } from './abilities';
 import type { MapPoint } from '../world/map';
@@ -63,7 +64,7 @@ export function chooseSpawn(s: SimState, t: Tank, deathX: number, deathY: number
     const cy = p.y + 0.5;
     let nearest = Infinity;
     for (const e of enemies) nearest = Math.min(nearest, Math.sqrt((e.x - cx) * (e.x - cx) + (e.y - cy) * (e.y - cy)));
-    const seen = s.vision[enemyTeam].visible[p.y * W + p.x] === 1;
+    const seen = s.vision[enemyTeam].los[p.y * W + p.x] === 1; // real line of sight, also in full-visibility mode
     const dDeath = Math.sqrt((deathX - cx) * (deathX - cx) + (deathY - cy) * (deathY - cy));
     const repeat = MATCH.spawn.avoidRepeat && i === t.lastSpawn;
     const safety = (seen ? -1000 : 0) + Math.min(nearest, 30);
@@ -89,7 +90,7 @@ export function respawnTank(s: SimState, t: Tank, deathX: number, deathY: number
   t.x = point.x + 0.5;
   t.y = point.y + 0.5;
   t.vx = t.vy = t.kx = t.ky = 0;
-  t.hp = TANKS[t.cls].hp;
+  resetUpgrades(t); // upgrades are lost on death; full base hp
   t.alive = true;
   t.charging = false;
   t.chargeT = t.fullT = t.cooldown = t.overheat = 0;

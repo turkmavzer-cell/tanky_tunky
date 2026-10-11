@@ -20,4 +20,8 @@ same world view (fill-rate-normalised). Real-device numbers are recorded below b
 | 2026-10-08 | round 01 (before) | 96×96, 6 tanks, fog+vision, CPU 4x — CI runner | p95 33.3 ms ❌ (JS work mean ~10 ms) |
 | 2026-10-08 | round 01 (D-026 ground bake + culler) | same, local | **60 FPS, p95 16.7 ms ✅**, JS work mean 4.6–5.5 ms (p95 11–13), ~1040 sprites |
 
+| 2026-10-09 | round 02 (re-measured as baseline) | 96×96, 6 tanks, CPU 4x, local | 60 FPS, p95 16.8 ms ✅, JS work mean 6.9–7.5 ms |
+| 2026-10-09 | round 03 (full visibility, before D-041) | same | p95 16.8 ms ✅, JS work mean 10.4 ms (p95 23.6) — bots chase across the map, A* every tile step |
+| 2026-10-09 | round 03 (D-041 A* throttling) | same | **p95 16.8 ms ✅**, JS work mean 8.7–9.6 ms (p95 16–19); headless sim p99 per tick on 96² forest 21 → 8 ms |
+
 Profiling helper: `npm run build && node tools/profile.mjs` (top self-time functions of a live match at CPU 4x).

@@ -67,9 +67,9 @@ test('tank select: swipeable cards with stats + ability, difficulty selector (re
   await shot(page, '05-tank-cards-swiped');
   // every card is reachable and shows its own numbers
   for (const [cls, hp] of [
-    ['scout', '1.900'],
+    ['scout', '2.200'],
     ['heavy', '5.500'],
-    ['trapper', '2.375'],
+    ['artillery', '2.550'],
   ] as const) {
     await page.getByTestId(`class-${cls}`).click();
     await expect(page.locator('.tank-card.on')).toHaveAttribute('data-cls', cls);

@@ -30,6 +30,10 @@ const FEATURE_KEY: Record<number, keyof TerrainArt['features'] | null> = {
   [Feature.Ruins]: 'ruins',
   [Feature.Gate]: 'gate',
   [Feature.Bridge]: 'bridge',
+  [Feature.Building]: 'building',
+  [Feature.Adobe]: 'adobe',
+  [Feature.Car]: 'car',
+  [Feature.Palm]: 'palm',
 };
 
 /** Elevation colour language (job 2): low ground cooler/darker, high ground lighter/warmer. */
@@ -269,7 +273,8 @@ export class WorldRenderer {
         const isRamp = (m.flags[i] & FLAG_RAMP) !== 0;
         // ground diamond
         const gv = this.groundTex[g];
-        gp.next(gv[h % gv.length], sx, top, 0.5, 0).tint = ELEV_TINT[Math.min(e, ELEV_TINT.length - 1)];
+        // flat themed maps (desert/city) keep true colours; the forest map tints by elevation (job 2)
+        gp.next(gv[h % gv.length], sx, top, 0.5, 0).tint = m.theme === 'forest' ? ELEV_TINT[Math.min(e, ELEV_TINT.length - 1)] : 0xffffff;
         if (g === Ground.Shallow || g === Ground.Deep) {
           const ws = this.waterPool.next(this.waterTex[g === Ground.Shallow ? 0 : 1][this.waterFrame], sx, top, 0.5, 0);
           this.waterSprites.push({ s: ws, kind: g === Ground.Shallow ? 0 : 1 });
@@ -285,7 +290,7 @@ export class WorldRenderer {
           if (ng !== g && EDGE_PRIORITY[ng] > EDGE_PRIORITY[g]) gp.next(this.edgeTex[ng][dir], sx, top, 0.5, 0);
         }
         // decals on plain land
-        if (m.feature[i] === Feature.None && !isRamp && g !== Ground.Deep && g !== Ground.Shallow && h % 7 === 0) {
+        if (m.feature[i] === Feature.None && !isRamp && g !== Ground.Deep && g !== Ground.Shallow && g !== Ground.Asphalt && g !== Ground.Pavement && h % 7 === 0) {
           const dcl = this.decalTex[(h >>> 8) % this.decalTex.length];
           const ox = (((h >>> 4) & 31) - 16) * 1.2;
           const oy = (((h >>> 12) & 15) - 8) * 1.2;
@@ -308,7 +313,7 @@ export class WorldRenderer {
           gp.next(v.tex, sx, cy, v.ax, v.ay);
         } else if (key) {
           const def = this.featureTex[key];
-          const damaged = (key === 'wall' || key === 'crate' || key === 'gate') && m.hp[i] > 0 && this.isDamaged(i, f);
+          const damaged = (key === 'wall' || key === 'crate' || key === 'gate' || key === 'adobe' || key === 'car') && m.hp[i] > 0 && this.isDamaged(i, f);
           const v = damaged
             ? this.damagedTex[key]
             : key === 'gate'
@@ -318,7 +323,7 @@ export class WorldRenderer {
           sp.zIndex = x + y + 1;
         }
         if (this.lightSet.has(i) && f === Feature.None) {
-          const v = this.featureTex.torch[0];
+          const v = this.featureTex[m.theme === 'city' ? 'lamp' : 'torch'][0];
           const sp = op.next(v.tex, sx + 26, cy + 6, v.ax, v.ay);
           sp.zIndex = x + y + 1;
         }

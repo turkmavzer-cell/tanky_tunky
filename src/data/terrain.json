@@ -36,6 +36,18 @@
       "speedMul": 0,
       "moveCost": 999,
       "passable": false
+    },
+    "asphalt": {
+      "id": 6,
+      "speedMul": 1.1,
+      "moveCost": 0.9,
+      "passable": true
+    },
+    "pavement": {
+      "id": 7,
+      "speedMul": 1.05,
+      "moveCost": 0.95,
+      "passable": true
     }
   },
   "feature": {
@@ -110,6 +122,42 @@
       "speedMul": 1.0,
       "concealment": 0,
       "hp": 0
+    },
+    "building": {
+      "id": 8,
+      "blocksMove": true,
+      "blocksLOS": true,
+      "blocksShots": true,
+      "speedMul": 0,
+      "concealment": 0,
+      "hp": 0
+    },
+    "adobe": {
+      "id": 9,
+      "blocksMove": true,
+      "blocksLOS": true,
+      "blocksShots": true,
+      "speedMul": 0,
+      "concealment": 0,
+      "hp": 120
+    },
+    "car": {
+      "id": 10,
+      "blocksMove": true,
+      "blocksLOS": false,
+      "blocksShots": true,
+      "speedMul": 0,
+      "concealment": 0,
+      "hp": 200
+    },
+    "palm": {
+      "id": 11,
+      "blocksMove": true,
+      "blocksLOS": false,
+      "blocksShots": false,
+      "speedMul": 0,
+      "concealment": 0,
+      "hp": 0
     }
   },
   "elevation": {
@@ -120,5 +168,6 @@
     "freeStep": 0,
     "$climb": "maxClimb: largest level difference a RAMP can connect. freeStep: largest level difference a tank can drive over WITHOUT a ramp (0 = every step needs a ramp). Movement, pathfinding, map validation and the cliff visuals all read these via src/world/passability.ts."
   },
-  "$forest": "Forest does not block line of sight (otherwise maps become blind); instead a tank INSIDE a forest tile is only visible from within vision.forestConcealRange (data/vision.json). See DECISIONS D-016."
+  "$forest": "Forest does not block line of sight (otherwise maps become blind); instead a tank INSIDE a forest tile is only visible from within vision.forestConcealRange (data/vision.json). See DECISIONS D-016.",
+  "$round03": "Round 03 (D-040): asphalt/pavement grounds and building (indestructible), adobe (house wall, breaks into ruins), car (destructible cover, low: does not block sight), palm (trunk blocks movement only) for the desert and city maps."
 }

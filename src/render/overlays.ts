@@ -75,6 +75,18 @@ export class Overlays {
     }
   }
 
+  /** Crate upgrade on the ground: bobbing green box with a gold up-chevron (round 03). */
+  pickup(x: number, y: number): void {
+    const [sx, sy] = this.px(x, y);
+    const g = this.ground;
+    const bob = Math.sin(this.time * 4 + x * 3) * 4;
+    g.ellipse(sx, sy + 2, 18, 9).fill({ color: 0x000000, alpha: 0.25 });
+    g.ellipse(sx, sy, 22 + Math.sin(this.time * 6) * 3, 11).stroke({ width: 2, color: 0x9dff8a, alpha: 0.6 });
+    const y0 = sy - 16 + bob;
+    g.roundRect(sx - 10, y0 - 10, 20, 20, 4).fill({ color: 0x2f8a3a }).stroke({ width: 2, color: 0x0f2a12 });
+    g.poly([sx - 6, y0 + 3, sx, y0 - 4, sx + 6, y0 + 3, sx + 6, y0 + 7, sx, y0, sx - 6, y0 + 7]).fill(0xffd84a);
+  }
+
   ring(x: number, y: number, r: number): void {
     this.rings.push({ x, y, lift: this.lift(x, y), r, t: 0, max: 0.45 });
   }

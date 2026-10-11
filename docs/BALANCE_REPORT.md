@@ -70,3 +70,32 @@ Final table:
 - **Heavy** — accurate (93 % of shots hit) and very hard to kill; all its option-B levers are at the ±20 % limit. The remaining lever is its hp (5500, owner's anchor value) or Rumble.
 
 Owner decides the next step; nothing outside option B was changed.
+
+## Round 03 — Trapper removed, full visibility, upgrades, regen, new maps (not tuned)
+
+`npx tsx tools/balance.ts 300 40 hard desert|city`. Nothing was tuned this round; the numbers are for the owner's next decision.
+
+Matches: 300 (3v3, 40x40, 300 s, random rosters, hard bots, desert map) — draws 11 (4 %), avg kills/match 51.2, runtime 232.1 s
+
+| Class | Appearances | Win rate (decisive) | K/D | Kills / match | Ability uses / match | Shots / match | Charged shots (≥30 %) | Band 45–55 % |
+|---|---|---|---|---|---|---|---|---|
+| scout | 467 | 59.0 % | 1.39 | 11.29 | 39.96 | 129.9 | 53 % | ❌ |
+| heavy | 444 | 63.1 % | 1.33 | 8.20 | 3.83 | 36.8 | 74 % | ❌ |
+| standard | 428 | 56.7 % | 1.12 | 10.02 | 15.86 | 87.1 | 56 % | ❌ |
+| artillery | 461 | 22.5 % | 0.43 | 4.68 | 29.07 | 221.2 | 91 % | ❌ |
+
+
+Matches: 300 (3v3, 40x40, 300 s, random rosters, hard bots, city map) — draws 11 (4 %), avg kills/match 53.5, runtime 224.5 s
+
+| Class | Appearances | Win rate (decisive) | K/D | Kills / match | Ability uses / match | Shots / match | Charged shots (≥30 %) | Band 45–55 % |
+|---|---|---|---|---|---|---|---|---|
+| scout | 467 | 57.2 % | 1.36 | 11.90 | 40.63 | 136.0 | 51 % | ❌ |
+| heavy | 444 | 66.7 % | 1.42 | 8.54 | 4.84 | 37.9 | 71 % | ❌ |
+| standard | 428 | 54.9 % | 1.11 | 10.48 | 16.41 | 91.3 | 53 % | ✅ |
+| artillery | 461 | 22.1 % | 0.42 | 4.84 | 28.93 | 221.7 | 90 % | ❌ |
+
+
+Observations
+- Much more fighting: ~52 kills per 5-minute match (bots see everyone now; regen + upgrades keep tanks in the fight).
+- **Artillery 22 %** remains the outlier (same blast-edge cause as in round 02). **Heavy 63–67 %**. Scout rose to 57–59 % with 2200 hp and full visibility (no ambush penalty).
+- Both maps give nearly identical class results, so the maps themselves are fair.

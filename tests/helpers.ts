@@ -15,7 +15,9 @@ export function arena(
   players: { team: number; cls: TankClassId; x: number; y: number }[],
   opts: { size?: number; map?: GameMap; rules?: Partial<MatchRules> } = {},
 ): SimState {
-  return createState({ seed: 1, map: opts.map ?? flatMap(opts.size ?? 30), players, rules: { endless: true, ...opts.rules } });
+  // arenas default to line-of-sight vision so the VisibilitySystem rules stay covered; pass
+  // rules.fullVisibility = true to test the game's default (D-037)
+  return createState({ seed: 1, map: opts.map ?? flatMap(opts.size ?? 30), players, rules: { endless: true, fullVisibility: false, ...opts.rules } });
 }
 
 /** Run n ticks with fixed inputs; returns all events. */

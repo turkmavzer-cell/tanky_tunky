@@ -242,7 +242,7 @@ describe('AI robustness', () => {
     const { Rng } = await import('../src/sim/rng');
     const r = new Rng(77);
     for (let g = 0; g < 40; g++) {
-      const pick = () => TANK_CLASSES[r.int(0, 4)];
+      const pick = () => TANK_CLASSES[r.int(0, TANK_CLASSES.length - 1)];
       expect(() => runHeadless({ seed: r.nextU32(), mapSize: 40, teams: [[pick(), pick(), pick()], [pick(), pick(), pick()]], rules: { duration: 20 } })).not.toThrow();
     }
   }, 120_000);

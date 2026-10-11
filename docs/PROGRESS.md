@@ -74,7 +74,43 @@ Gates: lint ✅ typecheck ✅ unit 125 ✅ E2E 19 ✅ perf ✅ (60 FPS, p95 16.7
 
 To try on the phone: the new launcher icon; swiping the tank cards; each difficulty (Kolay should feel clumsy and slow to shoot, Ekstrem should shoot at once and gang up on a weak tank); the ability button countdown; auto-aim while holding FIRE with a moving thumb; a full 5-minute match.
 
+## Round 03 — maps, upgrades, regen, visibility (branch `fix/round-03-maps`, 2026-10-09)
+
+| Job | Status | Evidence |
+|---|---|---|
+| Signing fix (D-035) | ✅ | explicit debug signing + CI signer check (run #14 verified `05278fc8…`) |
+| Trapper removed, Scout hp 2200 (D-036) | ✅ | 4 cards on the select screen (e2e round03/06) |
+| Full visibility + forest translucency (D-037) | ✅ | `tests/visibility.test.ts` full-visibility suite; `03-forest-concealment.png` |
+| Crate upgrades (D-038) | ✅ | `tests/upgrades.test.ts`; `04a/04b-*.png` |
+| Regeneration (D-039) | ✅ | `tests/upgrades.test.ts`; `05-regen.png` |
+| Desert + city maps, selector (D-040) | ✅ | `tests/themes.test.ts` (30 seeds each); `01/02-*.png`, `06-select-map.png` |
+| Balance | 🟡 reported | BALANCE_REPORT round 03 (Artillery 22 %, Heavy 63–67 %) |
+
+Gates: lint ✅ typecheck ✅ unit 140 ✅ E2E 25 ✅ perf ✅ (p95 16.8 ms; JS work ~9 ms locally, ~+2 ms vs round 02 from busier fights).
+
+To try on the phone: uninstall once (signature fix), then install; both new maps; picking up upgrades from crates; regen after leaving a fight; enemies in trees.
+
+## 2026-10-11 — cloud hand-off note reconciled (docs only, no game code)
+
+The owner ran a second (cloud) session that only saw the default branch (`5b8654e`, phase 3) and wrote a hand-off note.
+Checked against the round branches:
+- Already done in PR #1–#3 (the note could not see them): Trapper disabled, Hide and Rumble abilities, auto-aim,
+  readable heights, fog-fair AI ("wandering enemy"), 60 s → 5 min matches, respawn elsewhere, scoreboard, signing fix.
+- Not done: ability trees; the owner's 4 tank images are not in the repo.
+- Real gap found: since full visibility (D-037) auto-aim can lock an enemy outside the screen (work stream A).
+- New owner requests from the cloud chat (menu, campaign, progression, multiplayer, two abilities per tank, Scout spray fire,
+  art pipeline) recorded as pending decisions in `CLAUDE.md` §1 and as proposals in `docs/TANKS.md`.
+- `docs/changelog` merged: `docs/CHANGELOG.md` + `npm run log` + changelog-check workflow (D-043).
+- Verification: docs only; `npm run lint` / `npm run typecheck` run after the merge.
+
 ## Open questions for the owner
-- Balance: Heavy (63 %) and Artillery (31.5 %) are outside the band after option B — see BALANCE_REPORT (artillery blast rule / Heavy hp).
-- Tank art: owner may supply 3D models (.glb) or images (Nano Banana) — pipeline to be planned.
-- Git flow: the session can only push `claude/tanky-tunky-setup-dw06hp`. Should this branch be merged into a new `main` via PR (and later phases go through PRs)? See D-001.
+
+See `CLAUDE.md` §1 "Pending owner decisions" for options and proposals:
+- B1 Artillery weak (≈22 %), B2 Heavy strong (≈63–67 %).
+- A Auto-aim only on enemies visible on screen (bug since D-037).
+- K1 Multiplayer (online / Wi-Fi / later; INTERNET permission), K2 campaign map size and level count,
+  K3 map awareness after the Trapper (minimap for all? objective arrow?), K4 campaign enemy placement,
+  K5 spray fire for Scout only or all, K7 Scout numbers, K8 skill + ult per tank and cooldowns,
+  K9 work order, K10 merge PRs #1 → #2 → #3, K11 delete the Trapper from code or keep it disabled.
+- T Ability trees, G tank art pipeline (owner's 4 images needed in the repo).
+- Phone test of APK #16, including whether the update/signature error is gone after one uninstall.

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { arena, flatMap, run, idle, wall } from './helpers';
-import { canNoticeTank, canSeeTank, castFov, updateVision } from '../src/sim/visibility';
+import { canNoticeTank, canSeeTank, castFov, inForest, updateVision } from '../src/sim/visibility';
+import { VISION } from '../src/sim/config';
 import { Rng } from '../src/sim/rng';
 import { setFeature } from '../src/world/map';
 import { Feature } from '../src/world/terrain';
@@ -119,5 +120,53 @@ describe('VisibilitySystem — tanks', () => {
     const t0 = performance.now();
     for (let i = 0; i < 100; i++) updateVision(s);
     expect((performance.now() - t0) / 100).toBeLessThan(2);
+  });
+});
+
+describe('full visibility (game default since round 03, D-037)', () => {
+  const full = { rules: { fullVisibility: true } };
+
+  it('an enemy behind a wall and far away is visible and targetable', () => {
+    const s = arena(
+      [
+        { team: 0, cls: 'standard', x: 3.5, y: 3.5 },
+        { team: 1, cls: 'standard', x: 25.5, y: 25.5 },
+      ],
+      full,
+    );
+    wall(s.map, 10, 0, 29);
+    updateVision(s);
+    expect(canSeeTank(s, 0, s.tanks[1])).toBe(true);
+    expect(s.vision[0].visible.every((v) => v === 1)).toBe(true);
+    expect(s.vision[0].los[25 * 30 + 25]).toBe(0); // real line of sight is still blocked
+  });
+
+  it('a tank in forest is hidden beyond forestConcealRange and visible inside it', () => {
+    const s = arena(
+      [
+        { team: 0, cls: 'standard', x: 5.5, y: 15.5 },
+        { team: 1, cls: 'standard', x: 15.5, y: 15.5 },
+      ],
+      full,
+    );
+    for (let y = 13; y < 18; y++) for (let x = 13; x < 18; x++) setFeature(s.map, x, y, Feature.Forest);
+    updateVision(s);
+    expect(inForest(s, s.tanks[1])).toBe(true);
+    expect(canSeeTank(s, 0, s.tanks[1])).toBe(false);
+    s.tanks[0].x = 15.5 - VISION.forestConcealRange + 0.2;
+    expect(canSeeTank(s, 0, s.tanks[1])).toBe(true);
+  });
+
+  it('Hide still makes a tank invisible', () => {
+    const s = arena(
+      [
+        { team: 0, cls: 'standard', x: 5.5, y: 5.5 },
+        { team: 1, cls: 'scout', x: 7.5, y: 5.5 },
+      ],
+      full,
+    );
+    s.tanks[1].ability.active = 3;
+    updateVision(s);
+    expect(canSeeTank(s, 0, s.tanks[1])).toBe(false);
   });
 });

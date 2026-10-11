@@ -8,13 +8,15 @@ hasar 1x → 3x (tam şarj), "mükemmel şarj" +%15, mermi hızı 1x → 1,6x, m
 
 | Sınıf | Kod adı | Rol | Hız | Can | Zırh | Efektif can* | Görüş | Atış tipi |
 |---|---|---|---|---|---|---|---|---|
-| Çevik | `scout` | Kanat / keşif | 4,2 (çok yüksek) | 1.900 | %0 | 1.900 | 6 | Düz, seri |
+| Çevik | `scout` | Kanat / keşif | 4,2 (çok yüksek) | 2.200 | %0 | 2.200 | 6 | Düz, seri |
 | Ağır | `heavy` | Hat tutucu | 1,5 (çok düşük) | 5.500 | %20 | 6.875 | 4,5 | Düz, ağır, 1 kez seker |
 | Dengeli | `standard` | Her işi gören | 2,7 (orta) | 3.000 | %10 | 3.333 | 6 | Düz |
 | Topçu | `artillery` | Arkadan destek | 1,9 (düşük) | 2.550 | %5 | 2.684 | 6 | Kavisli, engel üstünden, alan hasarı |
-| Tuzakçı | `trapper` | Bilgi / kontrol | 2,2 (orta-düşük) | 2.375 | %5 | 2.500 | **Tüm harita** (+ mini harita) | Düz, zayıf |
+| Tuzakçı *(kapalı, D-036)* | `trapper` | Bilgi / kontrol | 2,2 (orta-düşük) | 2.375 | %5 | 2.500 | **Tüm harita** (+ mini harita) | Düz, zayıf |
 
 \* Efektif can = can / (1 − zırh).
+
+**Tur 03 (D-036):** Tuzakçı şimdilik oyundan çıkarıldı (veriler duruyor), Çevik canı 2.200. Kutulardan yükseltme: her biri +%5 can ve hasar, en fazla +%60; çatışma dışında 5 sn'de bir +%5 can.
 
 **Denge turu (2026-10-09, D-034):** B seçeneği uygulandı; aşağıdaki değerler güncel.
 
@@ -50,4 +52,32 @@ Değerler `src/data/abilities.json`. Bekleme süresi etki bittikten sonra başla
 | Ağır | Gümbürtü | Anlık şok dalgası, 2,4 kare; geri iter, duvar arkasına geçmez | anlık | 12 sn | 850 merkez → 298 kenar |
 | Dengeli | Swift | 2x hız ve atış hızı, şarj süresi yarıya | 4 sn | 8 sn | — |
 | Topçu | Yaylım Ateşi | **6 mermi, 1 sn içinde** (0,18 sn arayla) hedef bölgeye; iniş yerleri herkese uyarılır | 1 sn | 10 sn | 450 / mermi (en çok 2700) |
-| Tuzakçı | Mayın | Arkaya mayın; en çok 3 aktif | anlık | 2 sn | 1500 (basana), çevreye en çok %60 |
+| Tuzakçı *(kapalı)* | Mayın | Arkaya mayın; en çok 3 aktif | anlık | 2 sn | 1500 (basana), çevreye en çok %60 |
+
+> Tuzakçı satırları sadece bilgi içindir: sınıf oyunda kapalı (`enabled: false`), verisi geri getirmek için duruyor.
+> Koddan tamamen silinip silinmeyeceği sahibinin kararı (K11).
+
+## ÖNERİ — onay bekliyor (henüz oyunda yok)
+
+Bu bölüm 2026-10-10 bulut oturumunda konuşulan istek ve önerilerdir. **Hiçbiri uygulanmadı**; sayılar sahibinin onayıyla
+kesinleşir (`CLAUDE.md` §1, K5/K7/K8). Not: buluttaki öneriler eski ölçekteydi (Çevik hasarı 9); oyun şu an ×25 ölçekte
+(Çevik dokunma hasarı 260), bu yüzden hasar sayıları yeniden hesaplanmalı.
+
+### Çevik güncellemesi (istek: daha hızlı, taramalı seri ateş)
+| Değer | Şimdi | Öneri |
+|---|---|---|
+| Azami hız | 4,2 | ~5,0 (ivme ve dönüş orantılı) |
+| Ateş | dokun / basılı tut şarj, atış arası 0,28 sn | basılı tut = tarama, şarj yok, ~10 mermi/sn, ±2° sapma |
+| Mermi başına hasar | 260 (dokunma) | düşük; saniyedeki hasar bugünküne yakın kalacak şekilde hesaplanacak (×25 ölçek) |
+| Taramalı ateş kimde | — | sadece Çevik mi, tüm tanklar mı? (K5) |
+
+### Tank başına iki yetenek: hızlı dolan + ulti (istek)
+| Tank | Şimdi (1 yetenek) | 1. yetenek önerisi (hızlı dolan) | Ulti önerisi |
+|---|---|---|---|
+| Çevik | Saklan: 5 sn, bekleme 4 sn, ateşle biter | Saklan (bulut önerisi 2 sn / 10 sn; şimdiki değerler korunabilir) | Tarama ×3 (10 → 30 mermi/sn), 5 sn, bekleme 30 sn |
+| Ağır | Gümbürtü: anlık, 2,4 kare, 850 → 298 hasar, bekleme 12 sn | Gümbürtü: biraz daha büyük (~4 kare), **merkezden uca aynı hasar**, hasar artsın | Tam onarım: canı bir kerede fuller, bekleme 45 mi 60 sn mi? |
+| Dengeli | Swift: 4 sn, bekleme 8 sn | Swift kalsın mı, yoksa geçici kalkan (2 sn / 5 sn) mı? | EMP darbesi: 4 karede düşmanları 2,5 sn sersemletir, bekleme 40 sn |
+| Topçu | Yaylım Ateşi: 1 sn'de 6 mermi, 450'şer, bekleme 10 sn | Hazır atış: sonraki mermi şarjsız, anında, tam menzil, bekleme 8 sn | Bombardıman (bugünkü Yaylım Ateşi ulti olabilir), bekleme 45 sn |
+
+Ek varsayımlar (itiraz bekleniyor): ölünce tüm bekleme sayaçları sıfırlanır; görünmez tank botlara ve otomatik nişana hedef olmaz.
+

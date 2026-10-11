@@ -11,6 +11,7 @@ import { canSeeTank } from './visibility';
 import { abilityAllowsFire, abilityChargeTimeMul, abilityFireRateMul, abilityOnFire, abilitySpeedMul, tickAbility } from './abilities';
 import { speedMulAt } from '../world/map';
 import { isPassable } from '../world/passability';
+import { markCombat, updateRegen } from './upgrades';
 
 /** Effective charge time of a tank right now (Swift halves it). */
 export function chargeTimeOf(t: Tank): number {
@@ -29,6 +30,7 @@ export function updateTank(s: SimState, t: Tank, inp: PlayerInput | undefined, r
   if (t.protect > 0) t.protect = Math.max(0, t.protect - dt);
   if (t.shimmer > 0) t.shimmer = Math.max(0, t.shimmer - dt);
   if (t.bumpCd > 0) t.bumpCd = Math.max(0, t.bumpCd - dt);
+  if (inp) updateRegen(s, t, dt); // only while playing (no input during the countdown)
 
   // --- ability (rising edge of the button)
   const abilityPressed = (buttons & BTN_ABILITY) !== 0 && (t.prevButtons & BTN_ABILITY) === 0;
@@ -163,6 +165,7 @@ function moveTank(s: SimState, t: Tank, dt: number, inX: number, inY: number): v
 
 function fire(s: SimState, t: Tank, c: number, perfect: boolean, rng: Rng): void {
   const def = TANKS[t.cls];
+  markCombat(t); // firing interrupts regeneration
   const sc = COMBAT.scaling;
   const ca = dcos(t.turret);
   const sa = dsin(t.turret);

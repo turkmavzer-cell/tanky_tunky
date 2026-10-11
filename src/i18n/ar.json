@@ -89,5 +89,8 @@
   "diff.easy": "سهل",
   "diff.normal": "عادي",
   "diff.hard": "صعب",
-  "diff.extreme": "متطرف"
+  "diff.extreme": "متطرف",
+  "map.desert": "صحراء",
+  "map.city": "مدينة",
+  "map.forest": "غابة"
 }

@@ -25,7 +25,11 @@ export interface Settings {
   cooldownMul: number;
   /** Bot difficulty for Quick Match, allies and enemies (round-02). */
   difficulty: Difficulty;
+  /** Quick Match map theme (round-03). */
+  mapTheme: MapThemeId;
 }
+
+export type MapThemeId = 'desert' | 'city' | 'forest';
 
 export type Difficulty = 'easy' | 'normal' | 'hard' | 'extreme';
 
@@ -44,7 +48,7 @@ export interface SaveData {
   records: Records;
 }
 
-export const SCHEMA_VERSION = 3;
+export const SCHEMA_VERSION = 4;
 
 export function defaultSave(): SaveData {
   return {
@@ -65,6 +69,7 @@ export function defaultSave(): SaveData {
       edgeHighlight: 'normal',
       cooldownMul: 1,
       difficulty: 'normal',
+      mapTheme: 'desert',
     },
     credits: 0,
     tutorialDone: false,
@@ -80,7 +85,7 @@ export function migrate(raw: unknown): SaveData {
   const version = typeof r.schemaVersion === 'number' ? r.schemaVersion : 0;
   if (version > SCHEMA_VERSION) return { ...def, ...r, schemaVersion: version } as SaveData; // newer build wrote it; keep as-is
   // v0 → v1: no structural changes. v1 → v2: settings.edgeHighlight, settings.cooldownMul, records.
-  // v2 → v3: settings.difficulty (defaults filled in from defaultSave).
+  // v2 → v3: settings.difficulty. v3 → v4: settings.mapTheme (defaults filled in from defaultSave).
   return {
     ...def,
     ...r,
