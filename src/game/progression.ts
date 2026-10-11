@@ -73,6 +73,7 @@ export function buyUpgrade(save: SaveData, cls: CombatClassId, br: GarageBranch)
 /** Level i is playable when it is the first one or the previous level has at least one star. */
 export function isUnlocked(save: SaveData, index: number): boolean {
   if (index <= 0) return true;
+  if (index >= LEVELS.length) return false;
   const prev = LEVELS[index - 1];
   return (save.campaign.stars[prev.id] ?? 0) > 0;
 }

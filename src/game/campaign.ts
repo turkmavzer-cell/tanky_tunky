@@ -14,6 +14,8 @@ import type { SimState, TankBoost } from '../sim/state';
 import type { MapSize } from '../world/generator';
 import type { GameMap, MapPoint, MapTheme } from '../world/map';
 import { generateThemed } from '../world/themes';
+import { loadMazeMap, type MazeSrc } from '../world/mazeMap';
+import maze1 from '../../maps/maze_1.json';
 import { isTileOpen } from '../world/passability';
 import { floodFill } from '../world/reach';
 import { AiBot, type AiLevel } from '../systems/ai/bot';
@@ -23,14 +25,19 @@ import type { MatchHandle } from './matchSetup';
 export type UnitType = 'tower' | CombatClassId;
 
 export interface OutpostDef {
-  at: number;
-  side: number;
+  /** Generated maps: fraction along the line base0 → base1 and tiles sideways from it. */
+  at?: number;
+  side?: number;
+  /** Maze maps: [column, row] in the map's character grid. */
+  cell?: [number, number];
   budget: number;
   pool: UnitType[];
 }
 
 export interface CampaignLevel {
   id: string;
+  /** Hand-made maze map name (maps/<name>.json); absent = generated themed map. */
+  map?: string;
   theme: MapTheme;
   size: MapSize;
   seed: number;
@@ -48,6 +55,14 @@ export const ENEMIES = enemiesJson as unknown as {
   hqClearance: number;
   minSpacing: number;
 };
+
+const MAZES: Record<string, MazeSrc> = { maze_1: maze1 as MazeSrc };
+
+/** Builds the map of a level (deterministic). */
+export function buildLevelMap(lv: CampaignLevel): GameMap {
+  const maze = lv.map ? MAZES[lv.map] : undefined;
+  return maze ? loadMazeMap(maze, lv.seed) : generateThemed(lv.theme, lv.seed, lv.size);
+}
 
 export function levelById(id: string): CampaignLevel | undefined {
   return LEVELS.find((l) => l.id === id);
@@ -124,10 +139,11 @@ export function placeEnemies(level: CampaignLevel, map: GameMap): PlacedUnit[] {
   const px = -dy / len;
   const py = dx / len;
   level.outposts.forEach((o, oi) => {
-    const ax = b0.x + dx * o.at + px * o.side;
-    const ay = b0.y + dy * o.at + py * o.side;
+    const unit = level.map ? (MAZES[level.map]?.unit ?? 1) : 1;
+    const ax = o.cell ? o.cell[0] * unit + (unit >> 1) : b0.x + dx * (o.at ?? 0) + px * (o.side ?? 0);
+    const ay = o.cell ? o.cell[1] * unit + (unit >> 1) : b0.y + dy * (o.at ?? 0) + py * (o.side ?? 0);
     for (const type of fillOutpost(o, rng)) {
-      const spot = findSpot(map, reach, ax + rng.range(-1.5, 1.5), ay + rng.range(-1.5, 1.5), type === 'tower' ? 1 : 0, taken, ENEMIES.minSpacing);
+      const spot = findSpot(map, reach, ax + (o.cell ? 0 : rng.range(-1.5, 1.5)), ay + (o.cell ? 0 : rng.range(-1.5, 1.5)), type === 'tower' ? 1 : 0, taken, ENEMIES.minSpacing);
       if (!spot) continue;
       taken.push(spot);
       units.push({ type, x: spot.x, y: spot.y, outpost: oi });
@@ -157,7 +173,7 @@ const ALLY_NAMES = ['Kurt', 'Şahin', 'Pars'];
 
 export function createCampaignMatch(o: CampaignOptions): CampaignHandle {
   const lv = o.level;
-  const map = generateThemed(lv.theme, lv.seed, lv.size);
+  const map = buildLevelMap(lv);
   const units = placeEnemies(lv, map);
   const b0 = map.bases[0];
   const players: PlayerSpec[] = [];

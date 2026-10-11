@@ -6,7 +6,7 @@ const OUT = 'docs/screens/round-05';
 mkdirSync(OUT, { recursive: true });
 
 type T = { x: number; y: number; hp: number; team: number; cls: string; alive: boolean; protect: number };
-type W = Window & { __tanky: { scene: { hqId: number; state: { tick: number; tanks: T[]; match: { phase: string } } } } };
+type W = Window & { __tanky: { scene: { hqId: number; state: { tick: number; tanks: T[]; match: { phase: string }; map: { feature: Uint8Array; width: number } } } } };
 
 const shot = (page: Page, name: string): Promise<Buffer> => page.screenshot({ path: `${OUT}/${name}.png` });
 const seedSave = (page: Page, save: object): Promise<void> =>
@@ -24,23 +24,21 @@ test('01 solo menu: campaign + garage enabled, credits shown', async ({ page }) 
   await shot(page, '01-solo-menu');
 });
 
-test('02 campaign list: level 1 open, 2–3 locked; then unlocked with stars', async ({ page }) => {
+test('02 campaign list: the maze mission is open', async ({ page }) => {
   await page.goto('/?silent');
   await page.getByTestId('solo').click();
   await page.getByTestId('campaign').click();
-  await expect(page.getByTestId('play-c1')).toBeEnabled();
-  await expect(page.getByTestId('play-c2')).toBeDisabled();
-  await expect(page.getByTestId('play-c3')).toBeDisabled();
+  await expect(page.getByTestId('play-m1')).toBeEnabled();
+  await expect(page.locator('.level-card')).toHaveCount(1);
   await shot(page, '02-campaign-new');
 });
 
 test('03 campaign list with progress', async ({ page }) => {
-  await seedSave(page, { credits: 420, campaign: { stars: { c1: 3, c2: 1 }, bestTime: { c1: 241, c2: 402 } } });
+  await seedSave(page, { credits: 420, campaign: { stars: { m1: 3 }, bestTime: { m1: 241 } } });
   await page.goto('/?silent');
   await page.getByTestId('solo').click();
   await page.getByTestId('campaign').click();
-  await expect(page.getByTestId('play-c3')).toBeEnabled();
-  await expect(page.getByTestId('level-c1').locator('.stars i.on')).toHaveCount(3);
+  await expect(page.getByTestId('level-m1').locator('.stars i.on')).toHaveCount(3);
   await shot(page, '03-campaign-progress');
 });
 
@@ -66,7 +64,7 @@ test('05 mission 1: objective HUD, HQ arrow, structures on the map', async ({ pa
   await page.goto('/?silent');
   await page.getByTestId('solo').click();
   await page.getByTestId('campaign').click();
-  await page.getByTestId('play-c1').click();
+  await page.getByTestId('play-m1').click();
   await expect(page.getByTestId('map-theme')).toHaveCount(0); // level fixes the map
   await page.getByTestId('class-heavy').click();
   await page.getByTestId('start').click();
@@ -82,8 +80,10 @@ test('05 mission 1: objective HUD, HQ arrow, structures on the map', async ({ pa
     const st = (window as unknown as W).__tanky.scene.state;
     const tw = st.tanks.find((t) => t.cls === 'tower')!;
     const me = st.tanks[0];
-    me.x = tw.x - 3;
-    me.y = tw.y - 3;
+    const open = (x: number, y: number): boolean => st.map.feature[Math.floor(y) * st.map.width + Math.floor(x)] !== 2;
+    const spot = [[-3, 0], [3, 0], [0, -3], [0, 3], [-3, -3], [3, 3]].find(([dx, dy]) => open(tw.x + dx, tw.y + dy) && open(tw.x + dx / 2, tw.y + dy / 2)) ?? [0, 1];
+    me.x = tw.x + spot[0];
+    me.y = tw.y + spot[1];
     me.protect = 99;
   });
   await page.waitForTimeout(1500);
@@ -93,8 +93,10 @@ test('05 mission 1: objective HUD, HQ arrow, structures on the map', async ({ pa
     const sc = (window as unknown as W).__tanky.scene;
     const hq = sc.state.tanks[sc.hqId];
     const me = sc.state.tanks[0];
-    me.x = hq.x - 3;
-    me.y = hq.y - 2;
+    const open = (x: number, y: number): boolean => sc.state.map.feature[Math.floor(y) * sc.state.map.width + Math.floor(x)] !== 2;
+    const spot = [[-3, 0], [3, 0], [0, -3], [0, 3]].find(([dx, dy]) => open(hq.x + dx, hq.y + dy)) ?? [0, 2];
+    me.x = hq.x + spot[0];
+    me.y = hq.y + spot[1];
   });
   await page.waitForTimeout(1500);
   await shot(page, '07-hq');
@@ -106,17 +108,15 @@ test('05 mission 1: objective HUD, HQ arrow, structures on the map', async ({ pa
   await expect(page.getByTestId('mission-results')).toBeVisible({ timeout: 10_000 });
   await expect(page.getByTestId('mission-outcome')).toContainText('başarılı');
   await expect(page.getByTestId('credit-gain')).toBeVisible();
-  await expect(page.getByTestId('next-level')).toBeVisible();
+  await expect(page.getByTestId('next-level')).toHaveCount(0); // only one mission so far
   await shot(page, '08-mission-won');
-  await page.getByTestId('menu').click();
-  await expect(page.getByTestId('play-c2')).toBeEnabled();
 });
 
 test('06 time out = mission failed', async ({ page }) => {
   await page.goto('/?silent&dur=3');
   await page.getByTestId('solo').click();
   await page.getByTestId('campaign').click();
-  await page.getByTestId('play-c1').click();
+  await page.getByTestId('play-m1').click();
   await page.getByTestId('start').click();
   await expect(page.getByTestId('mission-results')).toBeVisible({ timeout: 60_000 });
   await expect(page.getByTestId('mission-outcome')).toContainText('başarısız');

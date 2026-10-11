@@ -1,56 +1,84 @@
 {
-  "$comment": "Campaign levels (round 05, stream D; owner 2026-10-11: 'start all plans' → K2/K4 proposal used: 96x96 maps, first 3 levels, hybrid outposts). Player + allies start at base 0, the enemy HQ stands at base 1. outposts: at = 0..1 along the line base0 → base1, side = tiles sideways from that line, budget = threat points (enemies.json threatCost), pool = unit types the solver may pick (seeded, deterministic). duration s; stars: 1 = win, 2 = win with deaths <= maxDeaths, 3 = also within time s. reward credits = base + perStar x stars (first clear) and perStar x new stars on replays.",
+  "$comment": "Mission levels (round 08). One hand-made maze level; more will copy its pattern. map = maps/<name>.json (maze, see world/mazeMap.ts); outposts: cell = [column,row] in the map's character grid (anchor), budget = threat points (enemies.json threatCost), pool = unit types the solver may pick (seeded). Older generated-map levels still work with at/side. duration s; stars: 1 = win, 2 = win with deaths <= maxDeaths, 3 = also within time s. reward credits = base + perStar x stars.",
   "levels": [
     {
-      "id": "c1",
-      "theme": "desert",
-      "size": 96,
-      "seed": 51001,
-      "duration": 480,
-      "allies": ["standard"],
-      "outposts": [
-        { "at": 0.3, "side": 0, "budget": 4, "pool": ["tower", "scout"] },
-        { "at": 0.5, "side": 7, "budget": 5, "pool": ["tower", "standard"] },
-        { "at": 0.68, "side": -6, "budget": 5, "pool": ["tower", "scout", "standard"] },
-        { "at": 0.88, "side": 0, "budget": 7, "pool": ["tower", "standard"] }
-      ],
-      "stars": { "maxDeaths": 3, "time": 300 },
-      "reward": { "base": 120, "perStar": 40 }
-    },
-    {
-      "id": "c2",
-      "theme": "city",
-      "size": 96,
-      "seed": 51002,
-      "duration": 540,
-      "allies": ["heavy"],
-      "outposts": [
-        { "at": 0.28, "side": -5, "budget": 5, "pool": ["tower", "scout", "standard"] },
-        { "at": 0.45, "side": 6, "budget": 6, "pool": ["tower", "standard", "artillery"] },
-        { "at": 0.62, "side": 0, "budget": 7, "pool": ["tower", "heavy", "standard"] },
-        { "at": 0.78, "side": -7, "budget": 6, "pool": ["tower", "artillery", "scout"] },
-        { "at": 0.9, "side": 3, "budget": 8, "pool": ["tower", "heavy", "standard"] }
-      ],
-      "stars": { "maxDeaths": 3, "time": 360 },
-      "reward": { "base": 160, "perStar": 50 }
-    },
-    {
-      "id": "c3",
+      "id": "m1",
+      "map": "maze_1",
       "theme": "forest",
-      "size": 96,
-      "seed": 51003,
+      "size": 64,
+      "seed": 61001,
       "duration": 600,
-      "allies": ["standard", "artillery"],
-      "outposts": [
-        { "at": 0.25, "side": 6, "budget": 6, "pool": ["tower", "scout", "standard"] },
-        { "at": 0.4, "side": -6, "budget": 7, "pool": ["tower", "standard", "artillery"] },
-        { "at": 0.55, "side": 0, "budget": 8, "pool": ["tower", "heavy", "artillery"] },
-        { "at": 0.7, "side": 7, "budget": 7, "pool": ["tower", "scout", "heavy"] },
-        { "at": 0.82, "side": -5, "budget": 8, "pool": ["tower", "standard", "heavy"] },
-        { "at": 0.92, "side": 0, "budget": 10, "pool": ["tower", "heavy", "artillery", "standard"] }
+      "allies": [
+        "standard"
       ],
-      "stars": { "maxDeaths": 2, "time": 420 },
-      "reward": { "base": 200, "perStar": 60 }
+      "outposts": [
+        {
+          "cell": [
+            3,
+            7
+          ],
+          "budget": 4,
+          "pool": [
+            "tower",
+            "scout"
+          ]
+        },
+        {
+          "cell": [
+            5,
+            3
+          ],
+          "budget": 5,
+          "pool": [
+            "tower",
+            "standard"
+          ]
+        },
+        {
+          "cell": [
+            10,
+            8
+          ],
+          "budget": 6,
+          "pool": [
+            "tower",
+            "scout",
+            "standard"
+          ]
+        },
+        {
+          "cell": [
+            15,
+            17
+          ],
+          "budget": 6,
+          "pool": [
+            "tower",
+            "artillery",
+            "standard"
+          ]
+        },
+        {
+          "cell": [
+            19,
+            11
+          ],
+          "budget": 8,
+          "pool": [
+            "tower",
+            "standard",
+            "heavy"
+          ]
+        }
+      ],
+      "stars": {
+        "maxDeaths": 3,
+        "time": 330
+      },
+      "reward": {
+        "base": 150,
+        "perStar": 50
+      }
     }
   ]
 }

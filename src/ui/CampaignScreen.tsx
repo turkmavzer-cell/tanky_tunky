@@ -40,7 +40,7 @@ export function CampaignScreen({ save, onPlay, onBack }: { save: SaveData; onPla
             <div key={lv.id} className={'level-card' + (open ? '' : ' locked')} data-testid={`level-${lv.id}`}>
               <div className="lc-head">
                 <small>{t('campaign.level', { n: i + 1 })}</small>
-                <b>{t(`level.${lv.id}` as 'level.c1')}</b>
+                <b>{t(`level.${lv.id}` as 'level.m1')}</b>
                 <Stars n={stars} />
               </div>
               <div className="lc-meta">

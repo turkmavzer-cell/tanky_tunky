@@ -77,6 +77,13 @@ Measurable items (frame time, input latency proxies, APK size) are automated —
 - [ ] Görev kazanınca "+1 güçlendirme parçası" ve tank seçimi çıkıyor; seçtiğin tank maçta farklı hissettiriyor mu?
 - [ ] Garaj: "Güçlendirme" satırı, parça varsa "1 parça" butonu çalışıyor.
 
+## Round 08 (telefonda dene)
+- [ ] Görevler → Labirent: duvarlar koridor oluşturuyor mu, haritada kısa yoldan karargâha gidilemiyor mu?
+- [ ] Ok yönü duvarı değil gidilecek yolu gösteriyor mu?
+- [ ] Koridorlardaki kuleler/karakollar, orman siperi, köprü: zorluk ve his
+- [ ] Hızlı Maç'ta Garaj güçlendirmesi etkisiz (tüm tanklar eşit), Görevler'de etkili
+- [ ] FPS (labirentte çok kaya var)
+
 ## Round 05 (telefonda dene)
 - [ ] Tek Oyunculu → Kampanya: Bölüm 1 açık, 2–3 kilitli; Bölüm 1'i geçince 2 açılıyor.
 - [ ] Görevde kırmızı ok karargâhı gösteriyor, mesafe azalıyor; üstte "Karargâhı yok et" + HQ can çubuğu + kalan düşman.

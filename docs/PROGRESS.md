@@ -199,6 +199,13 @@ Gates: lint ✅ typecheck ✅ unit 176 ✅ E2E 44 ✅. GitHub CI #51/#52 green (
 To try on the phone: Ağır hold fire → red laser line, ring around the target, other tanks nearby lose hp; kill one → extra blast;
 Dengeli charged shot through two tanks; Topçu charged shot → dark burning patch for 2 s; Çevik now 6 shots/s.
 
+## Round 08 (2026-10-11) — maze mission, upgrades only in missions
+
+- **Done:** 3 generated levels removed; one hand-made maze level "Labirent" (`maps/maze_1.json`, 21×21 characters × 3 tiles = 64×64, seeded recursive-backtracker layout with 4 loops, authored once and stored). Loader `src/world/mazeMap.ts`; levels use `outposts[].cell`. 5 enemy outposts (6 towers + 5 tanks) + HQ. Route arrow follows the walking distance field (`descend`). `playerBoost` only in missions (`App.tsx`). Old save data stays valid (stars of removed ids are ignored).
+- **Evidence:** unit tests 177/177 (maze test: walking distance to the HQ > 2.2× straight line, no sealed pockets, <60 % open); `tools/campaign-sim.ts`: bot Heavy/easy wins in 334 s, bot Standard/normal loses to the last outpost; e2e round05/06/08 pass; screenshots in `docs/screens/round-08/` inspected.
+- **Not verified:** feel on the phone; perf gate on the maze (CI decides).
+- **To try on the phone:** Görevler → Labirent; follow the arrow around the walls; check towers in corridors, forest cover, that Quick Match no longer gets garage boosts.
+
 ## Open questions for the owner
 
 See `CLAUDE.md` §1 "Pending owner decisions" for options and proposals:

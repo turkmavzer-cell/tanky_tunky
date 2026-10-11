@@ -120,3 +120,32 @@ export function components(m: GameMap): { labels: Int32Array; sizes: number[] } 
   }
   return { labels, sizes };
 }
+
+/**
+ * Follows a distance field downhill from (x, y) for `steps` tiles (8-neighbour, respects the passability rule).
+ * Returns the tile reached — the direction of the way to the field's source, not the straight line (mazes).
+ */
+export function descend(m: GameMap, field: Float64Array, x: number, y: number, steps: number): { x: number; y: number } {
+  let cx = Math.max(0, Math.min(m.width - 1, Math.floor(x)));
+  let cy = Math.max(0, Math.min(m.height - 1, Math.floor(y)));
+  for (let k = 0; k < steps; k++) {
+    let best = field[cy * m.width + cx];
+    let bx = cx;
+    let by = cy;
+    for (let d = 0; d < 8; d++) {
+      const nx = cx + DX[d];
+      const ny = cy + DY[d];
+      if (nx < 0 || ny < 0 || nx >= m.width || ny >= m.height || !canStep(m, cx, cy, nx, ny)) continue;
+      const v = field[ny * m.width + nx];
+      if (v < best) {
+        best = v;
+        bx = nx;
+        by = ny;
+      }
+    }
+    if (bx === cx && by === cy) break;
+    cx = bx;
+    cy = by;
+  }
+  return { x: cx, y: cy };
+}

@@ -21,6 +21,7 @@ import { FogLayer } from '../render/fogLayer';
 import { Overlays } from '../render/overlays';
 import { LEVEL_PX } from '../render/terrainArt';
 import type { MapSize } from '../world/generator';
+import { descend, distanceField } from '../world/reach';
 import { loadAsciiMap, type AsciiMap } from '../world/mapLoader';
 import { Ground } from '../world/terrain';
 import { screenAngleToWorld, screenDirToWorld, screenToWorld, worldAngleToScreen, worldToScreenX, worldToScreenY } from '../world/iso';
@@ -180,6 +181,8 @@ export class GameScene {
   onMatchEnd: ((rows: ScoreRow[]) => void) | null = null;
   /** Campaign: enemy HQ tank id (-1 in Quick Match) and the level being played. */
   hqId = -1;
+  /** Maze missions: walking distance to the enemy HQ for every tile (lazy). */
+  private hqField: Float64Array | null = null;
   level: CampaignLevel | null = null;
   readonly localId = 0;
 
@@ -928,14 +931,26 @@ export class GameScene {
     if (!hq) return { hqHp: 0, hqMax: 0, enemiesLeft: 0, hqAngle: null, hqDist: 0 };
     let left = 0;
     for (const t of s.tanks) if (t.team !== me.team && t.alive) left++;
-    const dx = hq.x - me.x;
-    const dy = hq.y - me.y;
+    let dx = hq.x - me.x;
+    let dy = hq.y - me.y;
+    let dist = Math.sqrt(dx * dx + dy * dy);
+    if (this.level?.map && hq.alive) {
+      // maze: point along the way around the walls, not through them
+      this.hqField ??= distanceField(s.map, Math.floor(hq.x), Math.floor(hq.y));
+      const ahead = descend(s.map, this.hqField, me.x, me.y, 6);
+      const here = this.hqField[Math.floor(me.y) * s.map.width + Math.floor(me.x)];
+      if (Number.isFinite(here)) {
+        dx = ahead.x + 0.5 - me.x;
+        dy = ahead.y + 0.5 - me.y;
+        dist = Math.round(here);
+      }
+    }
     return {
       hqHp: Math.ceil(hq.hp),
       hqMax: Math.round(maxHp(hq)),
       enemiesLeft: left,
       hqAngle: hq.alive ? worldAngleToScreen(Math.atan2(dy, dx)) : null,
-      hqDist: Math.round(Math.sqrt(dx * dx + dy * dy)),
+      hqDist: Math.round(dist),
     };
   }
 
