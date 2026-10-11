@@ -57,6 +57,8 @@ Tam liste ve öneriler: `CLAUDE.md` §1 "Pending owner decisions" (B1, B2, A, K1
 ## 4. Günlük (en yeni en üstte)
 
 <!-- LOG:START -->
+### 2026-10-11 — [degisiklik] Round 06 PR #6, CI yeşil, APK #27
+CI'da iki performans kapısı da (normal + 6 Çevikli taramalı ateş stresi) geçti. Telefonda denenmedi.
 ### 2026-10-11 — [yenilik] Güçlendirme parçaları
 Kazanılan her görev 1 parça (ilk 3 yıldızda +1). Görev sonunda veya Garajda bir tanka tak: Ağır +%6 can, Çevik +%6 atış hızı, Dengeli -%6 şarj süresi, Topçu +%6 patlama alanı; 5 seviye. Kayıt v6. Sayılar öneri.
 ### 2026-10-11 — [duzeltme] Taramalı ateşte kasma azaltıldı

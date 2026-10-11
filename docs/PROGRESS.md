@@ -171,7 +171,7 @@ Branch `fix/round-06-missions-perf-parts` (from round 05; PR into the round-05 b
 
 Spray stress (6 Scouts, Overdrive, 40×40, CPU 4x, this container): **before** JS work mean 12.5 ms / p95 30.7 ms, 24.6 fps, frame p95 99.9 ms →
 **after** 7.0 ms / 14.9 ms, 39.2 fps, frame p95 50.1 ms. Normal perf scene unchanged (work mean 6.1 ms). Both 22 ms frame gates fail in this
-container (it is slower than CI; the unchanged round-04 baseline measured 66.7 ms here) — CI decides. Haptics and sound cannot be measured in the
+container (it is slower than CI; the unchanged round-04 baseline measured 66.7 ms here); **GitHub CI #47/#48 passed both gates** (PR #6, APK #27). Haptics and sound cannot be measured in the
 headless browser (silent, no vibration): **the real gain on the phone is not verified**.
 
 Gates: lint ✅ typecheck ✅ unit 169 ✅ E2E 41 ✅. Screenshots `docs/screens/round-06/` inspected (garage perk row overflow found and fixed).

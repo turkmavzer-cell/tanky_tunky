@@ -37,7 +37,7 @@ design is gone with the Trapper, see D-036/D-037 and open decision K3.)
 
 ## 1. Where we are now (update every round)
 
-- **Last finished round:** Round 06 (2026-10-11, branch `fix/round-06-missions-perf-parts`, PR into the round-05 branch) — Kampanya → "Görevler"
+- **Last finished round:** Round 06 (2026-10-11, branch `fix/round-06-missions-perf-parts`, **PR #6 into the round-05 branch, CI #47/#48 green incl. both perf gates, not merged**) — Kampanya → "Görevler"
   (D-049), spray-fire stutter fixes (D-050), upgrade parts → class perks (D-051), save v6. See `docs/PROGRESS.md`.
 - **Round 05** (branch `fix/round-05-campaign-progression`, **PR #5 into the round-04 branch, CI green incl. perf gate, not merged**) —
   D campaign (3 levels, towers + HQ + guarded outposts) and E progression (stars, credits, garage, save v5).
@@ -47,7 +47,7 @@ design is gone with the Trapper, see D-036/D-037 and open decision K3.)
   (owner: "birleştir"; merge head `f94cbf8`). The default branch now holds round 03 + the change log. **Start new work
   from the default branch**: `git checkout -b fix/round-04-<topic> origin/claude/tanky-tunky-setup-dw06hp`.
   From 2026-10-11 the owner continues in the cloud/phone session; the desktop session pulls before working.
-- **Latest debug APK:** Android APK run **#25** (round 05 = round 04 + campaign + garage; 4.5 MB artifact). Previous: #23 (round 04), #16 (round 03). Signed with the committed debug
+- **Latest debug APK:** Android APK run **#27** (round 06 = rounds 04–06). Previous: #25/#26 (round 05), #23 (round 04), #16 (round 03). Signed with the committed debug
   key (`keystore/debug.sha256`), CI fails if the signature differs (D-035). The owner must uninstall **once** after
   D-035, then every newer APK installs over the old one — **not yet confirmed on the phone**.
 
