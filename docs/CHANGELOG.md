@@ -57,6 +57,10 @@ Tam liste ve öneriler: `CLAUDE.md` §1 "Pending owner decisions" (B1, B2, A, K1
 ## 4. Günlük (en yeni en üstte)
 
 <!-- LOG:START -->
+### 2026-10-11 — [konusma] Round 04 durumu ve performans uyarısı
+A, B1, C, B yapıldı (birim 149, E2E 29 geçti, ekran görüntüleri docs/screens/round-04). Perf kapısı bu bulut makinesinde eski sürümde de p95 66,7 ms (round 03'te 16,8 idi): makine yavaşladı, round 04'ten kaynaklanmıyor; CI'da doğrulanmadı. D-G (kampanya, ilerleme, çok oyunculu, görsel hattı) başlamadı.
+### 2026-10-11 — [yenilik] B: yeni ana menü iskeleti
+Açılış menüsü: Tek Oyunculu (Hızlı Maç çalışır; Kampanya ve Garaj 'Yakında') / Çok Oyunculu ('Yakında' notu, oda kur/katıl pasif) / Ayarlar. Hızlı Maç'tan geri dönüş artık Tek Oyunculu menüsüne. e2e testleri yeni akışa uyarlandı (solo → play). Kampanya, ilerleme ve çok oyunculu henüz yapılmadı: K1 (INTERNET izni/online-Wi-Fi), K2 (harita boyutu, bölüm sayısı), K4 (düşman yerleşimi) kararları gerekiyor.
 ### 2026-10-11 — [acik-soru] Denge ölçümü (round 04, 120 maç, zor bot, çöl 40x40)
 Çevik %62,0 · Ağır %67,8 · Dengeli %49,0 · Topçu %21,9 (B1 +%25'ten sonra de neredeyse değişmedi). Sayılar bu turda elle ayarlanmadı (kural 4). Öneri: Topçu mermileri patlamanın kenarına düşüyor (merkez hasarı ~%25'e iniyor) — iniş düzeltmesi; Ağır B2; Çevik taramalı ateş sonrası yine yüksek. Sahibin kararı bekleniyor.
 ### 2026-10-11 — [yenilik] C: her tanka yetenek + ulti, Çevik taramalı ateş

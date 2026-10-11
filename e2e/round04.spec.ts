@@ -24,6 +24,7 @@ test.describe.configure({ mode: 'serial' });
 
 test('01 tank cards show skill + ultimate', async ({ page }) => {
   await page.goto('/?silent');
+  await page.getByTestId('solo').click();
   await page.getByTestId('play').click();
   await page.getByTestId('class-scout').click();
   await expect(page.locator('.tank-card.on')).toContainText('Aşırı Yük');
@@ -93,4 +94,22 @@ test('04 EMP stuns, Onarım heals (in the real scene)', async ({ page }) => {
   });
   expect(stun).toBeGreaterThan(1.5);
   await shot(page, '06-emp');
+});
+
+test('05 menu: Tek Oyunculu / Çok Oyunculu / Ayarlar', async ({ page }) => {
+  await page.goto('/?silent');
+  await expect(page.getByTestId('solo')).toBeVisible();
+  await expect(page.getByTestId('multi')).toBeVisible();
+  await expect(page.getByTestId('settings')).toBeVisible();
+  await shot(page, '07-menu');
+  await page.getByTestId('solo').click();
+  await expect(page.getByTestId('play')).toBeVisible();
+  await expect(page.getByTestId('campaign')).toBeDisabled();
+  await shot(page, '08-menu-solo');
+  await page.getByTestId('back').click();
+  await page.getByTestId('multi').click();
+  await expect(page.getByTestId('multi-note')).toBeVisible();
+  await shot(page, '09-menu-multi');
+  await page.getByTestId('back').click();
+  await expect(page.getByTestId('solo')).toBeVisible();
 });

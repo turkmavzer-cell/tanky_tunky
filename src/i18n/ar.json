@@ -99,5 +99,12 @@
   "ability.overdrive.desc": "يتضاعف معدل إطلاق النار ثلاث مرات لخمس ثوانٍ.",
   "ability.repair.desc": "يعيد الصحة كاملة فوراً.",
   "ability.emp.desc": "يشل الأعداء القريبين لمدة 2.5 ثانية.",
-  "ability.readyshot.desc": "الطلقة التالية تنطلق فوراً بأقصى مدى."
+  "ability.readyshot.desc": "الطلقة التالية تنطلق فوراً بأقصى مدى.",
+  "menu.solo": "لاعب واحد",
+  "menu.multi": "متعدد اللاعبين",
+  "menu.campaign": "الحملة",
+  "menu.garage": "المرآب",
+  "menu.host": "إنشاء غرفة",
+  "menu.join": "الانضمام إلى غرفة",
+  "menu.multiSoon": "وضع اللعب الجماعي قيد الإنشاء."
 }

@@ -4,13 +4,13 @@ import { defaultSave, recordMatch, type SaveData } from '../core/save';
 import { setLang, t } from '../i18n';
 import { setHapticsEnabled } from '../core/platform';
 import { ErrorBoundary } from './ErrorBoundary';
-import { MainMenu } from './MainMenu';
+import { MainMenu, MultiMenu, SoloMenu } from './MainMenu';
 import { SettingsScreen } from './SettingsScreen';
 import { GameView } from './GameView';
 import { ClassSelect } from './ClassSelect';
 import type { TankClassId } from '../sim/config';
 
-export type Screen = 'loading' | 'menu' | 'classSelect' | 'settings' | 'game';
+export type Screen = 'loading' | 'menu' | 'solo' | 'multi' | 'classSelect' | 'settings' | 'game';
 
 /** Fresh match seed (URL ?seed= overrides inside GameView for tests). */
 function newSeed(): number {
@@ -43,13 +43,15 @@ export function App() {
     <ErrorBoundary>
       <div className="app">
         {screen === 'loading' && <div className="loading">{t('app.loading')}</div>}
-        {screen === 'menu' && <MainMenu onPlay={() => setScreen('classSelect')} onSettings={() => setScreen('settings')} />}
+        {screen === 'menu' && <MainMenu onSolo={() => setScreen('solo')} onMulti={() => setScreen('multi')} onSettings={() => setScreen('settings')} />}
+        {screen === 'solo' && <SoloMenu onQuick={() => setScreen('classSelect')} onBack={() => setScreen('menu')} />}
+        {screen === 'multi' && <MultiMenu onBack={() => setScreen('menu')} />}
         {screen === 'classSelect' && (
           <ClassSelect
             initial={cls}
             difficulty={save.settings.difficulty}
             theme={save.settings.mapTheme}
-            onBack={() => setScreen('menu')}
+            onBack={() => setScreen('solo')}
             onStart={(c, d, m) => {
               setCls(c);
               if (d !== save.settings.difficulty || m !== save.settings.mapTheme) updateSave({ ...save, settings: { ...save.settings, difficulty: d, mapTheme: m } });

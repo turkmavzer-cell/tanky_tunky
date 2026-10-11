@@ -92,6 +92,7 @@ test('05 out-of-combat regeneration: +hp after 5 s', async ({ page }) => {
 
 test('06 tank select with map + difficulty selectors', async ({ page }) => {
   await page.goto('/?silent');
+  await page.getByTestId('solo').click();
   await page.getByTestId('play').click();
   await expect(page.getByTestId('map-desert')).toHaveAttribute('aria-checked', 'true');
   await page.getByTestId('map-city').click();

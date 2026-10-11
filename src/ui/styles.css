@@ -32,6 +32,10 @@ body { user-select: none; -webkit-user-select: none; touch-action: none; }
 .menu-buttons { display: flex; flex-direction: column; gap: 12px; min-width: 260px; }
 .btn { min-height: 52px; padding: 0 28px; font-size: 20px; font-weight: 700; letter-spacing: 0.04em; color: var(--ink); background: linear-gradient(#3a4252, #262c37); border: 2px solid #4b5466; border-radius: 10px; box-shadow: 0 4px 0 #0008; cursor: pointer; }
 .btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #0008; }
+.menu-title { margin: 0 0 6px; font-size: 26px; letter-spacing: 0.06em; }
+.menu-note { max-width: 420px; text-align: center; color: #c9d1de; font-size: 15px; margin: 0 0 10px; }
+.btn.soon { opacity: 0.55; cursor: default; }
+.btn small { font-size: 12px; font-weight: 600; color: var(--accent); margin-left: 6px; }
 .btn-primary { background: linear-gradient(#e8b54c, #b77e1d); color: #1c140a; border-color: #f3cf7c; }
 .version { position: absolute; bottom: calc(8px + var(--safe-b)); right: calc(12px + var(--safe-r)); color: var(--muted); font-size: 12px; }
 .settings h2 { margin: 0; }
