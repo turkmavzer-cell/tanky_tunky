@@ -29,7 +29,7 @@ hasar 1x → 3x (tam şarj), "mükemmel şarj" +%15, mermi hızı 1x → 1,6x, m
 | Çevik | 260 | 780 | 897 | 0,28 sn | 0,8 sn | %20 | 11 | 7 | 0,25 | — |
 | Ağır | 760 | 2.280 | 2.622 | 1,68 sn | 2,2 sn | %50 | 8 | 7,5 | 0,55 | Duvardan 1 kez seker |
 | Dengeli | 360 | 1.080 | 1.242 | 0,7 sn | 1,4 sn | %35 | 10 | 7 | 0,35 | — |
-| Topçu | 780 | 2.340 | 2.691 | 1,5 sn | 1,8 sn | %45 | 7 | 10 | 1,1 | Kavisli; şarj atış mesafesini belirler; min. menzil 2 |
+| Topçu | 780 (inişte ×1,25 = 975) | 2.340 | 2.691 | 1,5 sn | 1,8 sn | %45 | 7 | 10 | 1,1 | Kavisli; şarj atış mesafesini belirler; min. menzil 2 |
 | Tuzakçı | 300 | 900 | 1.035 | 1 sn | 1,5 sn | %35 | 9 | 6,5 | 0,3 | — |
 
 ## Hareket özellikleri

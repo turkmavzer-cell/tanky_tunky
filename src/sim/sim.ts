@@ -86,6 +86,7 @@ export function createState(opts: SimOptions): SimState {
     vision: createVision(opts.map),
     match: { phase: rules.endless ? 'playing' : 'countdown', t: 0, timeLeft: rules.duration, kills: [] },
     rules,
+    view: null,
     events: [],
   };
   updateVision(s);

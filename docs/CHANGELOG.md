@@ -57,6 +57,12 @@ Tam liste ve öneriler: `CLAUDE.md` §1 "Pending owner decisions" (B1, B2, A, K1
 ## 4. Günlük (en yeni en üstte)
 
 <!-- LOG:START -->
+### 2026-10-11 — [duzeltme] A: Otomatik nişan sadece ekrandaki düşmana
+Tam görünürlükten (D-037) beri taret ekran dışındaki en yakın düşmana kilitleniyordu. SimState.view (kamera dikdörtgeni, iso ekran px) GameScene.updateView() ile her tick yenilenir; targeting.onScreen() yalnız yerel oyuncuyu sınırlar, botlar sınırsız. Kilitlenen hedef ekrandan çıkarsa bırakılır. Test: tests/targeting.test.ts (2 yeni). Gerçek cihazda doğrulanmadı.
+### 2026-10-11 — [degisiklik] B1: Topçu inişte +%25 hasar
+combat.json shell.artilleryDamageMul=1.25; combat.ts shellExplosion artillery mermisinin hasarını çarpar (Yaylım Ateşi dahil, arazi hasarı değişmez). Test: tests/combat.test.ts (merkezde ≥ taban hasar, ≤ ×1,25). Birim testler 143 geçti; denge etkisi henüz ölçülmedi (tools/balance.ts turun sonunda koşulacak).
+### 2026-10-11 — [konusma] Sahip: B1 ve tüm kalan güncellemelere başla
+B1: Topçunun düşen mermileri düştüğü yerde patlama hasarının %25'i kadar daha fazla hasar versin. Ardından 'geri kalan tüm güncellemelere başla' dendi (A, C, B, D–G sırayla; açık kararlar için makul varsayım + DECISIONS/PROGRESS notu). Çalışma branch'i: fix/round-04-balance-aim-skills.
 ### 2026-10-11 — [karar] PR #1-#3 birleştirildi
 Sahip 'birleştir' dedi (PR #1 → #2 → #3, base'ler varsayılan branch'e çevrilerek). Varsayılan branch artık round 03 oyununu içeriyor (merge f94cbf8). CI (checks, debug-apk, changelog) c2fde90 için yeşildi. Sahip bundan sonra telefondan/bulut oturumundan devam ediyor; masaüstü oturumu çalışmadan önce pull yapar.
 ### 2026-10-11 — [degisiklik] Belgeler güncellendi: CLAUDE.md, TANKS.md, PROGRESS.md, DECISIONS.md, CHANGELOG bölüm 2–3

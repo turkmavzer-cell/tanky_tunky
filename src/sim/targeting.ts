@@ -9,16 +9,27 @@ import { COMBAT, TANKS, evalCurve } from './config';
 import { datan2 } from './dmath';
 import type { SimState, Tank } from './state';
 import { canSeeTank } from './visibility';
+import { TILE_H, TILE_W } from '../world/iso';
+
+/** Is enemy `e` inside the local camera rectangle (iso screen space)? Always true for tanks without a screen limit. */
+export function onScreen(s: SimState, t: Tank, e: Tank): boolean {
+  const v = s.view;
+  if (!v || v.tank !== t.id) return true;
+  const m = COMBAT.targeting.screenMarginPx;
+  const sx = (e.x - e.y) * (TILE_W / 2);
+  const sy = (e.x + e.y) * (TILE_H / 2);
+  return sx >= v.left - m && sx <= v.right + m && sy >= v.top - m && sy <= v.bottom + m;
+}
 
 /** Target selection shared by the player's auto-aim and bots: returns the tank id to lock or -1. */
 export function selectTarget(s: SimState, t: Tank, currentId: number): number {
   let cur: Tank | null = currentId >= 0 ? s.tanks[currentId] : null;
-  if (cur && !canSeeTank(s, t.team, cur)) cur = null;
+  if (cur && (!canSeeTank(s, t.team, cur) || !onScreen(s, t, cur))) cur = null;
   const curD = cur ? dist2(t, cur) : Infinity;
   let best: Tank | null = null;
   let bestD = Infinity;
   for (const e of s.tanks) {
-    if (e.team === t.team || !canSeeTank(s, t.team, e)) continue;
+    if (e.team === t.team || !canSeeTank(s, t.team, e) || !onScreen(s, t, e)) continue;
     const d = dist2(t, e);
     if (d < bestD) {
       bestD = d;

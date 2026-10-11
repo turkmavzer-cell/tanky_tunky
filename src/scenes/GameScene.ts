@@ -269,7 +269,25 @@ export class GameScene {
     return { moveX: quantizeMove(w.x), moveY: quantizeMove(w.y), aim, buttons: (this.kb.fireHeld() ? BTN_FIRE : 0) | (this.kb.abilityHeld() ? BTN_ABILITY : 0) };
   }
 
+  /** Refresh the camera rectangle the sim uses to limit the local player's auto-aim (A). */
+  private updateView(): void {
+    const z = this.camera.zoom;
+    const left = this.viewLeft();
+    const top = this.viewTop();
+    const v = this.state.view;
+    if (v) {
+      v.tank = this.localId;
+      v.left = left;
+      v.right = left + this.app.screen.width / z;
+      v.top = top;
+      v.bottom = top + this.app.screen.height / z;
+    } else {
+      this.state.view = { tank: this.localId, left, right: left + this.app.screen.width / z, top, bottom: top + this.app.screen.height / z };
+    }
+  }
+
   private tick(): void {
+    this.updateView();
     this.localInput = this.sampleInput();
     this.snapshotPrev();
     stepMatch(this.match, this.localInput, this.inputs);
