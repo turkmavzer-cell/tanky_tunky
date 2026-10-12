@@ -48,6 +48,8 @@ export interface TankClassDef {
   spray?: SprayDef;
   /** Round 07: special of shots charged to >= minCharge (Heavy laser + shock, Standard pierce, Artillery fire). */
   charged?: ChargedDef;
+  /** Round 09 (tower): fragments after the shell lands: flat damage to enemies between `inner` and `radius` tiles. */
+  frag?: { damage: number; inner: number; radius: number; count: number };
   /** Campaign structure: never moves, never respawns, no regeneration, no crate pickups. */
   pve?: boolean;
   /** Has no gun (headquarters). */

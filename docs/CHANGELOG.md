@@ -57,6 +57,10 @@ Tam liste ve öneriler: `CLAUDE.md` §1 "Pending owner decisions" (B1, B2, A, K1
 ## 4. Günlük (en yeni en üstte)
 
 <!-- LOG:START -->
+### 2026-10-12 — [konusma] Sahibin isteği: kuleler
+Düşmanlar haritada gizli, kendi bölgede kule inşası, kule hp 10 000, 5 sn'de 500 top + 250 parça, 3 bölge x 3 kule, düşman yaklaşınca haritada görünsün; ardından 'kuleler kule gibi görünsün, uzun olsun'. Hepsi önerdiğim gibi uygulandı.
+### 2026-10-12 — [yenilik] Kule yenilemesi (tur 09)
+Kule 10 000 hp, 5 sn'de bir 500'lük kavisli top + 250'lik parçalar; 3 bölge x 3 kule x 2 takım = 18 kule; KULE butonu/B tuşu ile en çok 3 kule inşası (30 sn bekleme, kendi bölge); görev minimapinde düşmanlar sadece bizim kulelerin 12 kare yakınında görünür; uzun taş kule görseli. Hızlı Maç aynı. Testler: tests/towers.test.ts, e2e/round09.spec.ts (ekran görüntüleri incelendi). Telefonda denenmedi.
 ### 2026-10-11 — [konusma] Mini harita isteği
 Sahibi: 'Orijinal oyunda solda üstte tam harita gözüktüğü gibi bu oyunda da gözüksün'; plan sonrası 'Uygula bakalım sonuca göre güncellenir'.
 ### 2026-10-11 — [yenilik] Mini harita herkes için

@@ -1,5 +1,5 @@
 {
-  "$comment": "All tank tuning lives here (brief §3). Units: speed tiles/s, turn rad/s, time seconds, damage hp. shell: standard|heavy|artillery (arc over obstacles). splash: base explosion radius (tiles). bounces: wall ricochets. minRange/arcHeight: artillery. ult: second ability slot (button 2). spray: machine-gun fire instead of charging (rate shots/s, damage per bullet, spread +/- rad) — Scout, owner 2026-10-11 (K5/K7).",
+  "$comment": "All tank tuning lives here (brief \u00a73). Units: speed tiles/s, turn rad/s, time seconds, damage hp. shell: standard|heavy|artillery (arc over obstacles). splash: base explosion radius (tiles). bounces: wall ricochets. minRange/arcHeight: artillery. ult: second ability slot (button 2). spray: machine-gun fire instead of charging (rate shots/s, damage per bullet, spread +/- rad) \u2014 Scout, owner 2026-10-11 (K5/K7).",
   "classes": {
     "scout": {
       "maxSpeed": 5.0,
@@ -151,25 +151,32 @@
       "maxSpeed": 0,
       "accel": 0,
       "hullTurn": 0,
-      "turretTurn": 2.6,
+      "turretTurn": 4,
       "radius": 0.48,
-      "hp": 3200,
+      "hp": 10000,
       "armor": 0.1,
-      "vision": 7.5,
-      "fireCooldown": 1.8,
+      "vision": 12,
+      "fireCooldown": 5,
       "chargeTime": 1.4,
       "chargeSlow": 0,
-      "damage": 340,
-      "shellSpeed": 10,
-      "range": 7.5,
-      "shell": "standard",
-      "splash": 0.35,
+      "damage": 400,
+      "shellSpeed": 9,
+      "range": 12,
+      "shell": "artillery",
+      "splash": 1.3,
       "bounces": 0,
-      "minRange": 0,
-      "arcHeight": 0,
+      "minRange": 1.5,
+      "arcHeight": 3,
       "ability": "swift",
       "enabled": false,
-      "pve": true
+      "pve": true,
+      "frag": {
+        "damage": 250,
+        "inner": 1.3,
+        "radius": 3.6,
+        "count": 8
+      },
+      "$comment": "Round 09 (owner 2026-10-12): hp 10000, one lobbed shell every 5 s = 500 at the blast centre (damage 400 x artilleryDamageMul 1.25), then fragments fly out: every enemy between the blast edge (inner) and radius takes 250 flat (frag.damage). vision = also the radius in which it shows enemies on the minimap."
     },
     "hq": {
       "maxSpeed": 0,
@@ -198,6 +205,6 @@
     }
   },
   "$enabled": "enabled:false keeps a class's data (and its ability) in the game files but out of class select, bots and balance runs (owner 2026-10-09: Trapper removed for now, D-036).",
-  "$pve": "Round 05 (stream D, campaign): tower = stationary gun turret, hq = enemy headquarters (mission target, no gun). pve:true = never moves/respawns/regenerates; their 'ability' entry is a required placeholder that is never used. Numbers are Claude's first proposal — owner decides (rule 4).",
+  "$pve": "Round 05 (stream D, campaign): tower = stationary gun turret, hq = enemy headquarters (mission target, no gun). pve:true = never moves/respawns/regenerates; their 'ability' entry is a required placeholder that is never used. Numbers are Claude's first proposal \u2014 owner decides (rule 4).",
   "$charged": "Round 07 (owner 2026-10-11): shots charged to >= minCharge get a class special. Heavy: shell speed rises with charge up to speedAtFull tiles/s (laser), a direct hit sends a shock wave = ratio x shell damage to the hit tank's nearby enemies (not the hit tank, never allies) within radius tiles; if the hit destroys the tank, its wreck explodes for ratio x shell damage within radius. Standard: pierce = passes through the first tank and hits the next one for ratio x damage. Artillery: fire = a burning patch the size of the blast for duration s, enemies inside take ratioPerSec x landing damage per second (in tick-second chunks); fixed size, does not spread. minCharge 0.3 chosen by Claude (owner left it open)."
 }

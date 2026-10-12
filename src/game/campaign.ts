@@ -34,6 +34,13 @@ export interface OutpostDef {
   pool: UnitType[];
 }
 
+export interface TowerDef {
+  team: 0 | 1;
+  zone: 'top' | 'mid' | 'bottom';
+  x: number;
+  y: number;
+}
+
 export interface CampaignLevel {
   id: string;
   /** Hand-made maze map name (maps/<name>.json); absent = generated themed map. */
@@ -44,6 +51,9 @@ export interface CampaignLevel {
   duration: number;
   allies: CombatClassId[];
   outposts: OutpostDef[];
+  /** Explicit gun towers (both teams, 3 per zone) and the number of dormant build slots (round 09). */
+  towers?: TowerDef[];
+  build?: { slots: number };
   stars: { maxDeaths: number; time: number };
   reward: { base: number; perStar: number };
 }
@@ -182,6 +192,10 @@ export function createCampaignMatch(o: CampaignOptions): CampaignHandle {
     const sp = b0.spawns[k % b0.spawns.length];
     players.push({ team: 0, cls, x: sp.x + 0.5, y: sp.y + 0.5, name: k === 0 ? (o.playerName ?? 'Sen') : ALLY_NAMES[(k - 1) % ALLY_NAMES.length], boost: k === 0 ? o.playerBoost : undefined });
   });
+  // round 09: explicit gun towers of both teams + dormant slots the player can build
+  for (const tw of lv.towers ?? []) players.push({ team: tw.team, cls: 'tower', x: tw.x + 0.5, y: tw.y + 0.5, name: `tower-${tw.team}-${tw.zone}` });
+  for (let k = 0; k < (lv.build?.slots ?? 0); k++) players.push({ team: 0, cls: 'tower', x: b0.x + 0.5, y: b0.y + 0.5, name: `build-${k + 1}`, reserve: true });
+  const towerEnd = players.length;
   let hqId = -1;
   for (const u of units) {
     if (u.type === 'hq') hqId = players.length;
@@ -200,7 +214,7 @@ export function createCampaignMatch(o: CampaignOptions): CampaignHandle {
     if (p.cls === 'tower') return new TowerBot(i, o.aiLevel);
     const bot = new AiBot(i, lv.seed, o.aiLevel);
     if (p.team === 1) {
-      const u = units[i - team0.length];
+      const u = units[i - towerEnd];
       bot.guard = { x: u.x + 0.5, y: u.y + 0.5, r: ENEMIES.guard.radius, leash: ENEMIES.guard.leash };
     }
     return bot;

@@ -37,6 +37,7 @@ design is gone with the Trapper, see D-036/D-037 and open decision K3.)
 
 ## 1. Where we are now (update every round)
 
+- **Round 09 (in progress → pushed with round 08 branch)** — tower rework in missions (D-058): tower 10 000 hp, 500 lob every 5 s + 250 fragments, 18 towers (3 per zone per team), KULE button / key B builds ≤ 3 own towers (30 s cd, own zone), mission minimap shows enemies only within 12 tiles of our towers, tall tower art. Tests `tests/towers.test.ts`, `e2e/round09.spec.ts`; screenshots `docs/screens/round-09/`. Not tried on the phone.
 - **Round 08** (branch `fix/round-08-maze-mission`, **PR #8 into the round-07 branch, CI #63 green, not merged**, APK run #35) — missions = one lane map "Üç Yol" after the owner's LoL/WC3 picture (D-056, replaced the maze D-054), garage upgrades only in missions (D-055). See `docs/PROGRESS.md`.
 - **Round 07 (previous):** Round 07 (2026-10-11, branch `fix/round-07-charged-specials`, **PR #7 into the round-06 branch, CI #51/#52 green incl. perf gates, not merged**) — Scout 6 shots/s (D-052),
   charged specials ≥ 30 %: Heavy laser + shock + wreck, Standard pierce, Artillery fire patch (D-053). See `docs/PROGRESS.md`.
@@ -89,6 +90,7 @@ design is gone with the Trapper, see D-036/D-037 and open decision K3.)
 | Bots | FSM AI (patrol/suspicion/chase/attack/retreat); Kolay/Normal/Zor/Ekstrem (first shot 5/3/1/0 s after an enemy is in range), allies use the same level | `src/data/ai.json`, `src/systems/ai/bot.ts` |
 | Auto-aim | nearest visible enemy **inside the camera view** (D-045), 10 % hysteresis; touch manual aim needs a 60 px drag | `targeting.ts`, `touchControls.ts` |
 | Heights | cliffs/ramps from one `isPassable` rule, bump flash + haptic, "Engel vurgusu" setting | `passability.ts`, D-020/021 |
+| Towers (round 09) | `tanks.json → tower` (10 000 hp, dmg 400×1.25, cd 5 s, `frag`), explicit `levels.json → towers` (18) + `build.slots` 3 dormant `reserve` towers, `src/sim/build.ts` + `data/build.json`, BTN_BUILD / key B / `touchControls.setBuild`; tall art in `tankArt.ts towerSlice` |
 | Minimap (round 08) | every tank: top-left iso diamond of the whole map, tap = big (`src/ui/minimap.ts`, D-057) |
 | UI | main menu Tek Oyunculu (Hızlı Maç, Görevler [= campaign], Garaj) / Çok Oyunculu ("Yakında") / Ayarlar, swipeable tank cards (skill + ult), map + difficulty selectors, two ability buttons with countdown rings, upgrade chip | `src/ui/` |
 | Campaign (round 08) | ONE lane map "Üç Yol" (`maps/moba_1.json` from `tools/make-moba-map.py`, loaded by `src/world/mazeMap.ts`, 96×96, 3 lanes + river + jungle of impassable `thicket`, point-symmetric; `levels.json` outposts by `cell`); route arrow follows the walking path; earlier: 96×96 themed maps; towers + HQ = `pve` classes in `tanks.json`; outpost solver + guard mode (`enemies.json`); win = HQ destroyed, time out = loss; player respawns at own base; stars/credits | `src/game/campaign.ts`, `src/systems/ai/tower.ts`, `tools/campaign-sim.ts` |
@@ -202,6 +204,8 @@ android/     Capacitor project (committed), keystore/ debug key (committed) + de
 
 **Blocked on the owner:** K1 (INTERNET permission + relay vs Wi-Fi) blocks F; the 4 tank images block G;
 B1 landing correction / B2 Heavy are balance numbers (rule 4).
+
+8. Round 09 follow-ups: owner tries tower numbers on the phone (hp 10 000, 500/250, 18 towers, build cd 30 s); campaign-sim with the bot player lost (hq untouched) — balance is the owner's call.
 
 ## 8. Roadmap
 

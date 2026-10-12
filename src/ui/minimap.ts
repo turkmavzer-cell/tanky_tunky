@@ -2,9 +2,10 @@
  * Minimap (top-left, round 08; first written for the Trapper in round 01). Shows the WHOLE map in the same
  * isometric projection as the game view, so "up-right on the minimap" is "up-right on screen". Terrain is baked
  * once; markers are redrawn at ~10 Hz: you = white arrow, allies blue, enemy tanks red, towers red squares,
- * the enemy headquarters a big red star. Hiding (Hide) enemies are not drawn. Tap = big full map, tap again = close.
+ * the enemy headquarters a big red star. Hiding (Hide) enemies are not drawn. In missions enemies show only while within sight of one of our towers (round 09). Tap = big full map, tap again = close.
  * Plain 2D canvas, no per-frame allocation.
  */
+import { TANKS } from '../sim/config';
 import type { SimState } from '../sim/state';
 import { isInvisible } from '../sim/visibility';
 import { Ground, Feature } from '../world/terrain';
@@ -109,10 +110,15 @@ export class Minimap {
       g.fillStyle = '#ff9a1a';
       g.fillRect(x - 2, y - 2, 4, 4);
     }
+    const campaign = s.rules.mode === 'campaign';
+    const sight = TANKS.tower.vision;
     for (const t of s.tanks) {
       if (!t.alive || t.id === me) continue;
       const enemy = t.team !== myTeam;
       if (enemy && isInvisible(t)) continue; // Hide stays hidden
+      // campaign (round 09): enemies are hidden on the map until they come within sight of one of our towers (the HQ stays marked)
+      if (campaign && enemy && t.cls !== 'hq' && !nearOwnTower(s, myTeam, t.x, t.y, sight)) continue;
+      if (campaign && t.reserve && t.cls === 'tower' && !t.alive) continue;
       const [x, y] = this.p(s, t.x, t.y);
       g.fillStyle = enemy ? '#ff3b30' : '#4aa3ff';
       if (t.cls === 'hq') {
@@ -146,4 +152,15 @@ export class Minimap {
       g.stroke();
     }
   }
+}
+
+/** Is (x, y) within `r` tiles of a living tower of `team`? */
+function nearOwnTower(s: SimState, team: number, x: number, y: number, r: number): boolean {
+  for (const o of s.tanks) {
+    if (!o.alive || o.team !== team || o.cls !== 'tower') continue;
+    const dx = o.x - x;
+    const dy = o.y - y;
+    if (dx * dx + dy * dy <= r * r) return true;
+  }
+  return false;
 }

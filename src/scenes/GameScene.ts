@@ -7,7 +7,8 @@ import { FrameStats } from '../core/frameStats';
 import { KeyboardMouse } from '../core/keyboard';
 import { haptic } from '../core/platform';
 import { ABILITIES, COMBAT, MATCH, SIM_DT, TANKS, VISION, isPve, type AbilityId, type CombatClassId, type TankClassId } from '../sim/config';
-import { AIM_AUTO, BTN_ABILITY, BTN_FIRE, BTN_ULT, EMPTY_INPUT, quantizeAim, quantizeMove, type PlayerInput } from '../sim/input';
+import { BUILD } from '../sim/build';
+import { AIM_AUTO, BTN_ABILITY, BTN_BUILD, BTN_FIRE, BTN_ULT, EMPTY_INPUT, quantizeAim, quantizeMove, type PlayerInput } from '../sim/input';
 import { chargeLevel } from '../sim/sim';
 import type { SimEvent, SimState, Tank, TankBoost } from '../sim/state';
 import { lerp, lerpAngle } from '../sim/dmath';
@@ -105,6 +106,11 @@ export interface HudSnapshot {
   endless: boolean;
   /** 'campaign' shows the objective chip (enemy HQ hp + direction) instead of K/D only. */
   mode: 'versus' | 'campaign';
+  /** Campaign: the BUILD (tower) button exists; seconds until the next build; free slots; last refusal reason. */
+  hasBuild: boolean;
+  buildCooldown: number;
+  buildSlots: number;
+  buildMsg: '' | 'cooldown' | 'zone' | 'blocked' | 'limit';
   hqHp: number;
   hqMax: number;
   /** Enemy structures/tanks still standing (campaign). */
@@ -146,6 +152,8 @@ export class GameScene {
   private bars = new Graphics();
   private chargeG = new Graphics();
   private tankViews: TankView[] = [];
+  private buildMsg: HudSnapshot['buildMsg'] = '';
+  private buildMsgT = 0;
   private shellViews = new Map<number, ShellView>();
   private shellPool: ShellView[] = [];
   private fireG = new Graphics();
@@ -310,7 +318,7 @@ export class GameScene {
       if (touch.aimAngle !== null) aim = quantizeAim(screenAngleToWorld(touch.aimAngle));
       else if (this.opts.autoAim) aim = AIM_AUTO;
       else aim = Math.abs(w.x) + Math.abs(w.y) > 0.1 ? quantizeAim(Math.atan2(w.y, w.x)) : quantizeAim(me.turret);
-      return { moveX: quantizeMove(w.x), moveY: quantizeMove(w.y), aim, buttons: (touch.fire ? BTN_FIRE : 0) | (touch.ability ? BTN_ABILITY : 0) | (touch.ult ? BTN_ULT : 0) };
+      return { moveX: quantizeMove(w.x), moveY: quantizeMove(w.y), aim, buttons: (touch.fire ? BTN_FIRE : 0) | (touch.ability ? BTN_ABILITY : 0) | (touch.ult ? BTN_ULT : 0) | (touch.build ? BTN_BUILD : 0) };
     }
     const mv = this.kb.moveVector();
     const w = screenDirToWorld(mv.x, mv.y);
@@ -327,7 +335,7 @@ export class GameScene {
       aim = quantizeAim(Math.atan2(m.y - me.y, m.x - me.x));
     } else if (this.opts.autoAim) aim = AIM_AUTO;
     else aim = mv.x || mv.y ? quantizeAim(Math.atan2(w.y, w.x)) : quantizeAim(me.turret);
-    return { moveX: quantizeMove(w.x), moveY: quantizeMove(w.y), aim, buttons: (this.kb.fireHeld() ? BTN_FIRE : 0) | (this.kb.abilityHeld() ? BTN_ABILITY : 0) | (this.kb.ultHeld() ? BTN_ULT : 0) };
+    return { moveX: quantizeMove(w.x), moveY: quantizeMove(w.y), aim, buttons: (this.kb.fireHeld() ? BTN_FIRE : 0) | (this.kb.abilityHeld() ? BTN_ABILITY : 0) | (this.kb.ultHeld() ? BTN_ULT : 0) | (this.kb.buildHeld() ? BTN_BUILD : 0) };
   }
 
   /** Refresh the camera rectangle the sim uses to limit the local player's auto-aim (A). */
@@ -454,6 +462,13 @@ export class GameScene {
             if (seen) for (let k = 0; k < 10; k++) this.fx.dust(px + (Math.random() - 0.5) * e.radius * 110, py + (Math.random() - 0.5) * e.radius * 55, 0xc8b090);
             this.play('siege_on', e.x, e.y, 0.8);
             if (e.owner === this.localId) haptic('heavy');
+          } else if (e.kind === 'frag') {
+            // tower shell fragments: a quick spark burst per fragment ring
+            this.overlays.ring(e.x, e.y, e.radius);
+            if (seen) {
+              this.fx.sparks(px, py - 8, 14);
+              for (let k = 0; k < 6; k++) this.fx.dust(px + (Math.random() - 0.5) * e.radius * 100, py + (Math.random() - 0.5) * e.radius * 50, 0xd9a05a);
+            }
           } else if (e.kind === 'wreck') {
             // destroyed tank bursts: fireball + flying debris
             if (seen) {
@@ -576,6 +591,23 @@ export class GameScene {
           if (e.tank === this.localId && e.phase === 'start') haptic(e.id === 'rumble' || e.id === 'emp' ? 'heavy' : 'medium');
           break;
         }
+        case 'build': {
+          this.play('trap_place', e.x, e.y);
+          if (this.seenAt(e.x, e.y)) {
+            this.fx.dust(this.sx(e.x, e.y), this.sy(e.x, e.y), 0xc8b090);
+            this.fx.sparks(this.sx(e.x, e.y), this.sy(e.x, e.y) - 10, 12);
+          }
+          if (e.builder === this.localId) haptic('medium');
+          break;
+        }
+        case 'buildFail':
+          if (e.tank === this.localId) {
+            this.buildMsg = e.reason;
+            this.buildMsgT = 2;
+            this.play('ui_click');
+            haptic('light');
+          }
+          break;
         case 'matchStart':
           this.play('ui_confirm');
           break;
@@ -660,7 +692,7 @@ export class GameScene {
       // health bar
       const w = 44;
       const hpF = t.hp / maxHp(t);
-      const by = sy - 62;
+      const by = sy - (t.cls === 'tower' ? 118 : 62);
       this.bars.rect(sx - w / 2 - 1, by - 1, w + 2, 7).fill({ color: 0x000000, alpha: 0.6 });
       this.bars.rect(sx - w / 2, by, w * Math.min(1, hpF), 5).fill(own ? (i === this.localId ? 0x7ee07e : 0x6aa9ff) : 0xff5a4a);
       // crate upgrades: one gold pip each under the bar (round 03)
@@ -687,6 +719,8 @@ export class GameScene {
     this.renderBeams(dtMs);
     this.renderCharge(me);
     this.touch?.update(dt);
+    this.buildMsgT = Math.max(0, this.buildMsgT - dt);
+    this.touch?.setBuild(me.buildCd, BUILD.cooldown);
     const ab = me.ability;
     const cdMax = Number(ABILITIES[ab.id].cooldown) * Math.max(0.1, s.rules.cooldownMul);
     this.touch?.setFeedback(me.charging ? chargeLevel(me) : 0, me.fullT > 0 && me.fullT <= COMBAT.charge.perfectWindow, me.overheat / COMBAT.charge.overheatLock);
@@ -916,6 +950,10 @@ export class GameScene {
       cls: me.cls,
       endless: s.rules.endless,
       mode: s.rules.mode,
+      hasBuild: s.rules.mode === 'campaign' && s.tanks.some((t) => t.reserve),
+      buildCooldown: me.buildCd,
+      buildSlots: s.tanks.filter((t) => t.reserve && t.team === me.team && !t.alive).length,
+      buildMsg: this.buildMsgT > 0 ? this.buildMsg : '',
       ...this.objectiveHud(me),
     };
   }

@@ -43,7 +43,8 @@ export const CLASS_SHAPES: Readonly<Record<TankClassId, ClassShape>> = {
   artillery: { hullL: 0.96, hullW: 0.7, trackW: 0.15, turretR: 0.2, barrelL: 0.74, barrelW: 0.1, hullSlices: 4, turretSlices: 3 },
   trapper: { hullL: 0.88, hullW: 0.72, trackW: 0.17, turretR: 0.2, barrelL: 0.38, barrelW: 0.07, hullSlices: 4, turretSlices: 3 },
   // campaign structures (round 05): no tracks; the tower is a squat bunker, the HQ a tall block with a radar dome
-  tower: { hullL: 0.92, hullW: 0.92, trackW: 0, turretR: 0.26, barrelL: 0.6, barrelW: 0.1, hullSlices: 5, turretSlices: 3 },
+  // round 09: a tall stone tower - wide base, narrow shaft, battlement platform, cannon on top (hullL/W = base size)
+  tower: { hullL: 0.96, hullW: 0.96, trackW: 0, turretR: 0.22, barrelL: 0.62, barrelW: 0.11, hullSlices: 36, turretSlices: 3 },
   hq: { hullL: 1.4, hullW: 1.4, trackW: 0, turretR: 0.32, barrelL: 0, barrelW: 0, hullSlices: 9, turretSlices: 3 },
 };
 
@@ -109,6 +110,10 @@ export function drawTankSlices(cls: TankClassId, pal: TeamPalette): TankSlices {
   gs.fill();
 
   const hull: HTMLCanvasElement[] = [];
+  if (cls === 'tower') {
+    for (let i = 0; i < s.hullSlices; i++) hull.push(towerSlice(i, s, pal));
+    return finishSlices(cls, s, pal, shadow, hull);
+  }
   for (let i = 0; i < s.hullSlices; i++) {
     const [c, g] = canvas();
     const top = i === s.hullSlices - 1;
@@ -159,6 +164,10 @@ export function drawTankSlices(cls: TankClassId, pal: TeamPalette): TankSlices {
     hull.push(c);
   }
 
+  return finishSlices(cls, s, pal, shadow, hull);
+}
+
+function finishSlices(cls: TankClassId, s: ClassShape, pal: TeamPalette, shadow: HTMLCanvasElement, hull: HTMLCanvasElement[]): TankSlices {
   const turret: HTMLCanvasElement[] = [];
   for (let i = 0; i < s.turretSlices; i++) {
     const [c, g] = canvas();
@@ -203,4 +212,49 @@ export function drawTankSlices(cls: TankClassId, pal: TeamPalette): TankSlices {
     turret.push(c);
   }
   return { shadow, hull, turret };
+}
+
+/**
+ * One horizontal slice of the tall tower (bottom → top, 36 slices): 0-3 stone base, 4-17 narrow shaft with a
+ * team-coloured band and slits, 18-19 overhanging platform, 20-21 battlements. Square plan, so it reads as a tower
+ * from any angle; the cannon turret sits on top.
+ */
+function towerSlice(i: number, s: ClassShape, pal: TeamPalette): HTMLCanvasElement {
+  const [c, g] = canvas();
+  const n = s.hullSlices;
+  const base = 4;
+  const platform = n - 4;
+  let half: number; // half side of the square plan
+  if (i < base) half = s.hullL / 2 - (i === base - 1 ? 0.04 : 0);
+  else if (i < platform) half = 0.2 + 0.05 * (1 - (i - base) / (platform - base)); // slightly tapering shaft
+  else half = 0.36;
+  const stone = i % 3 === 0 ? '#8a8578' : '#9b968a';
+  const band = (i >= 14 && i <= 17) || (i >= 26 && i <= 27);
+  g.fillStyle = band ? pal.body : i < base ? '#6f6b61' : stone;
+  roundRect(g, -half, -half, half * 2, half * 2, 0.03);
+  g.fill();
+  if (i >= platform && i < n - 1) {
+    // dark underside / parapet floor
+    g.fillStyle = pal.bodyDark;
+    roundRect(g, -half + 0.05, -half + 0.05, (half - 0.05) * 2, (half - 0.05) * 2, 0.02);
+    g.fill();
+  }
+  if (i === n - 1) {
+    // battlement top: hollow centre with crenels at the corners
+    g.fillStyle = '#5b574f';
+    g.fillRect(-half + 0.07, -half + 0.07, (half - 0.07) * 2, (half - 0.07) * 2);
+    g.fillStyle = '#b3ad9e';
+    for (const [cx, cy] of [[-1, -1], [1, -1], [1, 1], [-1, 1], [0, -1], [0, 1], [-1, 0], [1, 0]]) g.fillRect(cx * (half - 0.05) - 0.05, cy * (half - 0.05) - 0.05, 0.1, 0.1);
+  }
+  if (i >= base && i < platform && i % 5 === 2) {
+    // arrow slits on the shaft
+    g.fillStyle = 'rgba(0,0,0,0.55)';
+    g.fillRect(-0.02, -half, 0.04, 0.05);
+    g.fillRect(-0.02, half - 0.05, 0.04, 0.05);
+  }
+  g.strokeStyle = 'rgba(0,0,0,0.45)';
+  g.lineWidth = 0.02;
+  roundRect(g, -half, -half, half * 2, half * 2, 0.03);
+  g.stroke();
+  return c;
 }

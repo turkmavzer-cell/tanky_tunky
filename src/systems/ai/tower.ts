@@ -31,7 +31,7 @@ export class TowerBot implements Controller {
 
   input(s: SimState): PlayerInput {
     const me = s.tanks[this.id];
-    if (!me || !me.alive || s.match.phase !== 'playing') {
+    if (!me || !me.alive || me.protect > 0 || s.match.phase !== 'playing') {
       this.engageT = 0;
       return EMPTY_INPUT;
     }
@@ -44,7 +44,7 @@ export class TowerBot implements Controller {
       const aligned = Math.abs(((me.turret - ang + 9.42477796) % 6.28318531) - 3.14159265) < aiJson.fireAlignment;
       // a tap = press for one tick, release on the next (the charge state machine fires on release)
       if (this.pressed) this.pressed = false;
-      else if (this.engageT >= this.fireDelay && aligned && me.cooldown <= 0 && clearGroundPath(s, me.x, me.y, tgt.x, tgt.y)) {
+      else if (this.engageT >= this.fireDelay && aligned && me.cooldown <= 0 && (def.shell === 'artillery' || clearGroundPath(s, me.x, me.y, tgt.x, tgt.y))) {
         this.pressed = true;
         buttons = BTN_FIRE;
       }

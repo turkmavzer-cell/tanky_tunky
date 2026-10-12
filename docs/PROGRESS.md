@@ -221,3 +221,8 @@ See `CLAUDE.md` §1 "Pending owner decisions" for options and proposals:
   K9 work order, K10 merge PRs #1 → #2 → #3, K11 delete the Trapper from code or keep it disabled.
 - T Ability trees, G tank art pipeline (owner's 4 images needed in the repo).
 - Phone test of APK #16, including whether the update/signature error is gone after one uninstall.
+
+## Round 09 — towers (2026-10-12)
+Done: tower 10 000 hp, 500 lobbed shell every 5 s with 250 fragments (annulus 1.3–3.6), 3 zones × 3 towers × 2 teams (18), build button/key B (≤3, 30 s, own zone), mission minimap shows enemies only near our towers, tall tower art.
+Evidence: lint, typecheck, 185 unit tests (incl. `tests/towers.test.ts`), e2e rounds 01–09 passed locally, screenshots inspected in `docs/screens/round-09/`. campaign-sim (standard bot, normal): not won, 17 deaths, HQ untouched (numbers are the owner's decision). Perf gate: local always fails in the container; CI decides.
+To try on the phone: see PLAYTEST_CHECKLIST "Tur 09".

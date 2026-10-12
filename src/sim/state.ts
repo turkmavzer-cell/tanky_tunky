@@ -86,6 +86,13 @@ export interface Tank {
   regenNext: number;
   /** Garage upgrades (round 05, stream E): multipliers on base max hp, top speed and damage dealt. 1 = none. */
   boost: TankBoost;
+  // --- round 09 (tower building)
+  /** Dormant tower slot a player can build (alive = false until built). */
+  reserve: boolean;
+  /** Seconds until this tank may build another tower. */
+  buildCd: number;
+  /** Build button was held last tick (edge detection). */
+  buildHeld: boolean;
 }
 
 export interface TankBoost {
@@ -175,7 +182,7 @@ export interface Mine {
   arm: number;
 }
 
-export type DamageCause = 'shell' | 'rumble' | 'barrage' | 'mine' | 'environment' | 'shock' | 'wreck' | 'fire';
+export type DamageCause = 'shell' | 'rumble' | 'barrage' | 'mine' | 'environment' | 'shock' | 'wreck' | 'fire' | 'frag';
 
 export interface KillRecord {
   /** Match time (s). */
@@ -231,7 +238,9 @@ export type SimEvent =
   | { type: 'chargeFull'; tank: number }
   | { type: 'overheat'; tank: number }
   | { type: 'bounce'; x: number; y: number; owner: number }
-  | { type: 'explode'; x: number; y: number; radius: number; charge: number; kind: ShellKind | 'mine' | 'rumble' | 'emp' | 'shock' | 'wreck'; owner: number }
+  | { type: 'explode'; x: number; y: number; radius: number; charge: number; kind: ShellKind | 'mine' | 'rumble' | 'emp' | 'shock' | 'wreck' | 'frag'; owner: number }
+  | { type: 'build'; tank: number; builder: number; x: number; y: number }
+  | { type: 'buildFail'; tank: number; reason: 'cooldown' | 'zone' | 'blocked' | 'limit' }
   | { type: 'hit'; target: number; by: number; damage: number; x: number; y: number }
   | { type: 'graze'; target: number; x: number; y: number }
   | { type: 'destroyed'; tank: number; by: number; x: number; y: number; cause: DamageCause }

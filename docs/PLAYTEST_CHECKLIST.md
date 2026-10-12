@@ -103,3 +103,10 @@ Measurable items (frame time, input latency proxies, APK size) are automated —
 - [ ] Taret ekran dışındaki düşmana dönmüyor; ekrana girince kilitleniyor.
 - [ ] Menü: Tek Oyunculu → Hızlı Maç çalışıyor; Çok Oyunculu "yakında" notu.
 - [ ] Mermi yağmuru (Çevik ×3) telefonda takılma yapıyor mu? (FPS düşerse bildir.)
+
+## Tur 09 — kuleler (Görevler)
+- [ ] Kuleler artık uzun taş kule; takım rengi bantlı. Üst/orta/alt yolda 3'er düşman kulesi var (18 kule toplam, 9'u bizim).
+- [ ] Kule 5 sn'de bir top atıyor (500), inince çevreye parça (250) saçılıyor; 10 000 can makul mu?
+- [ ] KULE butonu (B tuşu): kendi bölgende önüne kule kuruyor; 30 sn bekleme halkası; en çok 3 kule; düşman bölgesinde "Sadece kendi bölgende…" uyarısı.
+- [ ] Haritada düşman görünmüyor; bizim kulenin ~12 kare yakınına girince kırmızı nokta çıkıyor.
+- [ ] Hızlı Maç aynı (kule/KULE butonu yok, minimapte düşmanlar görünür).

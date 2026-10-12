@@ -71,6 +71,9 @@ input[type='range'] { width: 200px; accent-color: var(--accent); }
 .fire-btn { width: 104px; height: 104px; right: calc(28px + var(--safe-r)); bottom: calc(28px + var(--safe-b)); }
 .ability-btn { width: 72px; height: 72px; right: calc(150px + var(--safe-r)); bottom: calc(36px + var(--safe-b)); }
 .ult-btn { width: 64px; height: 64px; right: calc(104px + var(--safe-r)); bottom: calc(138px + var(--safe-b)); }
+.build-btn { width: 64px; height: 64px; right: calc(222px + var(--safe-r)); bottom: calc(138px + var(--safe-b)); }
+.left-handed .build-btn { right: auto; left: calc(222px + var(--safe-l)); }
+.build-msg { position: absolute; left: 50%; bottom: calc(86px + var(--safe-b)); transform: translateX(-50%); background: #000c; color: #ffd27a; border: 1px solid #ffd27a88; border-radius: 10px; padding: 4px 12px; font-size: 14px; pointer-events: none; z-index: 4; }
 .left-handed .ult-btn { right: auto; left: calc(104px + var(--safe-l)); }
 .left-handed .fire-btn { right: auto; left: calc(28px + var(--safe-l)); }
 .left-handed .ability-btn { right: auto; left: calc(150px + var(--safe-l)); }

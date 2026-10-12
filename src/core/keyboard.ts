@@ -73,6 +73,10 @@ export class KeyboardMouse {
     return this.down('KeyE') || this.down('ShiftLeft');
   }
 
+  buildHeld(): boolean {
+    return this.down('KeyB');
+  }
+
   ultHeld(): boolean {
     return this.down('KeyQ') || this.down('ShiftRight');
   }

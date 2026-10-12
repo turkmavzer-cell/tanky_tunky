@@ -1,0 +1,9 @@
+{
+  "$comment": "Tower building (round 09, owner 2026-10-12; numbers = Claude's proposal, approved with 'hepsini önerdiğin gibi'). Missions only. A player builds a tower into one of the dormant slots (the mission's `build.slots` reserve towers) about `ahead` tiles in front of the hull, inside his own zone: closer to his own base than to the enemy base by at least `zoneMargin` tiles. The tower rises for `buildTime` s (invulnerable, silent).",
+  "cooldown": 30,
+  "buildTime": 2,
+  "ahead": 2.5,
+  "clearance": 1,
+  "zoneMargin": 4,
+  "minGap": 1.6
+}
