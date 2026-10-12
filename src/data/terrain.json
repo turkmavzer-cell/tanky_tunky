@@ -1,5 +1,5 @@
 {
-  "$comment": "Terrain tuning (brief §7). speedMul multiplies tank speed; moveCost is the A* cost; concealment: 0 = none, 1 = only visible from very close.",
+  "$comment": "Terrain tuning (brief \u00a77). speedMul multiplies tank speed; moveCost is the A* cost; concealment: 0 = none, 1 = only visible from very close.",
   "ground": {
     "grass": {
       "id": 0,
@@ -155,6 +155,15 @@
       "blocksMove": true,
       "blocksLOS": false,
       "blocksShots": false,
+      "speedMul": 0,
+      "concealment": 0,
+      "hp": 0
+    },
+    "thicket": {
+      "id": 12,
+      "blocksMove": true,
+      "blocksLOS": true,
+      "blocksShots": true,
       "speedMul": 0,
       "concealment": 0,
       "hp": 0

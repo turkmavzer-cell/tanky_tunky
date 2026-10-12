@@ -137,6 +137,7 @@ export function GameView({ settings, playerClass, seed, record, onQuit, onAgain,
       leftHanded: settings.leftHanded,
       sensitivity: settings.joystickSensitivity,
       labels: { fire: t('hud.fire'), ability: t('hud.ability'), ult: t('hud.ult') },
+      buildName: campaignLevel ? t('hud.build') : undefined,
     });
     scene.touch = touch;
     scene.onMatchEnd = (rows) => {
@@ -250,7 +251,7 @@ export function GameView({ settings, playerClass, seed, record, onQuit, onAgain,
             <span style={{ transform: `rotate(${-hud.hqAngle}rad)` }}>{hud.hqDist}</span>
           </div>
         )}
-        <div ref={minimapHost} className={'minimap-host' + (settings.leftHanded ? ' right' : '')} />
+        <div ref={minimapHost} className={'minimap-host' + (settings.leftHanded ? ' right' : '')} data-testid="minimap-host" onPointerDown={(e) => { e.stopPropagation(); sceneRef.current?.minimap?.toggle(); }} />
         {hud && hud.phase !== 'ended' && !hud.endless && (
           <div className={'match-timer' + (finalWarn ? ' warn' : '')} data-testid="timer">
             {mm}:{ss}
@@ -273,6 +274,11 @@ export function GameView({ settings, playerClass, seed, record, onQuit, onAgain,
           </div>
         )}
       </div>
+      {hud?.buildMsg && (
+        <div className="build-msg" data-testid="build-msg">
+          {t(`build.${hud.buildMsg}` as Parameters<typeof t>[0])}
+        </div>
+      )}
       {paused && !results && (
         <div className="overlay">
           <div className="panel">

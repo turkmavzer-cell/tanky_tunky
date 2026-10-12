@@ -82,7 +82,8 @@ Kavisli mermiler (Topçu atışı ve Yaylım Ateşi) düştükleri yerde patlama
 
 | Yapı | Can | Zırh | Hasar | Atış arası | Menzil | Not |
 |---|---|---|---|---|---|---|
-| Kule | 3200 | %10 | 340 | 1,8 sn | 7,5 | Hareket etmez, yeniden doğmaz, can yenilemez. İlk atış zorluk gecikmesiyle (Kolay 5 sn … Ekstrem 0). |
+| Kule (tur 09) | 10 000 | %10 | 400 (×1,25 = 500 merkezde) | 5 sn, havan topu (kavisli) | 12 | 18 kule (bölge başına 3 × 2 takım) + oyuncu 3 kule kurabilir (30 sn bekleme). Mermi inince çevreye 8 parça: her biri 250 (iç yarıçap 1,3, dış 3,6 — merkezdeki hedef iki kez vurulmaz). Eski değerler: 3200 hp, 340, 1,8 sn, 7,5. |
+| (eski) Kule | 3200 | %10 | 340 | 1,8 sn | 7,5 | Hareket etmez, yeniden doğmaz, can yenilemez. İlk atış zorluk gecikmesiyle (Kolay 5 sn … Ekstrem 0). |
 | Karargâh (HQ) | 12000 | %15 | — | — | — | Silahı yok; yıkılınca görev kazanılır. |
 
 Karakol "tehdit bütçesi" (`enemies.json`): Kule 2, Çevik 2, Dengeli 3, Topçu 3, Ağır 4. Düşman tankları karakolunun 3 kare çevresinde

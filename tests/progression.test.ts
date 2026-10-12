@@ -13,10 +13,11 @@ describe('progression (round 05, E)', () => {
   it('unlocks levels in order', () => {
     let s = defaultSave();
     expect(isUnlocked(s, 0)).toBe(true);
-    expect(isUnlocked(s, 1)).toBe(false);
+    // later missions unlock one after another; with a single mission there is nothing beyond it yet
+    expect(isUnlocked(s, LEVELS.length)).toBe(false);
     s = applyMission(s, LEVELS[0], win(1)).save;
-    expect(isUnlocked(s, 1)).toBe(true);
-    expect(isUnlocked(s, 2)).toBe(false);
+    expect(isUnlocked(s, 0)).toBe(true);
+    expect(isUnlocked(s, LEVELS.length)).toBe(false);
   });
 
   it('pays base + stars on the first clear and only new stars on replays; losses pay nothing', () => {

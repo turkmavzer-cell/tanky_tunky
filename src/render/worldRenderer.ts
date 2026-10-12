@@ -34,6 +34,7 @@ const FEATURE_KEY: Record<number, keyof TerrainArt['features'] | null> = {
   [Feature.Adobe]: 'adobe',
   [Feature.Car]: 'car',
   [Feature.Palm]: 'palm',
+  [Feature.Thicket]: 'thicket',
 };
 
 /** Elevation colour language (job 2): low ground cooler/darker, high ground lighter/warmer. */

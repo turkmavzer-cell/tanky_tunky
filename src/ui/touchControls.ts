@@ -15,6 +15,7 @@ export interface TouchState {
   fire: boolean;
   ability: boolean;
   ult: boolean;
+  build: boolean;
   /** Screen-space aim angle while dragging the fire button, else null. */
   aimAngle: number | null;
   /** True once any touch happened (switches the scene from keyboard to touch input). */
@@ -29,6 +30,8 @@ export interface TouchOptions {
   abilityName?: string;
   /** Ultimate name; the ULT button is hidden when the class has none. */
   ultName?: string;
+  /** Campaign only: label of the BUILD (tower) button; the button is not created without it. */
+  buildName?: string;
 }
 
 const JOY_RADIUS = 64;
@@ -39,13 +42,14 @@ export const AIM_DRAG_MIN = 60;
 
 export class TouchControls {
   readonly root: HTMLDivElement;
-  readonly state: TouchState = { moveX: 0, moveY: 0, fire: false, ability: false, ult: false, aimAngle: null, active: false };
+  readonly state: TouchState = { moveX: 0, moveY: 0, fire: false, ability: false, ult: false, build: false, aimAngle: null, active: false };
   private readonly joyBase: HTMLDivElement;
   private readonly joyKnob: HTMLDivElement;
   private readonly fireBtn: HTMLDivElement;
   private readonly fireRing: HTMLDivElement;
   private readonly skill: Slot;
   private readonly ultSlot: Slot;
+  private readonly buildSlot: Slot | null;
   private joyId = -1;
   private joyCx = 0;
   private joyCy = 0;
@@ -56,6 +60,7 @@ export class TouchControls {
   private fireCy = 0;
   private abilityId = -1;
   private ultId = -1;
+  private buildId = -1;
   private readonly offs: (() => void)[] = [];
 
   constructor(
@@ -75,7 +80,9 @@ export class TouchControls {
     this.fireBtn.append(this.fireRing, fl);
     this.skill = makeSlot('ability-btn', 'ability', 'ability-count', opts.abilityName ?? opts.labels.ability);
     this.ultSlot = makeSlot('ability-btn ult-btn', 'ult', 'ult-count', opts.ultName ?? opts.labels.ult ?? 'ULT');
+    this.buildSlot = opts.buildName ? makeSlot('ability-btn build-btn', 'build', 'build-count', opts.buildName) : null;
     this.root.append(this.joyBase, this.fireBtn, this.skill.btn, this.ultSlot.btn);
+    if (this.buildSlot) this.root.append(this.buildSlot.btn);
     host.appendChild(this.root);
 
     const on = <K extends keyof HTMLElementEventMap>(t: HTMLElement | Window, type: K, fn: (e: HTMLElementEventMap[K]) => void): void => {
@@ -121,6 +128,13 @@ export class TouchControls {
       this.ultId = e.pointerId;
       this.state.ult = true;
       this.ultSlot.btn.classList.add('pressed');
+      return;
+    }
+    if (this.buildSlot && this.buildId < 0 && this.buildSlot.btn.contains(target)) {
+      e.preventDefault();
+      this.buildId = e.pointerId;
+      this.state.build = true;
+      this.buildSlot.btn.classList.add('pressed');
       return;
     }
     const rr = this.root.getBoundingClientRect();
@@ -184,6 +198,10 @@ export class TouchControls {
       this.abilityId = -1;
       this.state.ability = false;
       this.skill.btn.classList.remove('pressed');
+    } else if (e.pointerId === this.buildId) {
+      this.buildId = -1;
+      this.state.build = false;
+      this.buildSlot?.btn.classList.remove('pressed');
     } else if (e.pointerId === this.ultId) {
       this.ultId = -1;
       this.state.ult = false;
@@ -225,6 +243,11 @@ export class TouchControls {
   /** Same as setAbility for the ultimate button. */
   setUlt(active: number, activeMax: number, cooldown: number, cooldownMax: number): void {
     renderSlot(this.ultSlot, active, activeMax, cooldown, cooldownMax);
+  }
+
+  /** Build button: cooldown ring + seconds (0 = ready). */
+  setBuild(cooldown: number, cooldownMax: number): void {
+    if (this.buildSlot) renderSlot(this.buildSlot, 0, 0, cooldown, cooldownMax);
   }
 
   dispose(): void {

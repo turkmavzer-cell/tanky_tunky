@@ -1,32 +1,56 @@
 import { describe, expect, it } from 'vitest';
-import { LEVELS, ENEMIES, createCampaignMatch, fillOutpost, missionResult, placeEnemies } from '../src/game/campaign';
+import { LEVELS, ENEMIES, buildLevelMap, createCampaignMatch, fillOutpost, missionResult, placeEnemies } from '../src/game/campaign';
 import { stepMatch } from '../src/game/matchSetup';
 import { Rng } from '../src/sim/rng';
 import { step } from '../src/sim/sim';
 import { EMPTY_INPUT, type PlayerInput } from '../src/sim/input';
-import { generateThemed } from '../src/world/themes';
 import { isTileOpen } from '../src/world/passability';
-import { floodFill } from '../src/world/reach';
+import { distanceField, floodFill } from '../src/world/reach';
 import { hashState } from '../src/sim/hash';
 import { AiBot } from '../src/systems/ai/bot';
 import { TowerBot } from '../src/systems/ai/tower';
 import { TANKS } from '../src/sim/config';
 
 describe('campaign levels (round 05, D)', () => {
-  it('has 3 levels on 96x96 maps with valid outposts', () => {
-    expect(LEVELS.length).toBe(3);
+  it('has the lane-map level: 96x96 hand-made map with valid outposts', () => {
+    expect(LEVELS.length).toBeGreaterThanOrEqual(1);
     for (const lv of LEVELS) {
+      expect(lv.map).toBeTruthy();
       expect(lv.size).toBe(96);
       for (const o of lv.outposts) {
-        expect(o.at).toBeGreaterThan(0);
-        expect(o.at).toBeLessThan(1);
+        expect(o.cell).toBeTruthy();
         for (const u of o.pool) expect(ENEMIES.threatCost[u]).toBeGreaterThan(0);
       }
     }
   });
 
+  it('lane map: corridors and wood walls, point-symmetric, no sealed pockets', () => {
+    for (const lv of LEVELS) {
+      const map = buildLevelMap(lv);
+      const s0 = map.bases[0];
+      const hq = map.bases[1];
+      const dist = distanceField(map, s0.x, s0.y);
+      expect(Number.isFinite(dist[hq.y * map.width + hq.x])).toBe(true);
+      let open = 0;
+      for (let y = 0; y < map.height; y++) for (let x = 0; x < map.width; x++) if (isTileOpen(map, x, y)) open++;
+      const ratio = open / (map.width * map.height);
+      expect(ratio).toBeGreaterThan(0.4);
+      expect(ratio).toBeLessThan(0.85);
+      // multiplayer-ready: (x, y) and (W-1-x, H-1-y) have the same terrain
+      for (let y = 0; y < map.height; y++)
+        for (let x = 0; x < map.width; x++) {
+          const i = y * map.width + x;
+          const j = (map.height - 1 - y) * map.width + (map.width - 1 - x);
+          expect(map.feature[i]).toBe(map.feature[j]);
+          expect(map.ground[i]).toBe(map.ground[j]);
+        }
+      const reach = floodFill(map, s0.x, s0.y);
+      for (let y = 0; y < map.height; y++) for (let x = 0; x < map.width; x++) if (isTileOpen(map, x, y)) expect(reach[y * map.width + x]).toBe(1);
+    }
+  });
+
   it('outpost solver never overspends its budget and is deterministic', () => {
-    const o = { at: 0.5, side: 0, budget: 7, pool: ['tower', 'heavy', 'scout'] as const };
+    const o = { cell: [3, 3] as [number, number], budget: 7, pool: ['tower', 'heavy', 'scout'] as const };
     const a = fillOutpost({ ...o, pool: [...o.pool] }, new Rng(9));
     const b = fillOutpost({ ...o, pool: [...o.pool] }, new Rng(9));
     expect(a).toEqual(b);
@@ -36,7 +60,7 @@ describe('campaign levels (round 05, D)', () => {
 
   it('places one HQ and every unit on an open tile reachable from the player base', () => {
     for (const lv of LEVELS) {
-      const map = generateThemed(lv.theme, lv.seed, lv.size);
+      const map = buildLevelMap(lv);
       const units = placeEnemies(lv, map);
       expect(units.filter((u) => u.type === 'hq').length).toBe(1);
       expect(units.length).toBeGreaterThan(lv.outposts.length);
@@ -65,7 +89,7 @@ describe('campaign levels (round 05, D)', () => {
 
   it('is deterministic: same level + class → identical state after 20 s', () => {
     const run = (): string => {
-      const m = createCampaignMatch({ level: LEVELS[1], playerClass: 'standard', aiLevel: 'hard' });
+      const m = createCampaignMatch({ level: LEVELS[0], playerClass: 'standard', aiLevel: 'hard' });
       m.bots[0] = new AiBot(0, 3, 'hard');
       const inputs: PlayerInput[] = [];
       for (let k = 0; k < 60 * 23; k++) stepMatch(m, null, inputs);

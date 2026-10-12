@@ -199,6 +199,17 @@ Gates: lint ✅ typecheck ✅ unit 176 ✅ E2E 44 ✅. GitHub CI #51/#52 green (
 To try on the phone: Ağır hold fire → red laser line, ring around the target, other tanks nearby lose hp; kill one → extra blast;
 Dengeli charged shot through two tanks; Topçu charged shot → dark burning patch for 2 s; Çevik now 6 shots/s.
 
+## Round 08 (2026-10-11) — maze mission, upgrades only in missions
+
+**Update 2 (D-057):** minimap for all tanks, top-left under the HP bar (`src/ui/minimap.ts`, no longer Trapper-only). Evidence: lint/typecheck/177 unit pass; e2e round08 test 04 (visible top-left, tap enlarges 440 px, tap closes, also shown in Quick Match); screenshots `04-minimap`, `05-minimap-big`, `06-minimap-quick-match` inspected. Deviation from the plan: shown as the game's 2:1 iso diamond, not a square, so up-right on the map = up-right on screen; the camera-view frame was left out. Forest-hidden far enemies are still drawn (only Hide is hidden). Not verified: phone feel / FPS.
+
+**Update (same day, D-056):** the maze was replaced by a lane map after the owner's reference picture (LoL map for WC3): `maps/moba_1.json` (96×96, built by `tools/make-moba-map.py`, preview `docs/screens/round-08/00-map-plan.png`), new impassable `thicket` terrain (darker forest art), level "Üç Yol" with 9 lane towers, base guard, 2 jungle camps. Evidence: unit tests (point symmetry, no sealed pockets, 40–85 % open), campaign sim: bot Standard/normal won in 321 s (8 deaths), bot Heavy/easy won in 415 s; e2e round05/06/08 pass, screenshots 01–03 inspected. Not verified: phone feel and FPS with the many tree sprites (CI perf gate covers Quick Match only). Text below describes the first (maze) version.
+
+- **Done:** 3 generated levels removed; one hand-made maze level "Labirent" (`maps/maze_1.json`, 21×21 characters × 3 tiles = 64×64, seeded recursive-backtracker layout with 4 loops, authored once and stored). Loader `src/world/mazeMap.ts`; levels use `outposts[].cell`. 5 enemy outposts (6 towers + 5 tanks) + HQ. Route arrow follows the walking distance field (`descend`). `playerBoost` only in missions (`App.tsx`). Old save data stays valid (stars of removed ids are ignored).
+- **Evidence:** unit tests 177/177 (maze test: walking distance to the HQ > 2.2× straight line, no sealed pockets, <60 % open); `tools/campaign-sim.ts`: bot Heavy/easy wins in 334 s, bot Standard/normal loses to the last outpost; e2e round05/06/08 pass; screenshots in `docs/screens/round-08/` inspected.
+- **Not verified:** feel on the phone; perf gate on the maze (CI decides).
+- **To try on the phone:** Görevler → Labirent; follow the arrow around the walls; check towers in corridors, forest cover, that Quick Match no longer gets garage boosts.
+
 ## Open questions for the owner
 
 See `CLAUDE.md` §1 "Pending owner decisions" for options and proposals:
@@ -210,3 +221,8 @@ See `CLAUDE.md` §1 "Pending owner decisions" for options and proposals:
   K9 work order, K10 merge PRs #1 → #2 → #3, K11 delete the Trapper from code or keep it disabled.
 - T Ability trees, G tank art pipeline (owner's 4 images needed in the repo).
 - Phone test of APK #16, including whether the update/signature error is gone after one uninstall.
+
+## Round 09 — towers (2026-10-12)
+Done: tower 10 000 hp, 500 lobbed shell every 5 s with 250 fragments (annulus 1.3–3.6), 3 zones × 3 towers × 2 teams (18), build button/key B (≤3, 30 s, own zone), mission minimap shows enemies only near our towers, tall tower art.
+Evidence: lint, typecheck, 185 unit tests (incl. `tests/towers.test.ts`), e2e rounds 01–09 passed locally, screenshots inspected in `docs/screens/round-09/`. campaign-sim (standard bot, normal): not won, 17 deaths, HQ untouched (numbers are the owner's decision). Perf gate: local always fails in the container; CI decides.
+To try on the phone: see PLAYTEST_CHECKLIST "Tur 09".

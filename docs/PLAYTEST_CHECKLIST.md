@@ -77,6 +77,14 @@ Measurable items (frame time, input latency proxies, APK size) are automated —
 - [ ] Görev kazanınca "+1 güçlendirme parçası" ve tank seçimi çıkıyor; seçtiğin tank maçta farklı hissettiriyor mu?
 - [ ] Garaj: "Güçlendirme" satırı, parça varsa "1 parça" butonu çalışıyor.
 
+## Round 08 (telefonda dene)
+- [ ] Sol üstte mini harita: tüm harita, sen beyaz ok, dost mavi, düşman kırmızı, kule kare, karargâh yıldız; dokununca büyüyor, tekrar dokununca kapanıyor (joystick'i tetiklememeli)
+- [ ] Görevler → Üç Yol: üst / orta / alt koridor ve nehir görseldeki haritaya benziyor mu? Sık orman (koyu ağaçlar) geçilmiyor, çalılar (açık yeşil) geçiliyor — ayırt edilebiliyor mu?
+- [ ] Ok yönü duvarı değil gidilecek yolu gösteriyor mu?
+- [ ] Koridorlardaki kuleler/karakollar, orman siperi, köprü: zorluk ve his
+- [ ] Hızlı Maç'ta Garaj güçlendirmesi etkisiz (tüm tanklar eşit), Görevler'de etkili
+- [ ] FPS (labirentte çok kaya var)
+
 ## Round 05 (telefonda dene)
 - [ ] Tek Oyunculu → Kampanya: Bölüm 1 açık, 2–3 kilitli; Bölüm 1'i geçince 2 açılıyor.
 - [ ] Görevde kırmızı ok karargâhı gösteriyor, mesafe azalıyor; üstte "Karargâhı yok et" + HQ can çubuğu + kalan düşman.
@@ -95,3 +103,10 @@ Measurable items (frame time, input latency proxies, APK size) are automated —
 - [ ] Taret ekran dışındaki düşmana dönmüyor; ekrana girince kilitleniyor.
 - [ ] Menü: Tek Oyunculu → Hızlı Maç çalışıyor; Çok Oyunculu "yakında" notu.
 - [ ] Mermi yağmuru (Çevik ×3) telefonda takılma yapıyor mu? (FPS düşerse bildir.)
+
+## Tur 09 — kuleler (Görevler)
+- [ ] Kuleler artık uzun taş kule; takım rengi bantlı. Üst/orta/alt yolda 3'er düşman kulesi var (18 kule toplam, 9'u bizim).
+- [ ] Kule 5 sn'de bir top atıyor (500), inince çevreye parça (250) saçılıyor; 10 000 can makul mu?
+- [ ] KULE butonu (B tuşu): kendi bölgende önüne kule kuruyor; 30 sn bekleme halkası; en çok 3 kule; düşman bölgesinde "Sadece kendi bölgende…" uyarısı.
+- [ ] Haritada düşman görünmüyor; bizim kulenin ~12 kare yakınına girince kırmızı nokta çıkıyor.
+- [ ] Hızlı Maç aynı (kule/KULE butonu yok, minimapte düşmanlar görünür).

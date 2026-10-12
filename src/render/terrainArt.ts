@@ -37,7 +37,7 @@ export interface ArtSprite {
   anchorY: number;
 }
 
-export type FeatureArtKey = 'forest' | 'rock' | 'wall' | 'crate' | 'ruins' | 'gate' | 'bridge' | 'torch' | 'building' | 'adobe' | 'car' | 'palm' | 'lamp';
+export type FeatureArtKey = 'forest' | 'rock' | 'wall' | 'crate' | 'ruins' | 'gate' | 'bridge' | 'torch' | 'building' | 'adobe' | 'car' | 'palm' | 'lamp' | 'thicket';
 export type DamagedArtKey = 'wall' | 'crate' | 'gate' | 'adobe' | 'car';
 
 export interface TerrainArt {
@@ -1710,6 +1710,17 @@ function forest(v: number): ArtSprite {
   return { canvas: c, anchorX: ax, anchorY: ay };
 }
 
+/** Dense, impassable wood (round 08 mission map): the forest trees, darker so it reads as a wall. */
+function thicket(v: number): ArtSprite {
+  const s = forest(v + 4);
+  const g = s.canvas.getContext('2d')!;
+  g.globalCompositeOperation = 'source-atop';
+  g.fillStyle = 'rgba(8, 28, 14, 0.38)';
+  g.fillRect(0, 0, s.canvas.width, s.canvas.height);
+  g.globalCompositeOperation = 'source-over';
+  return s;
+}
+
 // ---------------------------------------------------------------------------------------------
 // Rocks
 // ---------------------------------------------------------------------------------------------
@@ -2816,6 +2827,7 @@ export function buildTerrainArt(): TerrainArt {
     adobe: [0, 1].map((v) => adobe(v, false)),
     car: [0, 1, 2, 3].map((v) => car(v, false)),
     palm: [0, 1].map(palm),
+    thicket: [0, 1, 2, 3].map(thicket),
     lamp: [lamp()],
   };
   const damaged: Record<DamagedArtKey, ArtSprite> = {

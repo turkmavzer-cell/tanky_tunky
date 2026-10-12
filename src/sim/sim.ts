@@ -15,6 +15,7 @@ import { newAbilityState } from './abilities';
 import { createVision, updateVision, VISION_INTERVAL } from './visibility';
 import { canRespawn, checkObjective, respawnTank, updateMatch } from './match';
 import { updateTank } from './tank';
+import { updateBuild } from './build';
 
 export { chargeLevel, chargeTimeOf } from './tank';
 
@@ -26,6 +27,8 @@ export interface PlayerSpec {
   name?: string;
   /** Garage upgrades (human player only). */
   boost?: Partial<TankBoost>;
+  /** Dormant tower slot (round 09): starts dead, a player can build it. */
+  reserve?: boolean;
 }
 
 export interface SimOptions {
@@ -52,7 +55,7 @@ export function createState(opts: SimOptions): SimState {
     hull: p.team === 0 ? 0.785398163397448 : -2.356194490192345,
     turret: p.team === 0 ? 0.785398163397448 : -2.356194490192345,
     hp: TANKS[p.cls].hp * (p.boost?.hp ?? 1),
-    alive: true,
+    alive: !p.reserve,
     respawn: 0,
     protect: 0,
     lastSpawn: -1,
@@ -76,6 +79,9 @@ export function createState(opts: SimOptions): SimState {
     combatT: 0,
     regenNext: COMBAT.regen.outOfCombat,
     boost: { hp: 1, speed: 1, damage: 1, fireRate: 1, chargeTime: 1, splash: 1, ...p.boost },
+    reserve: p.reserve === true,
+    buildCd: 0,
+    buildHeld: false,
   }));
   const s: SimState = {
     tick: 0,
@@ -106,6 +112,7 @@ export function step(state: SimState, inputs: readonly PlayerInput[]): void {
   const running = updateMatch(state, dt);
   if (running) {
     const playing = state.match.phase === 'playing';
+    if (playing) updateBuild(state, inputs, dt);
     for (let i = 0; i < state.tanks.length; i++) {
       const t = state.tanks[i];
       if (!t.alive) {

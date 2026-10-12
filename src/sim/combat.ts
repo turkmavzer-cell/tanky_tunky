@@ -108,14 +108,16 @@ export function damageTerrainDisc(state: SimState, x: number, y: number, r: numb
  * Flat damage to every living enemy of `team` within `radius` (+ their hull radius) of (x, y), except `skip`.
  * Used by the Heavy shock wave and wreck explosion (round 07): allies are never hurt.
  */
-function ring(state: SimState, x: number, y: number, radius: number, raw: number, owner: number, team: number, skip: number, kind: 'shock' | 'wreck'): void {
+function ring(state: SimState, x: number, y: number, radius: number, raw: number, owner: number, team: number, skip: number, kind: 'shock' | 'wreck' | 'frag', inner = 0): void {
   state.events.push({ type: 'explode', x, y, radius, charge: 1, kind, owner });
   for (const t of state.tanks) {
     if (!t.alive || t.team === team || t.id === skip) continue;
     const dx = t.x - x;
     const dy = t.y - y;
     const r = radius + TANKS[t.cls].radius;
-    if (dx * dx + dy * dy > r * r) continue;
+    const d2 = dx * dx + dy * dy;
+    if (d2 > r * r) continue;
+    if (inner > 0 && d2 <= (inner + TANKS[t.cls].radius) * (inner + TANKS[t.cls].radius)) continue; // inside the blast: already hit by the shell
     applyDamage(state, t, raw, owner, x, y, kind);
   }
 }
@@ -143,6 +145,11 @@ function shellExplosion(state: SimState, s: Shell, x: number, y: number, direct:
     // shock wave around the hit tank: the hit tank itself is not affected (owner 2026-10-11)
     ring(state, victim.x, victim.y, ch.shock.radius, s.damage * ch.shock.ratio, s.owner, s.team, victim.id, 'shock');
     if (wasAlive && !victim.alive && ch.wreck) ring(state, victim.x, victim.y, ch.wreck.radius, s.damage * ch.wreck.ratio, s.owner, s.team, victim.id, 'wreck');
+  }
+  // tower shells: fragments fly out of the blast (round 09) — flat damage to enemies outside the blast, inside `radius`
+  const frag = TANKS[state.tanks[s.owner]?.cls ?? 'standard'].frag;
+  if (frag && s.kind === 'artillery') {
+    ring(state, x, y, frag.radius, frag.damage, s.owner, s.team, -1, 'frag', frag.inner);
   }
   if (s.special === 'fire' && ch?.fire) {
     const landing = s.kind === 'artillery' ? s.damage * COMBAT.shell.artilleryDamageMul : s.damage;

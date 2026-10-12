@@ -14,6 +14,8 @@ import type { SimState, TankBoost } from '../sim/state';
 import type { MapSize } from '../world/generator';
 import type { GameMap, MapPoint, MapTheme } from '../world/map';
 import { generateThemed } from '../world/themes';
+import { loadMazeMap, type MazeSrc } from '../world/mazeMap';
+import moba1 from '../../maps/moba_1.json';
 import { isTileOpen } from '../world/passability';
 import { floodFill } from '../world/reach';
 import { AiBot, type AiLevel } from '../systems/ai/bot';
@@ -23,20 +25,35 @@ import type { MatchHandle } from './matchSetup';
 export type UnitType = 'tower' | CombatClassId;
 
 export interface OutpostDef {
-  at: number;
-  side: number;
+  /** Generated maps: fraction along the line base0 → base1 and tiles sideways from it. */
+  at?: number;
+  side?: number;
+  /** Maze maps: [column, row] in the map's character grid. */
+  cell?: [number, number];
   budget: number;
   pool: UnitType[];
 }
 
+export interface TowerDef {
+  team: 0 | 1;
+  zone: 'top' | 'mid' | 'bottom';
+  x: number;
+  y: number;
+}
+
 export interface CampaignLevel {
   id: string;
+  /** Hand-made maze map name (maps/<name>.json); absent = generated themed map. */
+  map?: string;
   theme: MapTheme;
   size: MapSize;
   seed: number;
   duration: number;
   allies: CombatClassId[];
   outposts: OutpostDef[];
+  /** Explicit gun towers (both teams, 3 per zone) and the number of dormant build slots (round 09). */
+  towers?: TowerDef[];
+  build?: { slots: number };
   stars: { maxDeaths: number; time: number };
   reward: { base: number; perStar: number };
 }
@@ -48,6 +65,14 @@ export const ENEMIES = enemiesJson as unknown as {
   hqClearance: number;
   minSpacing: number;
 };
+
+const MAZES: Record<string, MazeSrc> = { moba_1: moba1 as MazeSrc };
+
+/** Builds the map of a level (deterministic). */
+export function buildLevelMap(lv: CampaignLevel): GameMap {
+  const maze = lv.map ? MAZES[lv.map] : undefined;
+  return maze ? loadMazeMap(maze, lv.seed) : generateThemed(lv.theme, lv.seed, lv.size);
+}
 
 export function levelById(id: string): CampaignLevel | undefined {
   return LEVELS.find((l) => l.id === id);
@@ -124,10 +149,11 @@ export function placeEnemies(level: CampaignLevel, map: GameMap): PlacedUnit[] {
   const px = -dy / len;
   const py = dx / len;
   level.outposts.forEach((o, oi) => {
-    const ax = b0.x + dx * o.at + px * o.side;
-    const ay = b0.y + dy * o.at + py * o.side;
+    const unit = level.map ? (MAZES[level.map]?.unit ?? 1) : 1;
+    const ax = o.cell ? o.cell[0] * unit + (unit >> 1) : b0.x + dx * (o.at ?? 0) + px * (o.side ?? 0);
+    const ay = o.cell ? o.cell[1] * unit + (unit >> 1) : b0.y + dy * (o.at ?? 0) + py * (o.side ?? 0);
     for (const type of fillOutpost(o, rng)) {
-      const spot = findSpot(map, reach, ax + rng.range(-1.5, 1.5), ay + rng.range(-1.5, 1.5), type === 'tower' ? 1 : 0, taken, ENEMIES.minSpacing);
+      const spot = findSpot(map, reach, ax + (o.cell ? 0 : rng.range(-1.5, 1.5)), ay + (o.cell ? 0 : rng.range(-1.5, 1.5)), type === 'tower' ? 1 : 0, taken, ENEMIES.minSpacing);
       if (!spot) continue;
       taken.push(spot);
       units.push({ type, x: spot.x, y: spot.y, outpost: oi });
@@ -157,7 +183,7 @@ const ALLY_NAMES = ['Kurt', 'Şahin', 'Pars'];
 
 export function createCampaignMatch(o: CampaignOptions): CampaignHandle {
   const lv = o.level;
-  const map = generateThemed(lv.theme, lv.seed, lv.size);
+  const map = buildLevelMap(lv);
   const units = placeEnemies(lv, map);
   const b0 = map.bases[0];
   const players: PlayerSpec[] = [];
@@ -166,6 +192,10 @@ export function createCampaignMatch(o: CampaignOptions): CampaignHandle {
     const sp = b0.spawns[k % b0.spawns.length];
     players.push({ team: 0, cls, x: sp.x + 0.5, y: sp.y + 0.5, name: k === 0 ? (o.playerName ?? 'Sen') : ALLY_NAMES[(k - 1) % ALLY_NAMES.length], boost: k === 0 ? o.playerBoost : undefined });
   });
+  // round 09: explicit gun towers of both teams + dormant slots the player can build
+  for (const tw of lv.towers ?? []) players.push({ team: tw.team, cls: 'tower', x: tw.x + 0.5, y: tw.y + 0.5, name: `tower-${tw.team}-${tw.zone}` });
+  for (let k = 0; k < (lv.build?.slots ?? 0); k++) players.push({ team: 0, cls: 'tower', x: b0.x + 0.5, y: b0.y + 0.5, name: `build-${k + 1}`, reserve: true });
+  const towerEnd = players.length;
   let hqId = -1;
   for (const u of units) {
     if (u.type === 'hq') hqId = players.length;
@@ -184,7 +214,7 @@ export function createCampaignMatch(o: CampaignOptions): CampaignHandle {
     if (p.cls === 'tower') return new TowerBot(i, o.aiLevel);
     const bot = new AiBot(i, lv.seed, o.aiLevel);
     if (p.team === 1) {
-      const u = units[i - team0.length];
+      const u = units[i - towerEnd];
       bot.guard = { x: u.x + 0.5, y: u.y + 0.5, r: ENEMIES.guard.radius, leash: ENEMIES.guard.leash };
     }
     return bot;

@@ -37,7 +37,9 @@ design is gone with the Trapper, see D-036/D-037 and open decision K3.)
 
 ## 1. Where we are now (update every round)
 
-- **Last finished round:** Round 07 (2026-10-11, branch `fix/round-07-charged-specials`, **PR #7 into the round-06 branch, CI #51/#52 green incl. perf gates, not merged**) — Scout 6 shots/s (D-052),
+- **Round 09 (in progress → pushed with round 08 branch)** — tower rework in missions (D-058): tower 10 000 hp, 500 lob every 5 s + 250 fragments, 18 towers (3 per zone per team), KULE button / key B builds ≤ 3 own towers (30 s cd, own zone), mission minimap shows enemies only within 12 tiles of our towers, tall tower art. Tests `tests/towers.test.ts`, `e2e/round09.spec.ts`; screenshots `docs/screens/round-09/`. Not tried on the phone.
+- **Round 08** (branch `fix/round-08-maze-mission`, **PR #8 into the round-07 branch, CI #63 green, not merged**, APK run #35) — missions = one lane map "Üç Yol" after the owner's LoL/WC3 picture (D-056, replaced the maze D-054), garage upgrades only in missions (D-055). See `docs/PROGRESS.md`.
+- **Round 07 (previous):** Round 07 (2026-10-11, branch `fix/round-07-charged-specials`, **PR #7 into the round-06 branch, CI #51/#52 green incl. perf gates, not merged**) — Scout 6 shots/s (D-052),
   charged specials ≥ 30 %: Heavy laser + shock + wreck, Standard pierce, Artillery fire patch (D-053). See `docs/PROGRESS.md`.
 - **Round 06** (branch `fix/round-06-missions-perf-parts`, **PR #6 into the round-05 branch, CI #47/#48 green incl. both perf gates, not merged**) — Kampanya → "Görevler"
   (D-049), spray-fire stutter fixes (D-050), upgrade parts → class perks (D-051), save v6. See `docs/PROGRESS.md`.
@@ -49,7 +51,7 @@ design is gone with the Trapper, see D-036/D-037 and open decision K3.)
   (owner: "birleştir"; merge head `f94cbf8`). The default branch now holds round 03 + the change log. **Start new work
   from the default branch**: `git checkout -b fix/round-04-<topic> origin/claude/tanky-tunky-setup-dw06hp`.
   From 2026-10-11 the owner continues in the cloud/phone session; the desktop session pulls before working.
-- **Latest debug APK:** Android APK run **#29** (round 07 = rounds 04–07). Previous: #27 (round 06), #25/#26 (round 05), #23 (round 04), #16 (round 03). Signed with the committed debug
+- **Latest debug APK:** Android APK run **#35** (round 08 = rounds 04–08). Before: #33, #29 (round 07). Previous: #27 (round 06), #25/#26 (round 05), #23 (round 04), #16 (round 03). Signed with the committed debug
   key (`keystore/debug.sha256`), CI fails if the signature differs (D-035). The owner must uninstall **once** after
   D-035, then every newer APK installs over the old one — **not yet confirmed on the phone**.
 
@@ -88,9 +90,11 @@ design is gone with the Trapper, see D-036/D-037 and open decision K3.)
 | Bots | FSM AI (patrol/suspicion/chase/attack/retreat); Kolay/Normal/Zor/Ekstrem (first shot 5/3/1/0 s after an enemy is in range), allies use the same level | `src/data/ai.json`, `src/systems/ai/bot.ts` |
 | Auto-aim | nearest visible enemy **inside the camera view** (D-045), 10 % hysteresis; touch manual aim needs a 60 px drag | `targeting.ts`, `touchControls.ts` |
 | Heights | cliffs/ramps from one `isPassable` rule, bump flash + haptic, "Engel vurgusu" setting | `passability.ts`, D-020/021 |
+| Towers (round 09) | `tanks.json → tower` (10 000 hp, dmg 400×1.25, cd 5 s, `frag`), explicit `levels.json → towers` (18) + `build.slots` 3 dormant `reserve` towers, `src/sim/build.ts` + `data/build.json`, BTN_BUILD / key B / `touchControls.setBuild`; tall art in `tankArt.ts towerSlice` |
+| Minimap (round 08) | every tank: top-left iso diamond of the whole map, tap = big (`src/ui/minimap.ts`, D-057) |
 | UI | main menu Tek Oyunculu (Hızlı Maç, Görevler [= campaign], Garaj) / Çok Oyunculu ("Yakında") / Ayarlar, swipeable tank cards (skill + ult), map + difficulty selectors, two ability buttons with countdown rings, upgrade chip | `src/ui/` |
-| Campaign (round 05) | 3 levels (`levels.json`), 96×96 themed maps; towers + HQ = `pve` classes in `tanks.json`; outpost solver + guard mode (`enemies.json`); win = HQ destroyed, time out = loss; player respawns at own base; stars/credits | `src/game/campaign.ts`, `src/systems/ai/tower.ts`, `tools/campaign-sim.ts` |
-| Progression (round 05) | credits (campaign rewards, Quick Match 5/kill + 25/win), unlock chain, garage armor/engine/gun × 3 → `Tank.boost` for the player only | `src/game/progression.ts`, `src/data/progression.json` |
+| Campaign (round 08) | ONE lane map "Üç Yol" (`maps/moba_1.json` from `tools/make-moba-map.py`, loaded by `src/world/mazeMap.ts`, 96×96, 3 lanes + river + jungle of impassable `thicket`, point-symmetric; `levels.json` outposts by `cell`); route arrow follows the walking path; earlier: 96×96 themed maps; towers + HQ = `pve` classes in `tanks.json`; outpost solver + guard mode (`enemies.json`); win = HQ destroyed, time out = loss; player respawns at own base; stars/credits | `src/game/campaign.ts`, `src/systems/ai/tower.ts`, `tools/campaign-sim.ts` |
+| Progression (round 05) | credits (campaign rewards, Quick Match 5/kill + 25/win), unlock chain, garage armor/engine/gun × 3 → `Tank.boost` for the player only, **missions only** (D-055) | `src/game/progression.ts`, `src/data/progression.json` |
 | Upgrade parts (round 06) | +1 per won mission (+1 first 3-star win) → perk level on a chosen tank: Heavy hp, Scout fire rate, Standard charge time, Artillery blast radius (6 %/level, 5 levels) → `Tank.boost` | `progression.json → parts/perks`, `src/ui/PerkPicker.tsx` |
 | Save | schema v6 (settings, records, credits, campaign stars/bestTime, garage, parts, perks) | `src/core/save.ts` |
 | Android | no INTERNET permission, explicit debug signing, isometric tank icon | `android/`, D-033, D-035 |
@@ -192,7 +196,7 @@ android/     Capacitor project (committed), keystore/ debug key (committed) + de
 1. Owner: install the round-07 APK (contains rounds 04–07; GitHub artifacts need a signed-in browser — offered: a Release page without sign-in) (Actions → "Android APK" → artifact; first uninstall once if the update error appears), test with
    `docs/PLAYTEST_CHECKLIST.md`, report feel of spray / ultimates / menu and whether the update error is gone.
 2. Open owner decisions (§1): K1 multiplayer, K3 map awareness (keep the HQ arrow?), K11 Trapper in code, T ability trees, G images; review the round-05/06 numbers (tower/HQ, budgets, stars, rewards, garage, perks); report whether Scout spray still stutters on the phone (FPS counter).
-3. Campaign follow-ups (D): levels 4–12, other objectives (convoy, flag, survive), boss tanks every 4 levels, foot soldiers, hand-made/asymmetric maps.
+3. Campaign follow-ups (D): more levels copying `moba_1` (owner OKs the first one first), lane map for multiplayer (already symmetric) (owner OKs the first one first), mirrored version for multiplayer, levels 4–12, other objectives (convoy, flag, survive), boss tanks every 4 levels, foot soldiers, hand-made/asymmetric maps.
    Not started: **(F)** multiplayer (lockstep over relay or Wi-Fi; needs INTERNET permission);
    **(G)** tank art pipeline from the owner's images / 3D models.
 4. Balance (round 07, 200 matches hard): Scout 52.6 % ✅, Heavy 68.9 %, Standard 57.8 %, Artillery 23.1 % — B1 landing correction, B2 Heavy, pierce ratio: owner decides.
@@ -200,6 +204,8 @@ android/     Capacitor project (committed), keystore/ debug key (committed) + de
 
 **Blocked on the owner:** K1 (INTERNET permission + relay vs Wi-Fi) blocks F; the 4 tank images block G;
 B1 landing correction / B2 Heavy are balance numbers (rule 4).
+
+8. Round 09 follow-ups: owner tries tower numbers on the phone (hp 10 000, 500/250, 18 towers, build cd 30 s); campaign-sim with the bot player lost (hq untouched) — balance is the owner's call.
 
 ## 8. Roadmap
 

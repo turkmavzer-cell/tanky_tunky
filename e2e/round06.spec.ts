@@ -23,7 +23,7 @@ test('01 menu says Görevler', async ({ page }) => {
   await expect(page.getByTestId('campaign')).toHaveText('Görevler');
   await page.getByTestId('campaign').click();
   await expect(page.locator('.menu-title')).toHaveText('Görevler');
-  await expect(page.getByTestId('level-c1')).toContainText('Görev 1');
+  await expect(page.getByTestId('level-m1')).toContainText('Görev 1');
   await shot(page, '01-missions');
 });
 
@@ -31,7 +31,7 @@ test('02 won mission pays a part; pick a tank to power up', async ({ page }) => 
   await page.goto('/?silent');
   await page.getByTestId('solo').click();
   await page.getByTestId('campaign').click();
-  await page.getByTestId('play-c1').click();
+  await page.getByTestId('play-m1').click();
   await page.getByTestId('start').click();
   await page.waitForFunction(() => (window as unknown as W).__tanky?.scene.state.match.phase === 'playing', null, { timeout: 60_000 });
   await page.evaluate(() => {

@@ -1,56 +1,183 @@
 {
-  "$comment": "Campaign levels (round 05, stream D; owner 2026-10-11: 'start all plans' → K2/K4 proposal used: 96x96 maps, first 3 levels, hybrid outposts). Player + allies start at base 0, the enemy HQ stands at base 1. outposts: at = 0..1 along the line base0 → base1, side = tiles sideways from that line, budget = threat points (enemies.json threatCost), pool = unit types the solver may pick (seeded, deterministic). duration s; stars: 1 = win, 2 = win with deaths <= maxDeaths, 3 = also within time s. reward credits = base + perStar x stars (first clear) and perStar x new stars on replays.",
+  "$comment": "Mission levels (round 08). One hand-made lane map (owner's reference: LoL map for Warcraft 3 — 3 lanes, diagonal river with 2 lakes, jungle of wood clumps, bases in the corners); built by tools/make-moba-map.py → maps/moba_1.json (see world/mazeMap.ts). outposts: cell = [x, y] tile anchor (unit 1), budget = threat points (enemies.json threatCost), pool = unit types the solver may pick (seeded). Older generated-map levels still work with at/side. duration s; stars: 1 = win, 2 = win with deaths <= maxDeaths, 3 = also within time s. reward credits = base + perStar x stars. towers = explicit gun towers: team 1 = enemy (3 per zone: top / mid / bottom lane), team 0 = ours (point mirror); build.slots = dormant tower slots the player can build (data/build.json).",
   "levels": [
     {
-      "id": "c1",
-      "theme": "desert",
-      "size": 96,
-      "seed": 51001,
-      "duration": 480,
-      "allies": ["standard"],
-      "outposts": [
-        { "at": 0.3, "side": 0, "budget": 4, "pool": ["tower", "scout"] },
-        { "at": 0.5, "side": 7, "budget": 5, "pool": ["tower", "standard"] },
-        { "at": 0.68, "side": -6, "budget": 5, "pool": ["tower", "scout", "standard"] },
-        { "at": 0.88, "side": 0, "budget": 7, "pool": ["tower", "standard"] }
-      ],
-      "stars": { "maxDeaths": 3, "time": 300 },
-      "reward": { "base": 120, "perStar": 40 }
-    },
-    {
-      "id": "c2",
-      "theme": "city",
-      "size": 96,
-      "seed": 51002,
-      "duration": 540,
-      "allies": ["heavy"],
-      "outposts": [
-        { "at": 0.28, "side": -5, "budget": 5, "pool": ["tower", "scout", "standard"] },
-        { "at": 0.45, "side": 6, "budget": 6, "pool": ["tower", "standard", "artillery"] },
-        { "at": 0.62, "side": 0, "budget": 7, "pool": ["tower", "heavy", "standard"] },
-        { "at": 0.78, "side": -7, "budget": 6, "pool": ["tower", "artillery", "scout"] },
-        { "at": 0.9, "side": 3, "budget": 8, "pool": ["tower", "heavy", "standard"] }
-      ],
-      "stars": { "maxDeaths": 3, "time": 360 },
-      "reward": { "base": 160, "perStar": 50 }
-    },
-    {
-      "id": "c3",
+      "id": "m1",
+      "map": "moba_1",
       "theme": "forest",
       "size": 96,
-      "seed": 51003,
+      "seed": 62001,
       "duration": 600,
-      "allies": ["standard", "artillery"],
-      "outposts": [
-        { "at": 0.25, "side": 6, "budget": 6, "pool": ["tower", "scout", "standard"] },
-        { "at": 0.4, "side": -6, "budget": 7, "pool": ["tower", "standard", "artillery"] },
-        { "at": 0.55, "side": 0, "budget": 8, "pool": ["tower", "heavy", "artillery"] },
-        { "at": 0.7, "side": 7, "budget": 7, "pool": ["tower", "scout", "heavy"] },
-        { "at": 0.82, "side": -5, "budget": 8, "pool": ["tower", "standard", "heavy"] },
-        { "at": 0.92, "side": 0, "budget": 10, "pool": ["tower", "heavy", "artillery", "standard"] }
+      "allies": [
+        "standard"
       ],
-      "stars": { "maxDeaths": 2, "time": 420 },
-      "reward": { "base": 200, "perStar": 60 }
+      "outposts": [
+        {
+          "cell": [
+            40,
+            22
+          ],
+          "budget": 4,
+          "pool": [
+            "scout",
+            "standard"
+          ]
+        },
+        {
+          "cell": [
+            56,
+            22
+          ],
+          "budget": 4,
+          "pool": [
+            "standard",
+            "artillery"
+          ]
+        },
+        {
+          "cell": [
+            72,
+            50
+          ],
+          "budget": 4,
+          "pool": [
+            "scout",
+            "artillery"
+          ]
+        },
+        {
+          "cell": [
+            74,
+            21
+          ],
+          "budget": 8,
+          "pool": [
+            "heavy",
+            "standard"
+          ]
+        }
+      ],
+      "stars": {
+        "maxDeaths": 3,
+        "time": 360
+      },
+      "reward": {
+        "base": 150,
+        "perStar": 50
+      },
+      "towers": [
+        {
+          "team": 1,
+          "zone": "top",
+          "x": 46,
+          "y": 9
+        },
+        {
+          "team": 1,
+          "zone": "top",
+          "x": 58,
+          "y": 9
+        },
+        {
+          "team": 1,
+          "zone": "top",
+          "x": 70,
+          "y": 9
+        },
+        {
+          "team": 1,
+          "zone": "mid",
+          "x": 73,
+          "y": 22
+        },
+        {
+          "team": 1,
+          "zone": "mid",
+          "x": 64,
+          "y": 31
+        },
+        {
+          "team": 1,
+          "zone": "mid",
+          "x": 55,
+          "y": 40
+        },
+        {
+          "team": 1,
+          "zone": "bottom",
+          "x": 87,
+          "y": 30
+        },
+        {
+          "team": 1,
+          "zone": "bottom",
+          "x": 87,
+          "y": 43
+        },
+        {
+          "team": 1,
+          "zone": "bottom",
+          "x": 87,
+          "y": 56
+        },
+        {
+          "team": 0,
+          "zone": "top",
+          "x": 49,
+          "y": 86
+        },
+        {
+          "team": 0,
+          "zone": "top",
+          "x": 37,
+          "y": 86
+        },
+        {
+          "team": 0,
+          "zone": "top",
+          "x": 25,
+          "y": 86
+        },
+        {
+          "team": 0,
+          "zone": "mid",
+          "x": 22,
+          "y": 73
+        },
+        {
+          "team": 0,
+          "zone": "mid",
+          "x": 31,
+          "y": 64
+        },
+        {
+          "team": 0,
+          "zone": "mid",
+          "x": 40,
+          "y": 55
+        },
+        {
+          "team": 0,
+          "zone": "bottom",
+          "x": 8,
+          "y": 65
+        },
+        {
+          "team": 0,
+          "zone": "bottom",
+          "x": 8,
+          "y": 52
+        },
+        {
+          "team": 0,
+          "zone": "bottom",
+          "x": 8,
+          "y": 39
+        }
+      ],
+      "build": {
+        "slots": 3
+      }
     }
   ]
 }

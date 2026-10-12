@@ -57,6 +57,24 @@ Tam liste ve öneriler: `CLAUDE.md` §1 "Pending owner decisions" (B1, B2, A, K1
 ## 4. Günlük (en yeni en üstte)
 
 <!-- LOG:START -->
+### 2026-10-12 — [konusma] Sahibin isteği: kuleler
+Düşmanlar haritada gizli, kendi bölgede kule inşası, kule hp 10 000, 5 sn'de 500 top + 250 parça, 3 bölge x 3 kule, düşman yaklaşınca haritada görünsün; ardından 'kuleler kule gibi görünsün, uzun olsun'. Hepsi önerdiğim gibi uygulandı.
+### 2026-10-12 — [yenilik] Kule yenilemesi (tur 09)
+Kule 10 000 hp, 5 sn'de bir 500'lük kavisli top + 250'lik parçalar; 3 bölge x 3 kule x 2 takım = 18 kule; KULE butonu/B tuşu ile en çok 3 kule inşası (30 sn bekleme, kendi bölge); görev minimapinde düşmanlar sadece bizim kulelerin 12 kare yakınında görünür; uzun taş kule görseli. Hızlı Maç aynı. Testler: tests/towers.test.ts, e2e/round09.spec.ts (ekran görüntüleri incelendi). Telefonda denenmedi.
+### 2026-10-11 — [konusma] Mini harita isteği
+Sahibi: 'Orijinal oyunda solda üstte tam harita gözüktüğü gibi bu oyunda da gözüksün'; plan sonrası 'Uygula bakalım sonuca göre güncellenir'.
+### 2026-10-11 — [yenilik] Mini harita herkes için
+Sol üstte tüm haritayı gösteren mini harita (Hızlı Maç + Görevler): sen beyaz ok, dost mavi, düşman kırmızı, kule kare, karargâh yıldız; Saklan'daki düşman görünmez. Dokununca büyük harita. Oyunun izometrik yönüyle aynı (elmas). Telefonda doğrulanmadı.
+### 2026-10-11 — [konusma] Görsel harita isteği
+Sahibi bir LoL (Warcraft 3) harita görseli gönderdi: 'Bu tarz bir harita istiyorum, labirent haritayı kaldır ve görseldeki haritayı uygula.'
+### 2026-10-11 — [degisiklik] Görev haritası: labirent yerine Üç Yol (LoL/WC3 tarzı)
+Sahibinin gönderdiği LoL WC3 haritası örnek alındı: 96×96, köşelerde üsler, üst/orta/alt taş koridor, iki gölü olan çapraz nehir, C şeklinde sık orman kümeleri (yeni geçilmez 'sık orman' arazisi, mermi de durur), koridor kenarında açıklıklı orman duvarları. 9 kule + üs muhafızı + 2 orman kampı + karargâh. Harita simetrik (ileride çok oyunculu). Labirent (maze_1) kaldırıldı. Telefonda ve FPS doğrulanmadı.
+### 2026-10-11 — [konusma] Labirent görev isteği
+Sahibi: 3 bölümü kaldır, tek labirent bölüm, LoL/Warcraft gibi dolaşma zorunlu, düşmanlar bölgelerde, puanla tank güçlendirme sadece görevlerde, multiplayer'da eşit. Detaylar Claude'a bırakıldı, 'uygula' dendi.
+### 2026-10-11 — [degisiklik] Güçlendirmeler sadece Görevler'de
+Garaj yükseltmeleri ve parça perk'leri Hızlı Maç'ta uygulanmıyor (çok oyunculuda da eşit tanklar). Kredi ve parça iki ayrı para birimi olarak kaldı (birleştirmek denge sayısı değiştirir). Eski kayıtlar geçerli.
+### 2026-10-11 — [yenilik] Görevler: tek labirent bölümü
+3 üretilmiş bölüm kaldırıldı; elle çizilmiş 64×64 'Labirent' (maps/maze_1.json): duvarlar kaya, mermi de durur, karargâha giden yol düz çizginin ~3 katı. 5 karakol (6 kule + 5 tank) sabit hücrelerde. Ok artık yol yönünü gösteriyor. Telefonda doğrulanmadı.
 ### 2026-10-11 — [degisiklik] Round 07 PR #7, CI yeşil, APK #29
 CI (performans kapıları dahil) yeşil. Telefonda denenmedi.
 ### 2026-10-11 — [yenilik] Basılı tutma özellikleri

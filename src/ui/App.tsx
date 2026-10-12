@@ -103,7 +103,7 @@ export function App() {
             seed={seed}
             record={save.records}
             campaignLevel={level ?? undefined}
-            playerBoost={boostFor(save, cls as CombatClassId)}
+            playerBoost={level !== null ? boostFor(save, cls as CombatClassId) : undefined}
             hasNext={nextLevel(level) !== null}
             onNext={() => {
               setLevel(nextLevel(level));
