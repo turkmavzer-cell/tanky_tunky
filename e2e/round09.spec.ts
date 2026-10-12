@@ -50,11 +50,10 @@ test('02 build a tower with the button; a second press shows the cooldown messag
   await page.waitForTimeout(600);
   const before = await page.evaluate(() => (window as unknown as W).__tanky.scene.state.tanks.filter((t) => t.reserve && t.alive).length);
   await page.getByTestId('build').dispatchEvent('pointerdown', { pointerType: 'touch', pointerId: 5, bubbles: true });
-  await page.waitForTimeout(600);
+  const count = (): Promise<number> => page.evaluate(() => (window as unknown as W).__tanky.scene.state.tanks.filter((t) => t.reserve && t.alive).length);
+  await expect.poll(count, { timeout: 20_000 }).toBe(before + 1); // slow CI frame rates: hold until the sim has sampled the press
   await page.dispatchEvent('body', 'pointerup', { pointerType: 'touch', pointerId: 5, bubbles: true });
-  await page.waitForTimeout(1500);
-  const after = await page.evaluate(() => (window as unknown as W).__tanky.scene.state.tanks.filter((t) => t.reserve && t.alive).length);
-  expect(after).toBe(before + 1);
+  await page.waitForTimeout(800);
   await shot(page, '02-built');
   await page.getByTestId('build').dispatchEvent('pointerdown', { pointerType: 'touch', pointerId: 6, bubbles: true });
   await expect(page.getByTestId('build-msg')).toBeVisible({ timeout: 15_000 }); // headless runs ~5 fps: the press is sampled a few frames later
